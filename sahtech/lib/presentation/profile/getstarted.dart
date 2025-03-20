@@ -24,7 +24,11 @@ class Getstarted extends StatelessWidget {
             height: height * 0.75, // 75% of screen height for the green part
             width: double.infinity,
             decoration: BoxDecoration(
-              color: AppColors.lightTeal, // Light green background from Figma
+              borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(50),
+                  bottomRight: Radius.circular(50)),
+              color:
+                  const Color(0xFFd9f7c2), // Light green background from Figma
             ),
             child: SafeArea(
               child: Column(
@@ -34,8 +38,8 @@ class Getstarted extends StatelessWidget {
                     padding: EdgeInsets.only(top: height * 0.05),
                     child: Center(
                       child: Image.asset(
-                        'lib/assets/images/logo2.png', // Update with your actual logo path
-                        height: height * 0.05, // Adjust based on your logo
+                        'lib/assets/images/logo2.jpg',
+                        height: height * 0.06,
                         fit: BoxFit.contain,
                       ),
                     ),
@@ -47,7 +51,7 @@ class Getstarted extends StatelessWidget {
                       child: Container(
                         width: width * 0.9,
                         child: Image.asset(
-                          'lib/assets/images/logo2.jpg',
+                          'lib/assets/images/getstarted2.jpg', // Using correct image from assets
                           fit: BoxFit.contain,
                         ),
                       ),
@@ -97,15 +101,26 @@ class Getstarted extends StatelessWidget {
                   width: double.infinity,
                   height: height * 0.06,
                   margin: EdgeInsets.symmetric(vertical: height * 0.02),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        offset: Offset(0, 2),
+                        blurRadius: 5,
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
                   child: ElevatedButton(
                     onPressed: () {
                       // TODO: Navigate to the next screen
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.lightTeal,
+                      backgroundColor: const Color(0xFFB7F397),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(15),
                       ),
                     ),
                     child: Text(

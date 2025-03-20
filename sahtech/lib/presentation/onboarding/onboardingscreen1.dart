@@ -160,33 +160,31 @@ class OnboardingScreen1 extends StatelessWidget {
                       : size.height * 0.045),
 
               // Button with ensured visibility
-              Padding(
-                padding: EdgeInsets.only(bottom: size.height * 0.025),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: size.height * 0.065, // Fixed height for consistency
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const OnboardingScreen2()),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF9FE870),
-                      foregroundColor: Colors.black,
-                      padding: EdgeInsets.only(top: 2, right: 1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Skip to second onboarding screen
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const OnboardingScreen2()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFB7F397),
+                    foregroundColor: Colors.black87,
+                    padding: const EdgeInsets.only(
+                        top: 15, bottom: 15, left: 15, right: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
                     ),
-                    child: Text(
-                      "suivant",
-                      style: TextStyle(
-                        fontSize: size.width * 0.042,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  ),
+                  child: const Text(
+                    "suivant",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
