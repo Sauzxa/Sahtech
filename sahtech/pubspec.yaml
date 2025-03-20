@@ -64,6 +64,9 @@ flutter:
   assets:
     - lib/assets/images/onbor1.jpg
     - lib/assets/images/onbor2.jpg
+    - lib/assets/images/getstarted.jpg
+    - lib/assets/images/getstarted2.jpg
+    - lib/assets/images/logo2.jpg
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

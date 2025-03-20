@@ -4,9 +4,10 @@ import 'package:sahtech/core/theme/colors.dart';
 
 class OnboardingScreen2 extends StatelessWidget {
   const OnboardingScreen2({Key? key}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isSmallDevice = size.height < 700;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -17,38 +18,68 @@ class OnboardingScreen2 extends StatelessWidget {
               Align(
                 alignment: Alignment.topRight,
                 child: TextButton(
-                  onPressed: () {
-                    // Skip to second onboarding screen
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const OnboardingScreen3()),
-                    );
-                  },
-                  child: const Text(
-                    "Skip",
-                    style: TextStyle(
-                      color: Color(0xFF4CAF50),
-                      fontSize: 16,
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const OnboardingScreen2()),
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: size.width * 0.03,
+                        vertical: size.height * 0.012,
+                      ),
+                      minimumSize: Size(50, 40), // Increased tap target
                     ),
-                  ),
-                ),
+                    child: MaterialButton(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => Onboardingscreen3()),
+                          );
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Text(
+                              "Skip",
+                              style: TextStyle(
+                                color: AppColors.gray,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(
+                              Icons.chevron_right,
+                              color: AppColors.lightTeal,
+                              size: 20,
+                            ),
+                          ],
+                        ))),
               ),
-              const SizedBox(height: 30),
+              SizedBox(
+                  height:
+                      isSmallDevice ? size.height * 0.02 : size.height * 0.03),
               Expanded(
-                flex: 3,
+                flex: 4,
                 child: Container(
-                  padding: const EdgeInsets.all(20),
+                  width: 500,
+                  height: 100,
+                  padding: EdgeInsets.all(size.width * 0.04),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEBF9E7),
-                    borderRadius: BorderRadius.circular(20),
+                    color: const Color(0xFF9FE870).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(24),
                   ),
                   child: Image.asset(
-                    '../lib/assets/images/onbor1.jpg',
+                    'lib/assets/images/onbor1.jpg',
                     fit: BoxFit.contain,
                   ),
                 ),
               ),
+
               const SizedBox(height: 40),
               const Text(
                 "Trouver des alternatifs",
@@ -111,7 +142,7 @@ class OnboardingScreen2 extends StatelessWidget {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const OnboardingScreen3()),
+                          builder: (context) => const Onboardingscreen3()),
                     );
                   },
                   style: ElevatedButton.styleFrom(
