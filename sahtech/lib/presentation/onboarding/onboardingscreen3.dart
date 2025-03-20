@@ -28,7 +28,7 @@ class Onboardingscreen3 extends StatelessWidget {
                 child: Column(
                   children: [
                     // Flexible spacing that adapts to different screens
-                    SizedBox(height: height * 0.05),
+                    SizedBox(height: height * 0.08),
 
                     // Illustration container with green background circle
                     Expanded(
@@ -109,25 +109,25 @@ class Onboardingscreen3 extends StatelessWidget {
                 height: height * 0.06,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => Getstarted()),
+                    // Direct way to navigate to the Getstarted screen
+                    final route = MaterialPageRoute(
+                      builder: (context) => const Getstarted(),
                     );
+                    Navigator.pushReplacement(context, route);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.lightTeal, // Light green color
-                    elevation: 0, // No shadow, flat design like Figma
+                    backgroundColor: const Color(0xFFB7F397),
+                    foregroundColor: Colors.black87,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                          20), // Rounded corners like Figma
+                      borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: Text(
-                    'suivant',
+                  child: const Text(
+                    "suivant",
                     style: TextStyle(
-                      fontSize: buttonTextSize,
+                      fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.darkBrown,
                     ),
                   ),
                 ),
