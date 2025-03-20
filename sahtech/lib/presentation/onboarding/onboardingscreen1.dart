@@ -8,6 +8,7 @@ class OnboardingScreen1 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final isSmallDevice = size.height < 700;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -15,10 +16,11 @@ class OnboardingScreen1 extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.symmetric(
             horizontal: size.width * 0.08,
-            vertical: size.height * 0.03,
+            vertical: size.height * 0.02,
           ),
           child: Column(
             children: [
+              // Skip button
               Align(
                 alignment: Alignment.topRight,
                 child: TextButton(
@@ -32,8 +34,9 @@ class OnboardingScreen1 extends StatelessWidget {
                   style: TextButton.styleFrom(
                     padding: EdgeInsets.symmetric(
                       horizontal: size.width * 0.03,
-                      vertical: size.height * 0.01,
+                      vertical: size.height * 0.012,
                     ),
+                    minimumSize: Size(50, 40), // Increased tap target
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -42,59 +45,81 @@ class OnboardingScreen1 extends StatelessWidget {
                         "Skip",
                         style: TextStyle(
                           color: AppColors.gray,
-                          fontSize: 12,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                       SizedBox(width: 4),
-                      Text(
-                        ">",
-                        style: TextStyle(
-                          color: AppColors.lightTeal,
-                          fontSize: 24,
-                        ),
+                      Icon(
+                        Icons.chevron_right,
+                        color: AppColors.lightTeal,
+                        size: 20,
                       ),
                     ],
                   ),
                 ),
               ),
-              SizedBox(height: size.height * 0.03),
+
+              // Adaptive spacing
+              SizedBox(
+                  height:
+                      isSmallDevice ? size.height * 0.02 : size.height * 0.03),
+
+              // Image container without blur
               Expanded(
-                flex: 3,
+                flex: 4,
                 child: Container(
-                  padding: EdgeInsets.all(size.width * 0.05),
+                  width: 500,
+                  height: 100,
+                  padding: EdgeInsets.all(size.width * 0.04),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF9FE870).withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(20),
+                    color: const Color(0xFF9FE870).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(24),
                   ),
                   child: Image.asset(
-                    '../lib/assets/images/onbor2.jpg',
+                    'lib/assets/images/onbor2.jpg',
                     fit: BoxFit.contain,
                   ),
                 ),
               ),
-              SizedBox(height: size.height * 0.04),
+
+              // Adaptive spacing
+              SizedBox(
+                  height:
+                      isSmallDevice ? size.height * 0.03 : size.height * 0.04),
+
+              // Title
               Text(
                 "Scanner un produit",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.black,
-                  fontSize: size.width * 0.09,
-                  fontWeight: FontWeight.w600,
-                  height: 16 / 36,
-                  letterSpacing: 0,
+                  fontSize: size.width * 0.055,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
                 ),
               ),
-              SizedBox(height: size.height * 0.02),
+
+              SizedBox(height: isSmallDevice ? 10 : 20),
+
+              // Description
               Text(
                 "Avec SahTech, scannez plusieurs produits alimentaires et adoptez-les en fonction de votre profil",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.gray,
-                  fontSize: size.width * 0.04,
-                  height: 1.5,
+                  fontSize: size.width * 0.038,
+                  height: 1.4,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
-              SizedBox(height: size.height * 0.04),
+
+              // Spacing for pagination dots
+              SizedBox(
+                  height: isSmallDevice
+                      ? size.height * 0.025
+                      : size.height * 0.035),
+
               // Pagination dots
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -127,33 +152,41 @@ class OnboardingScreen1 extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: size.height * 0.03),
-              // Button
+
+              // Increased spacing for button to ensure visibility
               SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const OnboardingScreen2()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.lightTeal,
-                    foregroundColor: Colors.black87,
-                    padding: EdgeInsets.symmetric(
-                      vertical: size.height * 0.02,
+                  height: isSmallDevice
+                      ? size.height * 0.035
+                      : size.height * 0.045),
+
+              // Button with ensured visibility
+              Padding(
+                padding: EdgeInsets.only(bottom: size.height * 0.025),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: size.height * 0.065, // Fixed height for consistency
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const OnboardingScreen2()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF9FE870),
+                      foregroundColor: Colors.black,
+                      padding: EdgeInsets.only(top: 2, right: 1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  child: Text(
-                    "suivant",
-                    style: TextStyle(
-                      fontSize: size.width * 0.04,
-                      fontWeight: FontWeight.w500,
+                    child: Text(
+                      "suivant",
+                      style: TextStyle(
+                        fontSize: size.width * 0.042,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -165,3 +198,4 @@ class OnboardingScreen1 extends StatelessWidget {
     );
   }
 }
+//
