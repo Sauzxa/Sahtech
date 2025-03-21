@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/presentation/profile/getstarted.dart';
+import 'package:sahtech/presentation/profile/profile1.dart';
 
 class Onboardingscreen3 extends StatelessWidget {
   const Onboardingscreen3({Key? key}) : super(key: key);
@@ -109,11 +110,13 @@ class Onboardingscreen3 extends StatelessWidget {
                 height: height * 0.06,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Direct way to navigate to the Getstarted screen
-                    final route = MaterialPageRoute(
-                      builder: (context) => const Getstarted(),
+                    // Navigate to Profile1 screen
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const Getstarted(),
+                      ),
                     );
-                    Navigator.pushReplacement(context, route);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFB7F397),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sahtech/core/theme/colors.dart';
+import 'package:sahtech/presentation/profile/profile1.dart';
 
 class Getstarted extends StatelessWidget {
   const Getstarted({super.key});
@@ -114,7 +115,13 @@ class Getstarted extends StatelessWidget {
                   ),
                   child: ElevatedButton(
                     onPressed: () {
-                      // TODO: Navigate to the next screen
+                      // Navigate to profile1.dart
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const Profile1(),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFB7F397),
