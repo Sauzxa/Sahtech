@@ -1,0 +1,11 @@
+{
+  "appTitle": "صحتك",
+  "chronicDiseaseQuestion": "هل لديك مرض مزمن؟",
+  "chronicDiseaseExplanation": "لتجربة أفضل وفحص مخصص يتناسب مع ملفك الشخصي، نحتاج إلى معرفة بعض المعلومات عن حالتك الصحية",
+  "yes": "نعم",
+  "no": "لا",
+  "next": "التالي",
+  "selectLanguage": "اختر لغة",
+  "pleaseSelectOption": "الرجاء تحديد خيار",
+  "informationSaved": "تم حفظ المعلومات بنجاح!"
+} 

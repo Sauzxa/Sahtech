@@ -42,6 +42,9 @@ class _Profile1State extends State<Profile1> {
     final height = size.height;
     final width = size.width;
 
+    // Check if a user type is selected
+    final bool isUserTypeSelected = selectedUserType != null;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -262,15 +265,18 @@ class _Profile1State extends State<Profile1> {
 
               Spacer(),
 
-              // Continue button
+              // Continue button (disabled until a user type is selected)
               Container(
                 width: double.infinity,
                 margin: EdgeInsets.only(bottom: height * 0.03),
                 child: ElevatedButton(
-                  onPressed: navigateToProfile2,
+                  onPressed: isUserTypeSelected ? navigateToProfile2 : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.lightTeal,
-                    foregroundColor: Colors.black87,
+                    backgroundColor: isUserTypeSelected
+                        ? AppColors.lightTeal
+                        : Colors.grey[300],
+                    foregroundColor:
+                        isUserTypeSelected ? Colors.black87 : Colors.grey[600],
                     elevation: 0,
                     padding: EdgeInsets.symmetric(vertical: height * 0.018),
                     shape: RoundedRectangleBorder(

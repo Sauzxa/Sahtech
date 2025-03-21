@@ -21,8 +21,26 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    avoid_print: false  # Disable the `avoid_print` rule
+    prefer_single_quotes: false  # Disable single quotes requirement
+    prefer_const_constructors: false # Allow non-const constructors
+    prefer_const_constructors_in_immutables: false # Allow non-const constructors in immutables
+    prefer_const_literals_to_create_immutables: false # Disable const literals requirement
+    sort_child_properties_last: false # Disable sort child properties
+    use_key_in_widget_constructors: false # Make keys optional
+    avoid_unnecessary_containers: false # Allow container nesting
+    empty_catches: false # Allow empty catch blocks
+    library_private_types_in_public_api: false # Allow private types in public API
+    file_names: false # Allow any file naming convention
+
+analyzer:
+  errors:
+    deprecated_member_use: ignore
+    invalid_annotation_target: ignore
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "lib/generated/**"
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

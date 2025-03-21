@@ -1,0 +1,11 @@
+{
+  "appTitle": "Sahtech",
+  "chronicDiseaseQuestion": "Haben Sie eine chronische Krankheit?",
+  "chronicDiseaseExplanation": "Für ein besseres Erlebnis und einen personalisierten Scan, der an Ihr Profil angepasst ist, benötigen wir bestimmte Informationen über Ihren Gesundheitszustand",
+  "yes": "Ja",
+  "no": "Nein",
+  "next": "Weiter",
+  "selectLanguage": "Sprache auswählen",
+  "pleaseSelectOption": "Bitte wählen Sie eine Option",
+  "informationSaved": "Informationen erfolgreich gespeichert!"
+} 

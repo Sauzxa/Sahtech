@@ -74,7 +74,7 @@ class _SplashScreenState extends State<SplashScreen>
                         // Sahtech logo - using Image.asset for the logo image
                         Image.asset(
                           'lib/assets/images/mainlogo.jpg',
-                          width: width * 0.6, // 60% of screen width
+                          width: width * 0.8, // 60% of screen width
                           fit: BoxFit.contain,
                         ),
                       ],
