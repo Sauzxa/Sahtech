@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:sahtech/presentation/onboarding/onboardingscreen1.dart';
+import 'package:sahtech/presentation/onboarding/loading.dart';
 
 void main() {
-  runApp(Main());
+  runApp(const Main());
 }
 
 class Main extends StatefulWidget {
@@ -17,7 +17,7 @@ class _Main extends State<Main> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: OnboardingScreen1(),
+      home: SplashScreen(),
     );
   }
 }
