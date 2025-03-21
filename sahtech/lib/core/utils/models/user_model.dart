@@ -4,6 +4,8 @@ class UserModel {
   String? email;
   String? phoneNumber;
   String? profileImageUrl;
+  bool? hasChronicDisease;
+  String? preferredLanguage;
 
   // Add more fields as needed for your application
 
@@ -13,6 +15,8 @@ class UserModel {
     this.email,
     this.phoneNumber,
     this.profileImageUrl,
+    this.hasChronicDisease,
+    this.preferredLanguage,
   });
 
   // Factory method to create a user from a map
@@ -23,6 +27,8 @@ class UserModel {
       email: map['email'],
       phoneNumber: map['phoneNumber'],
       profileImageUrl: map['profileImageUrl'],
+      hasChronicDisease: map['hasChronicDisease'],
+      preferredLanguage: map['preferredLanguage'],
     );
   }
 
@@ -34,6 +40,8 @@ class UserModel {
       'email': email,
       'phoneNumber': phoneNumber,
       'profileImageUrl': profileImageUrl,
+      'hasChronicDisease': hasChronicDisease,
+      'preferredLanguage': preferredLanguage,
     };
   }
 }
