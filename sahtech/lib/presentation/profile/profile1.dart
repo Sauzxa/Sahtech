@@ -2,34 +2,126 @@ import 'package:flutter/material.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/presentation/profile/profile2.dart';
+import 'package:sahtech/core/services/translation_service.dart';
+import 'package:provider/provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:sahtech/core/widgets/language_selector.dart';
 
 class Profile1 extends StatefulWidget {
-  const Profile1({Key? key}) : super(key: key);
+  const Profile1({super.key});
 
   @override
   State<Profile1> createState() => _Profile1State();
 }
 
-class _Profile1State extends State<Profile1> {
+class _Profile1State extends State<Profile1> with WidgetsBindingObserver {
   // Initial selection (null means none selected)
   String? selectedUserType;
+  late TranslationService _translationService;
+  bool _isLoading = true;
+  String _currentLanguage = '';
+
+  // Text strings used in this screen
+  Map<String, String> _translations = {
+    'title': 'Démarrons ensemble',
+    'subtitle':
+        'Scannez vos aliments et recevez des conseils adaptés à votre profil pour faire les meilleurs choix nutritionnels',
+    'normalUserTitle': 'Je suis un utilisateur',
+    'normalUserDesc': 'Compte utilisateur pour utiliser l\'appli',
+    'nutritionistTitle': 'Je suis un nutritioniste',
+    'nutritionistDesc': 'Compte nutritioniste pour être consulter',
+    'continue': 'Continue',
+    'selectAccountType': 'Veuillez sélectionner un type de compte'
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadTranslations();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Check if language has changed
+    final translationService =
+        Provider.of<TranslationService>(context, listen: false);
+    if (_currentLanguage != '' &&
+        _currentLanguage != translationService.currentLanguageCode) {
+      _loadTranslations();
+    }
+  }
+
+  // Load translations when the screen initializes
+  Future<void> _loadTranslations() async {
+    setState(() => _isLoading = true);
+
+    try {
+      _translationService =
+          Provider.of<TranslationService>(context, listen: false);
+      final currentLanguage = _translationService.currentLanguageCode;
+      _currentLanguage = currentLanguage;
+
+      // Only translate if not French (our default language)
+      if (currentLanguage != 'fr') {
+        final translated =
+            await _translationService.translateMap(_translations);
+
+        setState(() {
+          _translations = translated;
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      debugPrint('Translation error: $e');
+      setState(() => _isLoading = false);
+    }
+  }
+
+  // Handle language change
+  void _handleLanguageChanged(String languageCode) {
+    // Reset loading state and reload translations
+    setState(() => _isLoading = true);
+
+    // Set currentLanguage to the new language to prevent extra reloads
+    _currentLanguage = languageCode;
+
+    // Load translations with the new language
+    _loadTranslations();
+  }
 
   // Function to navigate to the next screen with user data
-  void navigateToProfile2() {
+  void navigateToProfile2() async {
     if (selectedUserType != null) {
-      final userData = UserModel(userType: selectedUserType!);
+      final userData = UserModel(
+        userType: selectedUserType!,
+        preferredLanguage: _translationService.currentLanguageCode,
+      );
 
-      Navigator.of(context).push(
+      final result = await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => Profile2(userData: userData),
         ),
       );
+
+      // If we return to this screen and the language has changed
+      if (result == 'language_changed') {
+        await _loadTranslations();
+      }
     } else {
       // Show a snackbar if no user type is selected
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez sélectionner un type de compte'),
+        SnackBar(
+          content: Text(_translations['selectAccountType']!),
           backgroundColor: Colors.red,
         ),
       );
@@ -38,6 +130,13 @@ class _Profile1State extends State<Profile1> {
 
   @override
   Widget build(BuildContext context) {
+    // Get latest language from Provider
+    final translationService = Provider.of<TranslationService>(context);
+    if (_currentLanguage != translationService.currentLanguageCode) {
+      // If there's a new language since we last loaded, reload translations
+      Future.microtask(() => _loadTranslations());
+    }
+
     final size = MediaQuery.of(context).size;
     final height = size.height;
     final width = size.width;
@@ -45,28 +144,52 @@ class _Profile1State extends State<Profile1> {
     // Check if a user type is selected
     final bool isUserTypeSelected = selectedUserType != null;
 
+    // Show loading indicator while translations are being fetched
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(
+            color: AppColors.lightTeal,
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        title: Image.asset(
+          'lib/assets/images/mainlogo.jpg',
+          height: kToolbarHeight * 0.6,
+          fit: BoxFit.contain,
+        ),
+        centerTitle: true,
+        actions: [
+          // Language selector button
+          Padding(
+            padding: const EdgeInsets.only(right: 0),
+            child: LanguageSelectorButton(
+              width: width,
+              onLanguageChanged: _handleLanguageChanged,
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: width * 0.05),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              SizedBox(height: height * 0.05),
-
-              // Logo - Using mainlogo.jpg which contains the Sahtech logo
-              Image.asset(
-                'lib/assets/images/mainlogo.jpg',
-                width: width * 0.5,
-                fit: BoxFit.contain,
-              ),
-
-              SizedBox(height: height * 0.04),
+              SizedBox(height: height * 0.02),
 
               // Main Title
               Text(
-                'Démarrons ensemble',
+                _translations['title']!,
                 style: TextStyle(
                   fontSize: width * 0.06,
                   fontWeight: FontWeight.bold,
@@ -81,7 +204,7 @@ class _Profile1State extends State<Profile1> {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: width * 0.05),
                 child: Text(
-                  'Scannez vos aliments et recevez des conseils adaptés à votre profil pour faire les meilleurs choix nutritionnels',
+                  _translations['subtitle']!,
                   style: TextStyle(
                     fontSize: width * 0.035,
                     color: Colors.grey[600],
@@ -147,7 +270,7 @@ class _Profile1State extends State<Profile1> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Je suis un utilisateur',
+                              _translations['normalUserTitle']!,
                               style: TextStyle(
                                 fontSize: width * 0.04,
                                 fontWeight: FontWeight.w600,
@@ -156,7 +279,7 @@ class _Profile1State extends State<Profile1> {
                             ),
                             SizedBox(height: height * 0.005),
                             Text(
-                              'Compte utilisateur pour utiliser l\'appli',
+                              _translations['normalUserDesc']!,
                               style: TextStyle(
                                 fontSize: width * 0.03,
                                 color: Colors.grey[600],
@@ -233,7 +356,7 @@ class _Profile1State extends State<Profile1> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Je suis un nutritioniste',
+                              _translations['nutritionistTitle']!,
                               style: TextStyle(
                                 fontSize: width * 0.04,
                                 fontWeight: FontWeight.w600,
@@ -242,7 +365,7 @@ class _Profile1State extends State<Profile1> {
                             ),
                             SizedBox(height: height * 0.005),
                             Text(
-                              'Compte nutritioniste pour être consulter',
+                              _translations['nutritionistDesc']!,
                               style: TextStyle(
                                 fontSize: width * 0.03,
                                 color: Colors.grey[600],
@@ -284,7 +407,7 @@ class _Profile1State extends State<Profile1> {
                     ),
                   ),
                   child: Text(
-                    'Continue',
+                    _translations['continue']!,
                     style: TextStyle(
                       fontSize: width * 0.045,
                       fontWeight: FontWeight.w500,

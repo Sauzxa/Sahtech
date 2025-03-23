@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
-import 'package:sahtech/core/services/localization_service.dart';
-import 'package:sahtech/main.dart';
+import 'package:sahtech/core/services/translation_service.dart';
+import 'package:provider/provider.dart';
+import 'package:sahtech/core/widgets/language_selector.dart';
 
 class Profile2 extends StatefulWidget {
   final UserModel userData;
 
-  const Profile2({Key? key, required this.userData}) : super(key: key);
+  const Profile2({super.key, required this.userData});
 
   @override
   State<Profile2> createState() => _Profile2State();
@@ -15,45 +16,63 @@ class Profile2 extends StatefulWidget {
 
 class _Profile2State extends State<Profile2> {
   bool? _hasChronicDisease;
-  final LocalizationService _localizationService = LocalizationService();
+  late TranslationService _translationService;
   bool _isLoading = false;
 
-  // Switch the app language and refresh UI
-  Future<void> _switchLanguage(String languageCode) async {
-    if (languageCode == _localizationService.currentLanguageCode) return;
+  @override
+  void initState() {
+    super.initState();
+    _translationService =
+        Provider.of<TranslationService>(context, listen: false);
+  }
 
+  // Handle language change
+  void _handleLanguageChanged(String languageCode) {
+    // Show loading indicator while translations are loading
     setState(() {
       _isLoading = true;
     });
 
-    await _localizationService.changeLocale(languageCode);
+    // Use Future.delayed to allow the UI to update before continuing with potentially heavy operations
+    Future.delayed(Duration.zero, () async {
+      try {
+        // Update the user model with the new language
+        widget.userData.preferredLanguage = languageCode;
 
-    // Update the app's locale using the Main static method
-    if (mounted) {
-      Main.changeLocale(context, languageCode);
-
-      // Force rebuild this page with the new locale
-      setState(() {
-        _isLoading = false;
-      });
-
-      // Force a rebuild by remounting this widget
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => Profile2(userData: widget.userData),
-          ),
-        );
+        // Force a refresh of all text in the UI
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      } catch (e) {
+        debugPrint('Error handling language change: $e');
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
-    }
+    });
   }
 
-  void _continueToNextScreen() {
+  @override
+  void dispose() {
+    // When navigating back to Profile1, tell it if language changed
+    if (widget.userData.preferredLanguage !=
+        _translationService.currentLanguageCode) {
+      Navigator.pop(context, 'language_changed');
+    }
+    super.dispose();
+  }
+
+  void _continueToNextScreen() async {
     if (_hasChronicDisease == null) {
       // Show error if no selection made
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez sélectionner une option'),
+        SnackBar(
+          content: Text(await _translationService
+              .translate('Veuillez sélectionner une option')),
           backgroundColor: Colors.red,
         ),
       );
@@ -62,13 +81,13 @@ class _Profile2State extends State<Profile2> {
 
     // Update user model with the selections
     widget.userData.hasChronicDisease = _hasChronicDisease;
-    widget.userData.preferredLanguage =
-        _localizationService.currentLanguageCode;
+    widget.userData.preferredLanguage = _translationService.currentLanguageCode;
 
     // Navigate to next screen or show success message
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Informations enregistrées avec succès!'),
+      SnackBar(
+        content: Text(await _translationService
+            .translate('Informations enregistrées avec succès!')),
         backgroundColor: Colors.green,
       ),
     );
@@ -107,73 +126,9 @@ class _Profile2State extends State<Profile2> {
         centerTitle: true,
         actions: [
           // Language selector button
-          GestureDetector(
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return SimpleDialog(
-                    title: const Text('Choisir une langue'),
-                    children:
-                        LocalizationService.supportedLocales.map((locale) {
-                      final languageCode = locale.languageCode;
-                      final isSelected =
-                          _localizationService.currentLanguageCode ==
-                              languageCode;
-                      return SimpleDialogOption(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          _switchLanguage(languageCode);
-                        },
-                        child: Row(
-                          children: [
-                            Text(
-                                _localizationService
-                                        .languageFlags[languageCode] ??
-                                    '',
-                                style: const TextStyle(fontSize: 24)),
-                            const SizedBox(width: 12),
-                            Text(languageCode.toUpperCase(),
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  color: isSelected
-                                      ? AppColors.lightTeal
-                                      : Colors.black87,
-                                )),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  );
-                },
-              );
-            },
-            child: Container(
-              margin: EdgeInsets.only(right: width * 0.04),
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    _localizationService.languageFlags[
-                            _localizationService.currentLanguageCode] ??
-                        '',
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _localizationService.currentLanguageCode.toUpperCase(),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          LanguageSelectorButton(
+            width: width,
+            onLanguageChanged: _handleLanguageChanged,
           ),
         ],
       ),
@@ -209,104 +164,130 @@ class _Profile2State extends State<Profile2> {
                             SizedBox(height: height * 0.04),
 
                             // Main question
-                            Text(
-                              'Avez vous une maldie chronique ?',
-                              style: TextStyle(
-                                fontSize: width * 0.06,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
+                            FutureBuilder<String>(
+                                future: _translationService.translate(
+                                    'Avez vous une maldie chronique ?'),
+                                builder: (context, snapshot) {
+                                  final text = snapshot.data ??
+                                      'Avez vous une maldie chronique ?';
+                                  return Text(
+                                    text,
+                                    style: TextStyle(
+                                      fontSize: width * 0.06,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    ),
+                                  );
+                                }),
 
                             SizedBox(height: height * 0.02),
 
                             // Subtitle/explanation
-                            Text(
-                              'Pour une meilleure expérience et un scan personnalisé adapté à votre profil, nous avons besoin de connaître certaines informations sur votre état de santé',
-                              style: TextStyle(
-                                fontSize: width * 0.035,
-                                color: Colors.grey[600],
-                                height: 1.3,
-                              ),
-                            ),
+                            FutureBuilder<String>(
+                                future: _translationService.translate(
+                                    'Pour une meilleure expérience et un scan personnalisé adapté à votre profil, nous avons besoin de connaître certaines informations sur votre état de santé'),
+                                builder: (context, snapshot) {
+                                  final text = snapshot.data ??
+                                      'Pour une meilleure expérience et un scan personnalisé adapté à votre profil, nous avons besoin de connaître certaines informations sur votre état de santé';
+                                  return Text(
+                                    text,
+                                    style: TextStyle(
+                                      fontSize: width * 0.035,
+                                      color: Colors.grey[600],
+                                      height: 1.3,
+                                    ),
+                                  );
+                                }),
 
                             SizedBox(height: height * 0.06),
 
                             // Yes button - match Figma styling
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _hasChronicDisease = true;
-                                });
-                              },
-                              child: Container(
-                                width: double.infinity,
-                                height: height * 0.075,
-                                decoration: BoxDecoration(
-                                  color: _hasChronicDisease == true
-                                      ? AppColors.lightTeal.withOpacity(0.2)
-                                      : const Color(0xFFEFF9E8),
-                                  borderRadius: BorderRadius.circular(15),
-                                  border: Border.all(
-                                    color: _hasChronicDisease == true
-                                        ? AppColors.lightTeal
-                                        : Colors.transparent,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    'Oui',
-                                    style: TextStyle(
-                                      fontSize: width * 0.045,
-                                      fontWeight: FontWeight.w500,
-                                      color: _hasChronicDisease == true
-                                          ? AppColors.lightTeal
-                                          : Colors.black87,
+                            FutureBuilder<String>(
+                                future: _translationService.translate('Oui'),
+                                builder: (context, snapshot) {
+                                  final yesText = snapshot.data ?? 'Oui';
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _hasChronicDisease = true;
+                                      });
+                                    },
+                                    child: Container(
+                                      width: double.infinity,
+                                      height: height * 0.075,
+                                      decoration: BoxDecoration(
+                                        color: _hasChronicDisease == true
+                                            ? AppColors.lightTeal
+                                                .withOpacity(0.2)
+                                            : const Color(0xFFEFF9E8),
+                                        borderRadius: BorderRadius.circular(15),
+                                        border: Border.all(
+                                          color: _hasChronicDisease == true
+                                              ? AppColors.lightTeal
+                                              : Colors.transparent,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          yesText,
+                                          style: TextStyle(
+                                            fontSize: width * 0.045,
+                                            fontWeight: FontWeight.w500,
+                                            color: _hasChronicDisease == true
+                                                ? AppColors.lightTeal
+                                                : Colors.black87,
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              ),
-                            ),
+                                  );
+                                }),
 
                             SizedBox(height: height * 0.02),
 
                             // No button - match Figma styling
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _hasChronicDisease = false;
-                                });
-                              },
-                              child: Container(
-                                width: double.infinity,
-                                height: height * 0.075,
-                                decoration: BoxDecoration(
-                                  color: _hasChronicDisease == false
-                                      ? AppColors.lightTeal.withOpacity(0.2)
-                                      : const Color(0xFFEFF9E8),
-                                  borderRadius: BorderRadius.circular(15),
-                                  border: Border.all(
-                                    color: _hasChronicDisease == false
-                                        ? AppColors.lightTeal
-                                        : Colors.transparent,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    'Non',
-                                    style: TextStyle(
-                                      fontSize: width * 0.045,
-                                      fontWeight: FontWeight.w500,
-                                      color: _hasChronicDisease == false
-                                          ? AppColors.lightTeal
-                                          : Colors.black87,
+                            FutureBuilder<String>(
+                                future: _translationService.translate('Non'),
+                                builder: (context, snapshot) {
+                                  final noText = snapshot.data ?? 'Non';
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _hasChronicDisease = false;
+                                      });
+                                    },
+                                    child: Container(
+                                      width: double.infinity,
+                                      height: height * 0.075,
+                                      decoration: BoxDecoration(
+                                        color: _hasChronicDisease == false
+                                            ? AppColors.lightTeal
+                                                .withOpacity(0.2)
+                                            : const Color(0xFFEFF9E8),
+                                        borderRadius: BorderRadius.circular(15),
+                                        border: Border.all(
+                                          color: _hasChronicDisease == false
+                                              ? AppColors.lightTeal
+                                              : Colors.transparent,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          noText,
+                                          style: TextStyle(
+                                            fontSize: width * 0.045,
+                                            fontWeight: FontWeight.w500,
+                                            color: _hasChronicDisease == false
+                                                ? AppColors.lightTeal
+                                                : Colors.black87,
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              ),
-                            ),
+                                  );
+                                }),
                           ],
                         ),
                       ),
@@ -320,24 +301,29 @@ class _Profile2State extends State<Profile2> {
                     child: SizedBox(
                       width: double.infinity,
                       height: height * 0.065,
-                      child: ElevatedButton(
-                        onPressed: _continueToNextScreen,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.lightTeal,
-                          foregroundColor: Colors.black87,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: Text(
-                          'suivant',
-                          style: TextStyle(
-                            fontSize: width * 0.04,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
+                      child: FutureBuilder<String>(
+                          future: _translationService.translate('suivant'),
+                          builder: (context, snapshot) {
+                            final nextText = snapshot.data ?? 'suivant';
+                            return ElevatedButton(
+                              onPressed: _continueToNextScreen,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.lightTeal,
+                                foregroundColor: Colors.black87,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              child: Text(
+                                nextText,
+                                style: TextStyle(
+                                  fontSize: width * 0.04,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            );
+                          }),
                     ),
                   ),
                 ],

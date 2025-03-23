@@ -1,10 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/presentation/profile/getstarted.dart';
-import 'package:sahtech/presentation/profile/profile1.dart';
+import 'package:sahtech/core/base/base_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:sahtech/core/services/translation_service.dart';
 
-class Onboardingscreen3 extends StatelessWidget {
+class Onboardingscreen3 extends StatefulWidget {
   const Onboardingscreen3({Key? key}) : super(key: key);
+
+  @override
+  State<Onboardingscreen3> createState() => _Onboardingscreen3State();
+}
+
+class _Onboardingscreen3State extends State<Onboardingscreen3>
+    with TranslationMixin {
+  @override
+  Map<String, String> get initialTranslations => {
+        'title': 'Consulter nutritioniste',
+        'subtitle':
+            'Vous pouvez contacter des nutritionnistes qui vous guideront pour améliorer votre hygiène de vie',
+        'next': 'suivant',
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -18,8 +34,26 @@ class Onboardingscreen3 extends StatelessWidget {
     final subtitleSize = width * 0.04; // More readable subtitle size
     final buttonTextSize = width * 0.045;
 
+    // If still loading translations, show a loading indicator
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[50], // Light background like in Figma
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          LanguageSelectorWidget(
+            onTap: () => showLanguageSelector(context),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -39,7 +73,7 @@ class Onboardingscreen3 extends StatelessWidget {
                           width: width * 0.8,
                           height: width * 0.8,
                           decoration: BoxDecoration(
-                            color: AppColors.lightTeal.withOpacity(0.2),
+                            color: const Color(0xFFEFF9E8),
                             shape: BoxShape.circle,
                           ),
                           child: Image.asset(
@@ -57,7 +91,7 @@ class Onboardingscreen3 extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Consulter nutritioniste',
+                            translations['title']!,
                             style: TextStyle(
                               fontSize: titleSize,
                               fontWeight: FontWeight.bold,
@@ -68,7 +102,7 @@ class Onboardingscreen3 extends StatelessWidget {
                           Container(
                             width: width * 0.8, // Constrain text width
                             child: Text(
-                              'Vous pouvez contacter des nutritionnistes qui vous guideront pour améliorer votre hygiène de vie',
+                              translations['subtitle']!,
                               style: TextStyle(
                                 fontSize: subtitleSize,
                                 color: Colors.grey[600],
@@ -110,7 +144,7 @@ class Onboardingscreen3 extends StatelessWidget {
                 height: height * 0.06,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Navigate to Profile1 screen
+                    // Navigate to Getstarted screen
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
@@ -126,10 +160,10 @@ class Onboardingscreen3 extends StatelessWidget {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: const Text(
-                    "suivant",
+                  child: Text(
+                    translations['next']!,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: buttonTextSize,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -147,7 +181,7 @@ class Onboardingscreen3 extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4.0),
       height: 8.0,
-      width: 8.0,
+      width: isActive ? 20.0 : 8.0,
       decoration: BoxDecoration(
         color: isActive ? AppColors.lightTeal : Colors.grey.shade300,
         borderRadius: BorderRadius.circular(4.0),

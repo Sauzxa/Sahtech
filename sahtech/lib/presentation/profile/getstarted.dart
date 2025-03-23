@@ -1,9 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/presentation/profile/profile1.dart';
+import 'package:sahtech/core/base/base_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:sahtech/core/services/translation_service.dart';
 
-class Getstarted extends StatelessWidget {
-  const Getstarted({super.key});
+class Getstarted extends StatefulWidget {
+  const Getstarted({Key? key}) : super(key: key);
+
+  @override
+  State<Getstarted> createState() => _GetstartedState();
+}
+
+class _GetstartedState extends State<Getstarted> with TranslationMixin {
+  @override
+  Map<String, String> get initialTranslations => {
+        'title': 'Votre santé est notre priorité',
+        'subtitle': 'Soyez plus saine avec notre application sahtech',
+        'getStarted': 'Get started',
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -17,12 +31,30 @@ class Getstarted extends StatelessWidget {
     final subtitleSize = width * 0.035;
     final buttonTextSize = width * 0.045;
 
+    // If still loading translations, show a loading indicator
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          LanguageSelectorWidget(
+            onTap: () => showLanguageSelector(context),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           // Top section with green background (no rounded corners)
           Container(
-            height: height * 0.75, // 75% of screen height for the green part
+            height: height * 0.68, // Reduced to accommodate AppBar
             width: double.infinity,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.only(
@@ -32,11 +64,12 @@ class Getstarted extends StatelessWidget {
                   const Color(0xFFd9f7c2), // Light green background from Figma
             ),
             child: SafeArea(
+              bottom: false,
               child: Column(
                 children: [
                   // Logo image at the top with proper spacing
                   Padding(
-                    padding: EdgeInsets.only(top: height * 0.05),
+                    padding: EdgeInsets.only(top: height * 0.02),
                     child: Center(
                       child: Image.asset(
                         'lib/assets/images/logo2.jpg',
@@ -76,7 +109,7 @@ class Getstarted extends StatelessWidget {
                 Column(
                   children: [
                     Text(
-                      'Votre santé est notre priorité',
+                      translations['title']!,
                       style: TextStyle(
                         fontSize: titleSize,
                         fontWeight: FontWeight.w600,
@@ -86,7 +119,7 @@ class Getstarted extends StatelessWidget {
                     ),
                     SizedBox(height: height * 0.01),
                     Text(
-                      'Soyez plus saine avec notre application sahtech',
+                      translations['subtitle']!,
                       style: TextStyle(
                         fontSize: subtitleSize,
                         color: Colors.black54,
@@ -131,7 +164,7 @@ class Getstarted extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'Get started',
+                      translations['getStarted']!,
                       style: TextStyle(
                         fontSize: buttonTextSize,
                         fontWeight: FontWeight.w500,
