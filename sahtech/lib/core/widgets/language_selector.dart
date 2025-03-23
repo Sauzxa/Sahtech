@@ -75,8 +75,8 @@ class LanguageSelectorButton extends StatelessWidget {
     if (languageCode == translationService.currentLanguageCode) return;
 
     // Use the centralized method for language change
-    final success = await translationService
-        .handleLanguageChange(context, languageCode, onSuccess: (code) {
+    await translationService.handleLanguageChange(context, languageCode,
+        onSuccess: (code) {
       // Notify the parent widget if callback is provided
       if (onLanguageChanged != null) {
         onLanguageChanged!(code);

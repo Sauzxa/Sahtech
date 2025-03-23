@@ -4,6 +4,7 @@ import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
+import 'package:sahtech/presentation/profile/profile3.dart';
 
 class Profile2 extends StatefulWidget {
   final UserModel userData;
@@ -83,21 +84,38 @@ class _Profile2State extends State<Profile2> {
     widget.userData.hasChronicDisease = _hasChronicDisease;
     widget.userData.preferredLanguage = _translationService.currentLanguageCode;
 
-    // Navigate to next screen or show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(await _translationService
-            .translate('Informations enregistrées avec succès!')),
-        backgroundColor: Colors.green,
-      ),
-    );
+    // If user has chronic disease, navigate to Profile3
+    if (_hasChronicDisease == true) {
+      final result = await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => Profile3(userData: widget.userData),
+        ),
+      );
 
-    // TODO: Navigate to next screen
-    // Navigator.of(context).push(
-    //   MaterialPageRoute(
-    //     builder: (context) => NextScreen(userData: widget.userData),
-    //   ),
-    // );
+      if (result == 'conditions_selected') {
+        // User has selected their conditions, show success
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(await _translationService
+                .translate('Informations enregistrées avec succès!')),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // TODO: Navigate to next screen with complete user data
+      }
+    } else {
+      // Otherwise, show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(await _translationService
+              .translate('Informations enregistrées avec succès!')),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // TODO: Navigate to next screen for users without chronic disease
+    }
   }
 
   @override
@@ -166,7 +184,7 @@ class _Profile2State extends State<Profile2> {
                             // Main question
                             FutureBuilder<String>(
                                 future: _translationService.translate(
-                                    'Avez vous une maldie chronique ?'),
+                                    'Avez vous une maladie chronique ?'),
                                 builder: (context, snapshot) {
                                   final text = snapshot.data ??
                                       'Avez vous une maldie chronique ?';
