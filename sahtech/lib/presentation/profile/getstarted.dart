@@ -25,7 +25,6 @@ class _GetstartedState extends State<Getstarted> with TranslationMixin {
     final size = MediaQuery.of(context).size;
     final height = size.height;
     final width = size.width;
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final safeAreaBottom = bottomPadding;
 

@@ -21,7 +21,8 @@ class LanguageSelector extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            translationService.getLanguageFlag(currentLanguage),
+            translationService.supportedLanguages[currentLanguage]?['flag'] ??
+                '',
             style: const TextStyle(fontSize: 20),
           ),
           const SizedBox(width: 4),
@@ -38,8 +39,9 @@ class LanguageSelector extends StatelessWidget {
         }
       },
       itemBuilder: (context) {
-        return TranslationService.supportedLocales.map((locale) {
-          final languageCode = locale.languageCode;
+        return translationService.supportedLanguages.entries.map((entry) {
+          final languageCode = entry.key;
+          final languageInfo = entry.value;
           final isSelected = languageCode == currentLanguage;
 
           return PopupMenuItem<String>(
@@ -51,12 +53,12 @@ class LanguageSelector extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      translationService.getLanguageFlag(languageCode),
+                      languageInfo['flag'] ?? '',
                       style: const TextStyle(fontSize: 20),
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      translationService.getLanguageName(languageCode),
+                      languageInfo['name'] ?? '',
                       style: TextStyle(
                         fontWeight:
                             isSelected ? FontWeight.bold : FontWeight.normal,
@@ -87,7 +89,23 @@ class LanguageSelector extends StatelessWidget {
     final translationService =
         Provider.of<TranslationService>(context, listen: false);
 
-    // Use the centralized language change method
-    await translationService.handleLanguageChange(context, languageCode);
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // Change the language
+      await translationService.setLanguage(languageCode);
+    } finally {
+      // Remove loading dialog if context is still valid
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+    }
   }
 }
