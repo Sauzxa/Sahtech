@@ -4,6 +4,7 @@ import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
+import 'package:sahtech/presentation/profile/profile9.dart';
 
 class Profile8 extends StatefulWidget {
   final UserModel userData;
@@ -138,9 +139,13 @@ class _Profile8State extends State<Profile8> {
       ),
     );
 
-    // For now, navigate back to the previous screen
-    // In a real app, you would navigate to the main app screen or home page
-    Navigator.popUntil(context, (route) => route.isFirst);
+    // Navigate to Profile9 (weight selection) screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Profile9(userData: widget.userData),
+      ),
+    );
   }
 
   @override
