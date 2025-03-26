@@ -4,6 +4,7 @@ import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
+import 'package:sahtech/presentation/profile/profile4.dart';
 
 class Profile3 extends StatefulWidget {
   final UserModel userData;
@@ -154,18 +155,16 @@ class _Profile3State extends State<Profile3> {
       SnackBar(
         content: Text(_translations['success_message']!),
         backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
       ),
     );
 
-    // Navigate back to Profile2 with a result code
-    Navigator.pop(context, 'conditions_selected');
-
-    // TODO: Alternatively, you can navigate to the next screen in your app flow
-    // Navigator.of(context).push(
-    //   MaterialPageRoute(
-    //     builder: (context) => NextScreen(userData: widget.userData),
-    //   ),
-    // );
+    // Navigate to Profile4 with the updated user data
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => Profile4(userData: widget.userData),
+      ),
+    );
   }
 
   @override
