@@ -4,7 +4,6 @@ import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
-import 'package:sahtech/presentation/profile/profile9.dart';
 
 class Profile8 extends StatefulWidget {
   final UserModel userData;
@@ -18,26 +17,24 @@ class Profile8 extends StatefulWidget {
 class _Profile8State extends State<Profile8> {
   late TranslationService _translationService;
   bool _isLoading = false;
-  bool _isDropdownOpen = false;
 
-  // Available allergens with selection state
-  final Map<String, bool> _allergens = {
-    'Noix à coque': false,
-    'Soja': false,
-    'Poissons': false,
-    'Blé': false,
-    'Riz': false,
-    'Autres': false,
-  };
+  // Weight related variables
+  double _weight = 70.0; // Default weight in kg
+  String _weightUnit = 'kg'; // Default unit
+
+  // Min and max weight values
+  final double _minWeight = 0.0;
+  final double _maxWeight = 300.0;
 
   // Key translations
   Map<String, String> _translations = {
-    'title': 'choisir les choses que vous avez une allergie ?',
+    'title': 'Veuillez saisir votre poids ?',
     'subtitle':
-        'Choisissez un objectif pour mieux adapter votre expérience. Cette option est optionnelle!',
-    'dropdown_label': 'Choisir les allergants',
+        'Pour une expérience optimale. Afin de vous offrir un service personnalisé, nous vous invitons à renseigner certaines informations, telles que votre poids',
+    'kg': 'kg',
+    'lb': 'lb',
     'next': 'suivant',
-    'success_message': 'Allergies enregistrées avec succès!',
+    'success_message': 'Informations enregistrées avec succès!',
   };
 
   @override
@@ -47,6 +44,14 @@ class _Profile8State extends State<Profile8> {
         Provider.of<TranslationService>(context, listen: false);
     _translationService.addListener(_onLanguageChanged);
     _loadTranslations();
+
+    // Initialize weight from user data if available
+    if (widget.userData.weight != null) {
+      _weight = widget.userData.weight!;
+    }
+    if (widget.userData.weightUnit != null) {
+      _weightUnit = widget.userData.weightUnit!;
+    }
   }
 
   @override
@@ -68,24 +73,12 @@ class _Profile8State extends State<Profile8> {
     try {
       // Only translate if not French (our default language)
       if (_translationService.currentLanguageCode != 'fr') {
-        // Translate the UI strings
         final translatedStrings =
             await _translationService.translateMap(_translations);
-
-        // Translate allergen names
-        final translatedAllergens = <String, bool>{};
-        for (final allergen in _allergens.keys) {
-          final translatedAllergen =
-              await _translationService.translate(allergen);
-          translatedAllergens[translatedAllergen] = false;
-        }
 
         if (mounted) {
           setState(() {
             _translations = translatedStrings;
-            // Uncomment to enable allergen translation
-            // _allergens.clear();
-            // _allergens.addAll(translatedAllergens);
             _isLoading = false;
           });
         }
@@ -110,25 +103,41 @@ class _Profile8State extends State<Profile8> {
     // Language change is handled by the listener (_onLanguageChanged)
   }
 
-  void _toggleDropdown() {
-    setState(() {
-      _isDropdownOpen = !_isDropdownOpen;
-    });
+  // Toggle between kg and lb
+  void _toggleUnit(String unit) {
+    if (_weightUnit != unit) {
+      setState(() {
+        if (unit == 'kg' && _weightUnit == 'lb') {
+          // Convert lb to kg
+          _weight = _lbToKg(_weight);
+        } else if (unit == 'lb' && _weightUnit == 'kg') {
+          // Convert kg to lb
+          _weight = _kgToLb(_weight);
+        }
+        _weightUnit = unit;
+      });
+    }
   }
 
-  void _toggleAllergen(String allergen) {
-    setState(() {
-      _allergens[allergen] = !_allergens[allergen]!;
-    });
+  // Convert pounds to kilograms
+  double _lbToKg(double lb) {
+    return lb * 0.453592;
+  }
+
+  // Convert kilograms to pounds
+  double _kgToLb(double kg) {
+    return kg * 2.20462;
+  }
+
+  // Format weight value for display
+  String _formatWeight(double weight) {
+    return weight.toInt().toString();
   }
 
   void _continueToNextScreen() {
-    // Get selected allergens
-    final selectedAllergens =
-        _allergens.entries.where((e) => e.value).map((e) => e.key).toList();
-
-    // Update user model with selected allergens
-    widget.userData.allergies = selectedAllergens;
+    // Store weight value in user's preferred unit
+    widget.userData.weight = _weight;
+    widget.userData.weightUnit = _weightUnit;
 
     // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
@@ -139,13 +148,8 @@ class _Profile8State extends State<Profile8> {
       ),
     );
 
-    // Navigate to Profile9 (weight selection) screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Profile9(userData: widget.userData),
-      ),
-    );
+    // Navigate back to home or to the main screen
+    Navigator.popUntil(context, (route) => route.isFirst);
   }
 
   @override
@@ -162,7 +166,7 @@ class _Profile8State extends State<Profile8> {
         leadingWidth: width * 0.12,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios,
-              color: AppColors.lightTeal, size: width * 0.05),
+              color: Colors.green, size: width * 0.05),
           onPressed: () => Navigator.pop(context),
           padding: EdgeInsets.only(left: width * 0.04),
         ),
@@ -185,27 +189,11 @@ class _Profile8State extends State<Profile8> {
           : SafeArea(
               child: Column(
                 children: [
-                  // Green divider line
+                  // Green progress bar/line at the top
                   Container(
                     width: double.infinity,
                     height: 1,
                     color: AppColors.lightTeal,
-                  ),
-
-                  // Green progress bar
-                  Container(
-                    width: double.infinity,
-                    height: 4,
-                    color: Colors.grey[200],
-                    child: Row(
-                      children: [
-                        Container(
-                          width: width * 0.8, // Representing progress
-                          height: 4,
-                          color: AppColors.lightTeal,
-                        ),
-                      ],
-                    ),
                   ),
 
                   // Main content
@@ -233,7 +221,7 @@ class _Profile8State extends State<Profile8> {
                           Text(
                             _translations['subtitle']!,
                             style: TextStyle(
-                              fontSize: width * 0.04,
+                              fontSize: width * 0.035,
                               color: Colors.grey[600],
                               height: 1.3,
                             ),
@@ -241,73 +229,218 @@ class _Profile8State extends State<Profile8> {
 
                           SizedBox(height: height * 0.03),
 
-                          // Dropdown button
-                          GestureDetector(
-                            onTap: _toggleDropdown,
+                          // Weight unit selector (kg/lb) - pill style toggle
+                          Center(
                             child: Container(
-                              width: double.infinity,
-                              height: height * 0.07,
+                              width: width * 0.3,
+                              height: height * 0.045,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFEFF9E8),
-                                borderRadius: BorderRadius.circular(15),
-                                border: Border.all(
-                                  color: Colors.transparent,
-                                  width: 1,
-                                ),
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(25),
                               ),
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: width * 0.04),
                               child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    _translations['dropdown_label']!,
-                                    style: TextStyle(
-                                      fontSize: width * 0.04,
-                                      color: Colors.black87,
+                                  // lb selector
+                                  GestureDetector(
+                                    onTap: () => _toggleUnit('lb'),
+                                    child: Container(
+                                      width: width * 0.15,
+                                      height: height * 0.045,
+                                      decoration: BoxDecoration(
+                                        color: _weightUnit == 'lb'
+                                            ? Colors.white
+                                            : Colors.grey[200],
+                                        borderRadius: BorderRadius.circular(25),
+                                        boxShadow: _weightUnit == 'lb'
+                                            ? [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(0.1),
+                                                  blurRadius: 2,
+                                                  spreadRadius: 0.5,
+                                                ),
+                                              ]
+                                            : null,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          'lb',
+                                          style: TextStyle(
+                                            fontSize: width * 0.035,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                  Icon(
-                                    _isDropdownOpen
-                                        ? Icons.keyboard_arrow_up
-                                        : Icons.keyboard_arrow_down,
-                                    color: Colors.black54,
+                                  // kg selector
+                                  GestureDetector(
+                                    onTap: () => _toggleUnit('kg'),
+                                    child: Container(
+                                      width: width * 0.15,
+                                      height: height * 0.045,
+                                      decoration: BoxDecoration(
+                                        color: _weightUnit == 'kg'
+                                            ? AppColors.lightTeal
+                                            : Colors.grey[200],
+                                        borderRadius: BorderRadius.circular(25),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          'kg',
+                                          style: TextStyle(
+                                            fontSize: width * 0.035,
+                                            fontWeight: FontWeight.w500,
+                                            color: _weightUnit == 'kg'
+                                                ? Colors.black87
+                                                : Colors.black87,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
 
-                          // Allergen options list - only shown when dropdown is open
-                          if (_isDropdownOpen)
-                            Expanded(
-                              child: SingleChildScrollView(
-                                child: Padding(
-                                  padding: EdgeInsets.only(top: 16.0),
-                                  child: Column(
-                                    children: _allergens.entries.map((entry) {
-                                      return _buildAllergenOption(
-                                        entry.key,
-                                        entry.value,
-                                        width,
-                                        height,
-                                      );
-                                    }).toList(),
+                          SizedBox(height: height * 0.03),
+
+                          // Weight display area with slider
+                          Container(
+                            width: double.infinity,
+                            height: height * 0.3,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF9E8),
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Weight value display
+                                Text(
+                                  _formatWeight(_weight),
+                                  style: TextStyle(
+                                    fontSize: width * 0.2,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
                                   ),
                                 ),
-                              ),
-                            ),
 
-                          if (!_isDropdownOpen) Expanded(child: SizedBox()),
+                                SizedBox(height: height * 0.03),
+
+                                // Scale markings and slider
+                                Container(
+                                  width: width * 0.7,
+                                  child: Column(
+                                    children: [
+                                      // Scale markings
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            '50',
+                                            style: TextStyle(
+                                              fontSize: width * 0.035,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          Text(
+                                            '60',
+                                            style: TextStyle(
+                                              fontSize: width * 0.035,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          Container(
+                                            height: height * 0.04,
+                                            width: 1,
+                                            color: Colors.black,
+                                          ),
+                                          Text(
+                                            '80',
+                                            style: TextStyle(
+                                              fontSize: width * 0.035,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          Text(
+                                            '90',
+                                            style: TextStyle(
+                                              fontSize: width * 0.035,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+
+                                      // Scale ticks
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: List.generate(
+                                          21,
+                                          (index) => Container(
+                                            height: index % 5 == 0 ? 12 : 6,
+                                            width: 1,
+                                            color: Colors.grey[400],
+                                          ),
+                                        ),
+                                      ),
+
+                                      // Slider
+                                      SliderTheme(
+                                        data: SliderThemeData(
+                                          activeTrackColor: Colors.transparent,
+                                          inactiveTrackColor:
+                                              Colors.transparent,
+                                          thumbColor: Colors.black,
+                                          thumbShape: RoundSliderThumbShape(
+                                            enabledThumbRadius: width * 0.015,
+                                          ),
+                                          overlayShape: RoundSliderOverlayShape(
+                                            overlayRadius: width * 0.025,
+                                          ),
+                                          trackHeight: 0,
+                                        ),
+                                        child: Slider(
+                                          value: _weight.clamp(
+                                              _minWeight, _maxWeight),
+                                          min: _minWeight,
+                                          max: _maxWeight,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              _weight = value;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Weight unit
+                                Text(
+                                  _weightUnit,
+                                  style: TextStyle(
+                                    fontSize: width * 0.04,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          Spacer(),
 
                           // Next button
                           Padding(
-                            padding:
-                                EdgeInsets.symmetric(vertical: height * 0.02),
+                            padding: EdgeInsets.only(bottom: height * 0.02),
                             child: SizedBox(
                               width: double.infinity,
-                              height: height * 0.065,
+                              height: height * 0.06,
                               child: ElevatedButton(
                                 onPressed: _continueToNextScreen,
                                 style: ElevatedButton.styleFrom(
@@ -335,76 +468,6 @@ class _Profile8State extends State<Profile8> {
                 ],
               ),
             ),
-    );
-  }
-
-  Widget _buildAllergenOption(
-      String allergen, bool isSelected, double width, double height) {
-    return Container(
-      width: double.infinity,
-      margin: EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _toggleAllergen(allergen),
-          borderRadius: BorderRadius.circular(15),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: width * 0.04,
-              vertical: height * 0.022,
-            ),
-            child: Row(
-              children: [
-                // Checkbox
-                Container(
-                  width: width * 0.06,
-                  height: width * 0.06,
-                  decoration: BoxDecoration(
-                    color:
-                        isSelected ? AppColors.lightTeal : Colors.transparent,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color:
-                          isSelected ? AppColors.lightTeal : Colors.grey[400]!,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: isSelected
-                      ? Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: width * 0.04,
-                        )
-                      : null,
-                ),
-                SizedBox(width: width * 0.03),
-
-                // Allergen name
-                Text(
-                  allergen,
-                  style: TextStyle(
-                    fontSize: width * 0.04,
-                    fontWeight:
-                        isSelected ? FontWeight.w500 : FontWeight.normal,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
