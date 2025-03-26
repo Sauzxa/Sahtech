@@ -6,9 +6,7 @@ import 'package:sahtech/presentation/onboarding/onboardingscreen1.dart';
 import 'package:sahtech/presentation/onboarding/onboardingscreen2.dart';
 import 'package:sahtech/presentation/onboarding/onboardingscreen3.dart';
 import 'package:sahtech/presentation/profile/profile1.dart';
-
-// Global key to access the Main state from anywhere
-final GlobalKey<_Main> mainNavigatorKey = GlobalKey<_Main>();
+import 'package:sahtech/presentation/profile/getstarted.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,87 +17,74 @@ void main() async {
 
   runApp(Main(
     translationService: translationService,
-    key: mainNavigatorKey,
   ));
 }
 
 class Main extends StatefulWidget {
   final TranslationService translationService;
 
-  const Main({super.key, required this.translationService});
-
-  // Static method to change language from anywhere in the app
-  static void changeLanguage(BuildContext context, String languageCode) async {
-    // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
-
-    try {
-      // Get translation service
-      final translationService =
-          Provider.of<TranslationService>(context, listen: false);
-
-      // Change locale
-      await translationService.changeLocale(languageCode);
-
-      // Force app-wide refresh
-      translationService.forceSyncRefresh();
-
-      // Hide loading indicator
-      if (context.mounted) Navigator.pop(context);
-    } catch (e) {
-      // Hide loading indicator
-      if (context.mounted) Navigator.pop(context);
-
-      // Show error message
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to change language: $e')),
-        );
-      }
-    }
-  }
+  const Main({Key? key, required this.translationService}) : super(key: key);
 
   @override
-  State<Main> createState() => _Main();
+  State<Main> createState() => _MainState();
 }
 
-class _Main extends State<Main> {
+class _MainState extends State<Main> {
   late TranslationService _translationService;
-  late Locale _currentLocale;
 
   @override
   void initState() {
     super.initState();
     _translationService = widget.translationService;
-    _currentLocale = _translationService.currentLocale;
+    // Listen to language changes
+    _translationService.addListener(_onLanguageChanged);
   }
 
-  // This function will be used to change language by code
-  Future<void> setLanguageByCode(String languageCode) async {
-    await _translationService.changeLocale(languageCode);
-    setState(() {
-      _currentLocale = _translationService.currentLocale;
-    });
+  @override
+  void dispose() {
+    _translationService.removeListener(_onLanguageChanged);
+    super.dispose();
+  }
+
+  // This function will be called when language changes
+  void _onLanguageChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     // Determine text direction for the entire app
-    final isRtl = _translationService.isRtl(_currentLocale.languageCode);
+    final isRtl = TranslationService.rtlLanguages
+        .contains(_translationService.currentLanguageCode);
 
     return ChangeNotifierProvider<TranslationService>.value(
       value: _translationService,
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
+        title: 'Sahtech',
+        theme: ThemeData(
+          primarySwatch: Colors.teal,
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            iconTheme: IconThemeData(color: Colors.black),
+            titleTextStyle: TextStyle(
+              color: Colors.black,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
         // Set locale for the app
-        locale: _currentLocale,
+        locale: Locale(_translationService.currentLanguageCode),
         // Routes for the app
+        initialRoute: '/',
         routes: {
           '/': (context) => const SplashScreen(),
+          '/getstarted': (context) => const Getstarted(),
           '/onboarding1': (context) => const OnboardingScreen1(),
           '/onboarding2': (context) => const OnboardingScreen2(),
           '/onboarding3': (context) => const Onboardingscreen3(),

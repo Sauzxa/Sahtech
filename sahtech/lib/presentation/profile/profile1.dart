@@ -31,7 +31,9 @@ class _Profile1State extends State<Profile1> with WidgetsBindingObserver {
     'nutritionistTitle': 'Je suis un nutritioniste',
     'nutritionistDesc': 'Compte nutritioniste pour être consulter',
     'continue': 'Continue',
-    'selectAccountType': 'Veuillez sélectionner un type de compte'
+    'selectAccountType': 'Veuillez sélectionner un type de compte',
+    'nutritionistFeatureMessage':
+        'Fonctionnalité nutritionniste en cours de développement'
   };
 
   @override
@@ -102,6 +104,20 @@ class _Profile1State extends State<Profile1> with WidgetsBindingObserver {
   // Function to navigate to the next screen with user data
   void navigateToProfile2() async {
     if (selectedUserType != null) {
+      // If user is a nutritionist, show a message instead of navigating
+      if (selectedUserType == 'nutritionist') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_translations['nutritionistFeatureMessage']!),
+            backgroundColor: AppColors.lightTeal,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      // Only proceed to Profile2 if user is a regular user
       final userData = UserModel(
         userType: selectedUserType!,
         preferredLanguage: _translationService.currentLanguageCode,

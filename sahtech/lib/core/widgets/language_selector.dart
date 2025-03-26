@@ -31,8 +31,9 @@ class LanguageSelectorButton extends StatelessWidget {
               final title = snapshot.data ?? 'Choisir une langue';
               return SimpleDialog(
                 title: Text(title),
-                children: TranslationService.supportedLocales.map((locale) {
-                  final languageCode = locale.languageCode;
+                children:
+                    translationService.supportedLanguages.entries.map((entry) {
+                  final languageCode = entry.key;
                   final isSelected =
                       translationService.currentLanguageCode == languageCode;
                   return SimpleDialogOption(
@@ -43,12 +44,12 @@ class LanguageSelectorButton extends StatelessWidget {
                     child: Row(
                       children: [
                         Text(
-                          translationService.getLanguageFlag(languageCode),
+                          entry.value['flag'] ?? '',
                           style: const TextStyle(fontSize: 24),
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          translationService.getLanguageName(languageCode),
+                          entry.value['name'] ?? '',
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
                             color: isSelected
@@ -74,14 +75,29 @@ class LanguageSelectorButton extends StatelessWidget {
 
     if (languageCode == translationService.currentLanguageCode) return;
 
-    // Use the centralized method for language change
-    await translationService.handleLanguageChange(context, languageCode,
-        onSuccess: (code) {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // Change the language
+      await translationService.setLanguage(languageCode);
+
       // Notify the parent widget if callback is provided
       if (onLanguageChanged != null) {
-        onLanguageChanged!(code);
+        onLanguageChanged!(languageCode);
       }
-    });
+    } finally {
+      // Remove loading dialog
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+    }
   }
 
   @override
@@ -101,8 +117,9 @@ class LanguageSelectorButton extends StatelessWidget {
         child: Row(
           children: [
             Text(
-              translationService
-                  .getLanguageFlag(translationService.currentLanguageCode),
+              translationService.supportedLanguages[
+                      translationService.currentLanguageCode]?['flag'] ??
+                  '',
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(width: 4),
@@ -115,6 +132,55 @@ class LanguageSelectorButton extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// A language selector dialog that can be used throughout the app
+class LanguageSelectorDialog extends StatelessWidget {
+  const LanguageSelectorDialog({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final translationService = Provider.of<TranslationService>(context);
+
+    return AlertDialog(
+      title: const Text('Select Language'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: translationService.supportedLanguages.entries.map((entry) {
+          final isSelected =
+              translationService.currentLanguageCode == entry.key;
+          return ListTile(
+            leading: Text(entry.value['flag'] ?? ''),
+            title: Text(entry.value['name'] ?? ''),
+            selected: isSelected,
+            onTap: () async {
+              // Show loading indicator
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+
+              try {
+                // Close the language selector dialog
+                Navigator.pop(context);
+
+                // Change the language
+                await translationService.setLanguage(entry.key);
+              } finally {
+                // Make sure the loading dialog is dismissed
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              }
+            },
+          );
+        }).toList(),
       ),
     );
   }

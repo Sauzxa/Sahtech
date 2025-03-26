@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/presentation/profile/getstarted.dart';
 import 'package:sahtech/core/base/base_screen.dart';
-import 'package:provider/provider.dart';
-import 'package:sahtech/core/services/translation_service.dart';
 
 class Onboardingscreen3 extends StatefulWidget {
   const Onboardingscreen3({Key? key}) : super(key: key);

@@ -13,35 +13,16 @@ class TranslationService extends ChangeNotifier {
 
   // Current app language
   String _currentLanguageCode = _defaultLocale;
+  bool _isLoading = false;
 
   // Cache for translations to avoid repeated API calls
   final Map<String, Map<String, String>> _translationCache = {};
 
-  // Supported languages
-  static final List<Locale> supportedLocales = [
-    const Locale('fr'), // French
-    const Locale('en'), // English
-    const Locale('es'), // Spanish
-    const Locale('ar'), // Arabic
-    const Locale('de'), // German
-  ];
-
-  // Flags (emojis) for each language
-  final Map<String, String> languageFlags = {
-    'fr': '🇫🇷',
-    'en': '🇬🇧',
-    'es': '🇪🇸',
-    'ar': '🇸🇦',
-    'de': '🇩🇪',
-  };
-
-  // Names of each language in its native form
-  final Map<String, String> languageNames = {
-    'fr': 'Français',
-    'en': 'English',
-    'es': 'Español',
-    'ar': 'العربية',
-    'de': 'Deutsch',
+  // Supported languages with their flags and names
+  final Map<String, Map<String, String>> supportedLanguages = {
+    'fr': {'flag': '🇫🇷', 'name': 'Français'},
+    'en': {'flag': '🇬🇧', 'name': 'English'},
+    'ar': {'flag': '🇸🇦', 'name': 'العربية'},
   };
 
   // RTL languages
@@ -49,12 +30,8 @@ class TranslationService extends ChangeNotifier {
 
   // Get the current language code
   String get currentLanguageCode => _currentLanguageCode;
-
-  // Get the current locale
-  Locale get currentLocale => Locale(_currentLanguageCode);
-
-  // Check if current language is RTL
-  bool get isCurrentLanguageRtl => rtlLanguages.contains(_currentLanguageCode);
+  String get currentLanguage => _currentLanguageCode;
+  bool get isLoading => _isLoading;
 
   // Initialize the translation service
   Future<void> init() async {
@@ -67,10 +44,9 @@ class TranslationService extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final savedLocale = prefs.getString(_localeKey);
 
-      if (savedLocale != null &&
-          supportedLocales
-              .any((locale) => locale.languageCode == savedLocale)) {
+      if (savedLocale != null && supportedLanguages.containsKey(savedLocale)) {
         _currentLanguageCode = savedLocale;
+        notifyListeners();
       }
     } catch (e) {
       // Fallback to default if there's an error
@@ -78,62 +54,16 @@ class TranslationService extends ChangeNotifier {
     }
   }
 
-  // A centralized method to handle language changes throughout the app
-  Future<bool> handleLanguageChange(BuildContext context, String languageCode,
-      {Function(String)? onSuccess}) async {
-    // Show a loading indicator while changing languages
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-
-    try {
-      // Change the app's locale
-      await changeLocale(languageCode);
-
-      // Force a UI refresh
-      forceSyncRefresh();
-
-      // Remove loading dialog
-      if (context.mounted) Navigator.of(context).pop();
-
-      // Call the success callback if provided
-      if (onSuccess != null) {
-        onSuccess(languageCode);
-      }
-
-      return true;
-    } catch (e) {
-      // Remove loading dialog in case of error
-      if (context.mounted) Navigator.of(context).pop();
-
-      // Show error message
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to change language: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-
-      return false;
-    }
-  }
-
   // Change the app language
   Future<void> changeLocale(String languageCode) async {
-    // Verify the language code is supported
-    if (!supportedLocales
-        .any((locale) => locale.languageCode == languageCode)) {
+    if (!supportedLanguages.containsKey(languageCode)) {
       return;
     }
 
     if (_currentLanguageCode == languageCode) return;
+
+    _isLoading = true;
+    notifyListeners();
 
     try {
       // Save to preferences
@@ -150,29 +80,16 @@ class TranslationService extends ChangeNotifier {
       // Notify listeners that the locale has changed
       notifyListeners();
     } catch (e) {
-      // Handle error if needed
       debugPrint('Error saving locale: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
   // Force an immediate refresh of translations across the app
   void forceSyncRefresh() {
     notifyListeners();
-  }
-
-  /// Get locale name in native language
-  String getLanguageName(String languageCode) {
-    return languageNames[languageCode] ?? languageCode;
-  }
-
-  /// Get locale flag emoji
-  String getLanguageFlag(String languageCode) {
-    return languageFlags[languageCode] ?? '';
-  }
-
-  /// Check if a language is RTL
-  bool isRtl(String languageCode) {
-    return rtlLanguages.contains(languageCode);
   }
 
   // Translate a specific text
@@ -211,12 +128,10 @@ class TranslationService extends ChangeNotifier {
 
         return translatedText;
       }
-
-      return text; // Return original if translation fails
     } catch (e) {
       debugPrint('Translation error: $e');
-      return text; // Return original if there's an exception
     }
+    return text; // Return original if translation fails
   }
 
   // Translate a map of values
@@ -234,5 +149,27 @@ class TranslationService extends ChangeNotifier {
     }
 
     return result;
+  }
+
+  Future<void> setLanguage(String languageCode) async {
+    if (languageCode == _currentLanguageCode) return;
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_localeKey, languageCode);
+      _currentLanguageCode = languageCode;
+
+      // Clear any cached translations to force refresh
+      _translationCache.clear();
+
+      // Notify listeners immediately to trigger UI updates
+      notifyListeners();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }
