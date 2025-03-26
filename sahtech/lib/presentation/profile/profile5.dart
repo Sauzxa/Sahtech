@@ -22,6 +22,7 @@ class _Profile5State extends State<Profile5> {
 
   // Available physical activities with selection state
   final Map<String, bool> _activities = {
+    'Aucune': false, // None option
     'Musculation': false,
     'Football': false,
     'Boxe': false,
@@ -123,7 +124,22 @@ class _Profile5State extends State<Profile5> {
 
   void _toggleActivity(String activity) {
     setState(() {
-      _activities[activity] = !_activities[activity]!;
+      // If 'None' is selected, unselect all other options
+      if (activity == 'Aucune') {
+        // First unselect all activities
+        _activities.forEach((key, value) {
+          _activities[key] = false;
+        });
+        // Then select only 'Aucune'
+        _activities['Aucune'] = true;
+      } else {
+        // If any other activity is selected, unselect 'None'
+        if (_activities['Aucune'] == true) {
+          _activities['Aucune'] = false;
+        }
+        // Toggle the selected activity
+        _activities[activity] = !_activities[activity]!;
+      }
     });
   }
 
@@ -154,8 +170,13 @@ class _Profile5State extends State<Profile5> {
       ),
     );
 
-    // As per updated requirements, we don't navigate to Profile6 yet
-    // Navigation to the next screen will be implemented later
+    // Navigate to Profile6 (objectives selection) instead of Profile7
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Profile6(userData: widget.userData),
+      ),
+    );
   }
 
   @override
