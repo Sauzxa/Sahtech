@@ -14,6 +14,8 @@ class UserModel {
       []; // List of daily physical activities for users who don't exercise
   List<String> healthGoals = []; // User's health goals/objectives
   List<String> allergies = []; // List of user's allergies
+  double? weight; // User's weight in kg
+  String? weightUnit; // 'kg' or 'lb'
 
   // Add more fields as needed for your application
 
@@ -31,6 +33,8 @@ class UserModel {
     List<String>? dailyActivities,
     List<String>? healthGoals,
     List<String>? allergies,
+    this.weight,
+    this.weightUnit,
   }) {
     this.chronicConditions = chronicConditions ?? [];
     this.physicalActivities = physicalActivities ?? [];
@@ -55,6 +59,8 @@ class UserModel {
       dailyActivities: List<String>.from(map['dailyActivities'] ?? []),
       healthGoals: List<String>.from(map['healthGoals'] ?? []),
       allergies: List<String>.from(map['allergies'] ?? []),
+      weight: map['weight']?.toDouble(),
+      weightUnit: map['weightUnit'],
     );
   }
 
@@ -74,6 +80,8 @@ class UserModel {
       'dailyActivities': dailyActivities,
       'healthGoals': healthGoals,
       'allergies': allergies,
+      'weight': weight,
+      'weightUnit': weightUnit,
     };
   }
 }
