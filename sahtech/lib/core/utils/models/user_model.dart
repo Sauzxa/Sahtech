@@ -7,6 +7,8 @@ class UserModel {
   bool? hasChronicDisease;
   List<String> chronicConditions = [];
   String? preferredLanguage;
+  bool? doesExercise; // true = Yes, false = No
+  List<String> physicalActivities = []; // List of selected physical activities
 
   // Add more fields as needed for your application
 
@@ -19,8 +21,11 @@ class UserModel {
     this.hasChronicDisease,
     List<String>? chronicConditions,
     this.preferredLanguage,
+    this.doesExercise,
+    List<String>? physicalActivities,
   }) {
     this.chronicConditions = chronicConditions ?? [];
+    this.physicalActivities = physicalActivities ?? [];
   }
 
   // Factory method to create a user from a map
@@ -34,6 +39,8 @@ class UserModel {
       hasChronicDisease: map['hasChronicDisease'],
       chronicConditions: List<String>.from(map['chronicConditions'] ?? []),
       preferredLanguage: map['preferredLanguage'],
+      doesExercise: map['doesExercise'],
+      physicalActivities: List<String>.from(map['physicalActivities'] ?? []),
     );
   }
 
@@ -48,6 +55,8 @@ class UserModel {
       'hasChronicDisease': hasChronicDisease,
       'chronicConditions': chronicConditions,
       'preferredLanguage': preferredLanguage,
+      'doesExercise': doesExercise,
+      'physicalActivities': physicalActivities,
     };
   }
 }
