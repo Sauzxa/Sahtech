@@ -5,6 +5,7 @@ import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:sahtech/presentation/profile/profile3.dart';
+import 'package:sahtech/presentation/profile/profile4.dart';
 
 class Profile2 extends StatefulWidget {
   final UserModel userData;
@@ -114,7 +115,12 @@ class _Profile2State extends State<Profile2> {
         ),
       );
 
-      // TODO: Navigate to next screen for users without chronic disease
+      // Navigate to Profile4 for users without chronic disease
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => Profile4(userData: widget.userData),
+        ),
+      );
     }
   }
 

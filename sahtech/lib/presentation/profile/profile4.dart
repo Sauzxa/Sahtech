@@ -5,6 +5,7 @@ import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:sahtech/presentation/profile/profile5.dart';
+import 'package:sahtech/presentation/profile/profile6.dart';
 
 class Profile4 extends StatefulWidget {
   final UserModel userData;
@@ -115,15 +116,20 @@ class _Profile4State extends State<Profile4> {
     );
 
     // If user does exercise, navigate to Profile5 for activity selection
-    // If not, we don't navigate anywhere (as per updated requirements)
     if (_doesExercise == true) {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => Profile5(userData: widget.userData),
         ),
       );
+    } else {
+      // If user does not exercise, skip to Profile6
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => Profile6(userData: widget.userData),
+        ),
+      );
     }
-    // No else block needed - if user selects "No", we stay on this screen
   }
 
   @override

@@ -4,37 +4,40 @@ import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
-import 'package:sahtech/presentation/profile/profile7.dart';
+import 'package:sahtech/presentation/profile/profile8.dart';
 
-class Profile6 extends StatefulWidget {
+class Profile7 extends StatefulWidget {
   final UserModel userData;
 
-  const Profile6({Key? key, required this.userData}) : super(key: key);
+  const Profile7({Key? key, required this.userData}) : super(key: key);
 
   @override
-  State<Profile6> createState() => _Profile6State();
+  State<Profile7> createState() => _Profile7State();
 }
 
-class _Profile6State extends State<Profile6> {
+class _Profile7State extends State<Profile7> {
   late TranslationService _translationService;
   bool _isLoading = false;
   bool _isDropdownOpen = false;
 
-  // Available goals with selection state
-  final Map<String, bool> _goals = {
-    'Contrôle du diabète': false,
-    'Perte de poid': false,
-    'Réduction du cholestérol': false,
+  // Available allergens with selection state
+  final Map<String, bool> _allergens = {
+    'Noix à coque': false,
+    'Soja': false,
+    'Poissons': false,
+    'Blé': false,
+    'Riz': false,
+    'Autres': false,
   };
 
   // Key translations
   Map<String, String> _translations = {
-    'title': 'choisir votre objectif dans notre application ?',
+    'title': 'choisir les choses que vous avez une allergie ?',
     'subtitle':
         'Choisissez un objectif pour mieux adapter votre expérience. Cette option est optionnelle!',
-    'dropdown_label': 'Choisir ton objectif',
+    'dropdown_label': 'Choisir les allergants',
     'next': 'suivant',
-    'success_message': 'Objectifs enregistrés avec succès!',
+    'success_message': 'Allergies enregistrées avec succès!',
   };
 
   @override
@@ -69,19 +72,20 @@ class _Profile6State extends State<Profile6> {
         final translatedStrings =
             await _translationService.translateMap(_translations);
 
-        // Translate goal names
-        final translatedGoals = <String, bool>{};
-        for (final goal in _goals.keys) {
-          final translatedGoal = await _translationService.translate(goal);
-          translatedGoals[translatedGoal] = false;
+        // Translate allergen names
+        final translatedAllergens = <String, bool>{};
+        for (final allergen in _allergens.keys) {
+          final translatedAllergen =
+              await _translationService.translate(allergen);
+          translatedAllergens[translatedAllergen] = false;
         }
 
         if (mounted) {
           setState(() {
             _translations = translatedStrings;
-            // Uncomment to enable goal translation
-            // _goals.clear();
-            // _goals.addAll(translatedGoals);
+            // Uncomment to enable allergen translation
+            // _allergens.clear();
+            // _allergens.addAll(translatedAllergens);
             _isLoading = false;
           });
         }
@@ -112,19 +116,19 @@ class _Profile6State extends State<Profile6> {
     });
   }
 
-  void _toggleGoal(String goal) {
+  void _toggleAllergen(String allergen) {
     setState(() {
-      _goals[goal] = !_goals[goal]!;
+      _allergens[allergen] = !_allergens[allergen]!;
     });
   }
 
   void _continueToNextScreen() {
-    // Get selected goals
-    final selectedGoals =
-        _goals.entries.where((e) => e.value).map((e) => e.key).toList();
+    // Get selected allergens
+    final selectedAllergens =
+        _allergens.entries.where((e) => e.value).map((e) => e.key).toList();
 
-    // Update user model with selected goals (can be empty since goals are optional)
-    widget.userData.healthGoals = selectedGoals;
+    // Update user model with selected allergens
+    widget.userData.allergies = selectedAllergens;
 
     // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
@@ -135,11 +139,11 @@ class _Profile6State extends State<Profile6> {
       ),
     );
 
-    // Navigate to Profile7
+    // Navigate to Profile8
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Profile7(userData: widget.userData),
+        builder: (context) => Profile8(userData: widget.userData),
       ),
     );
   }
@@ -196,7 +200,7 @@ class _Profile6State extends State<Profile6> {
                     child: Row(
                       children: [
                         Container(
-                          width: width * 0.7, // Representing progress
+                          width: width * 0.8, // Representing progress
                           height: 4,
                           color: AppColors.lightTeal,
                         ),
@@ -275,15 +279,15 @@ class _Profile6State extends State<Profile6> {
                             ),
                           ),
 
-                          // Goal options list - only shown when dropdown is open
+                          // Allergen options list - only shown when dropdown is open
                           if (_isDropdownOpen)
                             Expanded(
                               child: SingleChildScrollView(
                                 child: Padding(
                                   padding: EdgeInsets.only(top: 16.0),
                                   child: Column(
-                                    children: _goals.entries.map((entry) {
-                                      return _buildGoalOption(
+                                    children: _allergens.entries.map((entry) {
+                                      return _buildAllergenOption(
                                         entry.key,
                                         entry.value,
                                         width,
@@ -334,27 +338,27 @@ class _Profile6State extends State<Profile6> {
     );
   }
 
-  // Updated goal option widget to better match the design
-  Widget _buildGoalOption(
-      String goal, bool isSelected, double width, double height) {
+  Widget _buildAllergenOption(
+      String allergen, bool isSelected, double width, double height) {
     return Container(
       width: double.infinity,
-      margin: EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
+            blurRadius: 3,
             spreadRadius: 1,
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
+        borderRadius: BorderRadius.circular(15),
         child: InkWell(
-          onTap: () => _toggleGoal(goal),
+          onTap: () => _toggleAllergen(allergen),
           borderRadius: BorderRadius.circular(15),
           child: Padding(
             padding: EdgeInsets.symmetric(
@@ -373,7 +377,7 @@ class _Profile6State extends State<Profile6> {
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(
                       color:
-                          isSelected ? AppColors.lightTeal : Colors.grey[400]!,
+                          isSelected ? AppColors.lightTeal : Colors.grey[300]!,
                       width: 1.5,
                     ),
                   ),
@@ -387,9 +391,9 @@ class _Profile6State extends State<Profile6> {
                 ),
                 SizedBox(width: width * 0.03),
 
-                // Goal name
+                // Allergen name
                 Text(
-                  goal,
+                  allergen,
                   style: TextStyle(
                     fontSize: width * 0.04,
                     fontWeight:
