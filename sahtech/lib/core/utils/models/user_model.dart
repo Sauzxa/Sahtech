@@ -16,6 +16,8 @@ class UserModel {
   List<String> allergies = []; // List of user's allergies
   double? weight; // User's weight in kg
   String? weightUnit; // 'kg' or 'lb'
+  double? height; // User's height in cm
+  String? heightUnit; // 'cm' or 'inches'
 
   // Add more fields as needed for your application
 
@@ -35,6 +37,8 @@ class UserModel {
     List<String>? allergies,
     this.weight,
     this.weightUnit,
+    this.height,
+    this.heightUnit,
   }) {
     this.chronicConditions = chronicConditions ?? [];
     this.physicalActivities = physicalActivities ?? [];
@@ -61,6 +65,8 @@ class UserModel {
       allergies: List<String>.from(map['allergies'] ?? []),
       weight: map['weight']?.toDouble(),
       weightUnit: map['weightUnit'],
+      height: map['height']?.toDouble(),
+      heightUnit: map['heightUnit'],
     );
   }
 
@@ -82,6 +88,8 @@ class UserModel {
       'allergies': allergies,
       'weight': weight,
       'weightUnit': weightUnit,
+      'height': height,
+      'heightUnit': heightUnit,
     };
   }
 }
