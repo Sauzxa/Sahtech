@@ -192,13 +192,22 @@ class _Profile6State extends State<Profile6> {
                   Container(
                     width: double.infinity,
                     height: 4,
-                    color: Colors.grey[200],
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                    ),
                     child: Row(
                       children: [
                         Container(
-                          width: width * 0.7, // Representing progress
+                          width:
+                              width * 0.5, // Representing 50% progress (step 5)
                           height: 4,
-                          color: AppColors.lightTeal,
+                          decoration: BoxDecoration(
+                            color: AppColors.lightTeal,
+                            borderRadius: BorderRadius.only(
+                              topRight: Radius.circular(2),
+                              bottomRight: Radius.circular(2),
+                            ),
+                          ),
                         ),
                       ],
                     ),

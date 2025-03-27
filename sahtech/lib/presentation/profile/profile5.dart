@@ -216,18 +216,26 @@ class _Profile5State extends State<Profile5> {
           : SafeArea(
               child: Column(
                 children: [
-                  // Green progress bar
+                  // Green progress bar/line at the top
                   Container(
                     width: double.infinity,
                     height: 4,
-                    color: Colors.grey[200],
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                    ),
                     child: Row(
                       children: [
                         Container(
-                          width: width *
-                              0.60, // Representing progress (4 of 5 steps)
+                          width:
+                              width * 0.4, // Representing 40% progress (step 4)
                           height: 4,
-                          color: AppColors.lightTeal,
+                          decoration: BoxDecoration(
+                            color: AppColors.lightTeal,
+                            borderRadius: BorderRadius.only(
+                              topRight: Radius.circular(2),
+                              bottomRight: Radius.circular(2),
+                            ),
+                          ),
                         ),
                       ],
                     ),

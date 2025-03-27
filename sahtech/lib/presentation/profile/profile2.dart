@@ -165,14 +165,22 @@ class _Profile2State extends State<Profile2> {
                   Container(
                     width: double.infinity,
                     height: 4,
-                    color: Colors.grey[200],
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                    ),
                     child: Row(
                       children: [
                         Container(
                           width: width *
-                              0.15, // Representing progress (1 of 5 steps)
+                              0.1, // Representing 10% progress (first step)
                           height: 4,
-                          color: AppColors.lightTeal,
+                          decoration: BoxDecoration(
+                            color: AppColors.lightTeal,
+                            borderRadius: BorderRadius.only(
+                              topRight: Radius.circular(2),
+                              bottomRight: Radius.circular(2),
+                            ),
+                          ),
                         ),
                       ],
                     ),
