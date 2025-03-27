@@ -4,6 +4,7 @@ import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
+import 'package:sahtech/core/auth/signupUser.dart';
 import 'dart:math';
 
 class Profile10 extends StatefulWidget {
@@ -181,30 +182,13 @@ class _Profile10State extends State<Profile10> {
     widget.userData.allergyMonth = _selectedMonth;
     widget.userData.allergyDay = _selectedDay;
 
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_translations['success_message']!),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
+    // Navigate to SignupUser screen with the user data
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SignupUser(userData: widget.userData),
       ),
     );
-
-    // For now, navigate back to home as this is the last screen
-    // If you have a next screen, you would use:
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => NextScreen(
-    //       userData: widget.userData,
-    //       currentStep: widget.currentStep + 1,
-    //       totalSteps: widget.totalSteps,
-    //     ),
-    //   ),
-    // );
-
-    // As this is the last screen, go back to the home screen
-    Navigator.popUntil(context, (route) => route.isFirst);
   }
 
   @override
