@@ -4,11 +4,19 @@ import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
+import 'package:sahtech/presentation/profile/profile10.dart';
 
 class Profile9 extends StatefulWidget {
   final UserModel userData;
+  final int currentStep;
+  final int totalSteps;
 
-  const Profile9({Key? key, required this.userData}) : super(key: key);
+  const Profile9({
+    Key? key,
+    required this.userData,
+    this.currentStep = 3,
+    this.totalSteps = 5,
+  }) : super(key: key);
 
   @override
   State<Profile9> createState() => _Profile9State();
@@ -139,17 +147,17 @@ class _Profile9State extends State<Profile9> {
     widget.userData.height = _height;
     widget.userData.heightUnit = _heightUnit;
 
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_translations['success_message']!),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
+    // Navigate to the allergies screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Profile10(
+          userData: widget.userData,
+          currentStep: widget.currentStep + 1,
+          totalSteps: widget.totalSteps,
+        ),
       ),
     );
-
-    // Navigate back to home or to the main screen
-    Navigator.popUntil(context, (route) => route.isFirst);
   }
 
   @override
@@ -192,8 +200,26 @@ class _Profile9State extends State<Profile9> {
                   // Green progress bar/line at the top
                   Container(
                     width: double.infinity,
-                    height: 1,
-                    color: AppColors.lightTeal,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width:
+                              width * 0.8, // Representing 80% progress (step 8)
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppColors.lightTeal,
+                            borderRadius: BorderRadius.only(
+                              topRight: Radius.circular(2),
+                              bottomRight: Radius.circular(2),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
 
                   // Main content

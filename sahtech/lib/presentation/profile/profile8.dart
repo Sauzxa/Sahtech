@@ -8,8 +8,15 @@ import 'package:sahtech/presentation/profile/profile9.dart';
 
 class Profile8 extends StatefulWidget {
   final UserModel userData;
+  final int currentStep;
+  final int totalSteps;
 
-  const Profile8({Key? key, required this.userData}) : super(key: key);
+  const Profile8({
+    Key? key,
+    required this.userData,
+    this.currentStep = 2,
+    this.totalSteps = 5,
+  }) : super(key: key);
 
   @override
   State<Profile8> createState() => _Profile8State();
@@ -144,7 +151,11 @@ class _Profile8State extends State<Profile8> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Profile9(userData: widget.userData),
+        builder: (context) => Profile9(
+          userData: widget.userData,
+          currentStep: widget.currentStep + 1,
+          totalSteps: widget.totalSteps,
+        ),
       ),
     );
   }
@@ -189,8 +200,26 @@ class _Profile8State extends State<Profile8> {
                   // Green progress bar/line at the top
                   Container(
                     width: double.infinity,
-                    height: 1,
-                    color: AppColors.lightTeal,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width:
+                              width * 0.7, // Representing 70% progress (step 7)
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppColors.lightTeal,
+                            borderRadius: BorderRadius.only(
+                              topRight: Radius.circular(2),
+                              bottomRight: Radius.circular(2),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
 
                   // Main content
