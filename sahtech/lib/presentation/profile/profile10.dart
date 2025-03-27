@@ -4,6 +4,7 @@ import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
+import 'package:sahtech/core/auth/signinUser.dart';
 import 'package:sahtech/core/auth/signupUser.dart';
 import 'dart:math';
 
@@ -182,11 +183,11 @@ class _Profile10State extends State<Profile10> {
     widget.userData.allergyMonth = _selectedMonth;
     widget.userData.allergyDay = _selectedDay;
 
-    // Navigate to SignupUser screen with the user data
+    // Navigate directly to sign in screen
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SignupUser(userData: widget.userData),
+        builder: (context) => SigninUser(userData: widget.userData),
       ),
     );
   }
