@@ -132,6 +132,7 @@ class _SignupUserState extends State<SignupUser> {
             SnackBar(
               content: Text('Signup successful for ${widget.userData.name}'),
               backgroundColor: Colors.green,
+              duration: const Duration(seconds: 1),
             ),
           );
 

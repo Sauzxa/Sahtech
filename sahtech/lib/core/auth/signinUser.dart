@@ -114,6 +114,7 @@ class _SigninUserState extends State<SigninUser> {
             SnackBar(
               content: Text('Login successful with ${_emailController.text}'),
               backgroundColor: Colors.green,
+              duration: const Duration(seconds: 1),
             ),
           );
 
@@ -154,6 +155,7 @@ class _SigninUserState extends State<SigninUser> {
           SnackBar(
             content: Text('Google Sign-In successful'),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 1),
           ),
         );
 
@@ -200,6 +202,7 @@ class _SigninUserState extends State<SigninUser> {
             content:
                 Text('Password reset email sent to ${_emailController.text}'),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 1),
           ),
         );
 

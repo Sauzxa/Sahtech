@@ -131,7 +131,7 @@ class _Profile6State extends State<Profile6> {
       SnackBar(
         content: Text(_translations['success_message']!),
         backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
+        duration: const Duration(seconds: 1),
       ),
     );
 

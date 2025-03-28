@@ -103,6 +103,7 @@ class _Profile2State extends State<Profile2> {
             content: Text(await _translationService
                 .translate('Informations enregistrées avec succès!')),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 1),
           ),
         );
 
@@ -115,6 +116,7 @@ class _Profile2State extends State<Profile2> {
           content: Text(await _translationService
               .translate('Informations enregistrées avec succès!')),
           backgroundColor: Colors.green,
+          duration: const Duration(seconds: 1),
         ),
       );
 
