@@ -412,7 +412,7 @@ class _Profile1State extends State<Profile1> with WidgetsBindingObserver {
               // Continue button (disabled until a user type is selected)
               Container(
                 width: double.infinity,
-                margin: EdgeInsets.only(bottom: height * 0.03),
+                margin: EdgeInsets.only(bottom: height * 0.07),
                 child: ElevatedButton(
                   onPressed: isUserTypeSelected ? navigateToProfile2 : null,
                   style: ElevatedButton.styleFrom(

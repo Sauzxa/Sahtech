@@ -471,7 +471,7 @@ class _Profile10State extends State<Profile10> {
                     padding: EdgeInsets.only(
                       left: width * 0.06,
                       right: width * 0.06,
-                      bottom: height * 0.03,
+                      bottom: height * 0.05,
                     ),
                     child: SizedBox(
                       width: double.infinity,

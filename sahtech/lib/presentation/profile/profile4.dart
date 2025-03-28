@@ -311,7 +311,7 @@ class _Profile4State extends State<Profile4> {
                           // Next button
                           Padding(
                             padding: EdgeInsets.only(
-                              bottom: height * 0.03,
+                              bottom: height * 0.07,
                             ),
                             child: SizedBox(
                               width: double.infinity,
