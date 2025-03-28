@@ -147,7 +147,7 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
       SnackBar(
         content: Text('Informations enregistrées avec succès!'),
         backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
+        duration: const Duration(seconds: 1),
       ),
     );
 
