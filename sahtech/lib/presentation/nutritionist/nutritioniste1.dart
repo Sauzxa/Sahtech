@@ -4,6 +4,7 @@ import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
+import 'package:sahtech/presentation/nutritionist/nutritioniste2.dart';
 
 class Nutritioniste1 extends StatefulWidget {
   final NutritionisteModel nutritionistData;
@@ -114,17 +115,17 @@ class _Nutritioniste1State extends State<Nutritioniste1> {
       widget.nutritionistData.name =
           "${_prenomController.text.trim()} ${_nomController.text.trim()}";
 
-      // Navigate to the next screen (will be implemented in future)
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(
-      //     builder: (context) => Nutritioniste2(
-      //       nutritionistData: widget.nutritionistData,
-      //       currentStep: widget.currentStep + 1,
-      //       totalSteps: widget.totalSteps,
-      //     ),
-      //   ),
-      // );
+      // Navigate to the next screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => Nutritioniste2(
+            nutritionistData: widget.nutritionistData,
+            currentStep: widget.currentStep + 1,
+            totalSteps: widget.totalSteps,
+          ),
+        ),
+      );
     }
   }
 

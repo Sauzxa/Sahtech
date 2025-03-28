@@ -5,6 +5,7 @@ class NutritionisteModel {
   String? phoneNumber;
   String? profileImageUrl;
   String? preferredLanguage;
+  String? gender; // Added to store gender information
 
   // Nutritionist-specific fields
   String? specialization; // Area of specialization
@@ -45,6 +46,7 @@ class NutritionisteModel {
     this.phoneNumber,
     this.profileImageUrl,
     this.preferredLanguage,
+    this.gender,
     this.specialization,
     this.education,
     this.certification,
@@ -81,6 +83,7 @@ class NutritionisteModel {
       phoneNumber: map['phoneNumber'],
       profileImageUrl: map['profileImageUrl'],
       preferredLanguage: map['preferredLanguage'],
+      gender: map['gender'],
       specialization: map['specialization'],
       education: map['education'],
       certification: map['certification'],
@@ -115,6 +118,7 @@ class NutritionisteModel {
       'phoneNumber': phoneNumber,
       'profileImageUrl': profileImageUrl,
       'preferredLanguage': preferredLanguage,
+      'gender': gender,
       'specialization': specialization,
       'education': education,
       'certification': certification,
