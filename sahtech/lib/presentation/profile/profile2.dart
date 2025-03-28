@@ -7,6 +7,9 @@ import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:sahtech/presentation/profile/profile3.dart';
 import 'package:sahtech/presentation/profile/profile4.dart';
 
+// Note: No need to import NutritionisteModel here since this screen is only used for regular users
+// The nutritionist flow is handled separately starting from profile1.dart to nutritioniste1.dart
+
 class Profile2 extends StatefulWidget {
   final UserModel userData;
 

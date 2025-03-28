@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
+import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/presentation/profile/profile2.dart';
+import 'package:sahtech/presentation/nutritionist/nutritioniste1.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -104,14 +106,17 @@ class _Profile1State extends State<Profile1> with WidgetsBindingObserver {
   // Function to navigate to the next screen with user data
   void navigateToProfile2() async {
     if (selectedUserType != null) {
-      // If user is a nutritionist, show a message instead of navigating
+      // If user is a nutritionist, navigate to nutritionist flow
       if (selectedUserType == 'nutritionist') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_translations['nutritionistFeatureMessage']!),
-            backgroundColor: AppColors.lightTeal,
-            duration: const Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
+        final nutritionistData = NutritionisteModel(
+          userType: selectedUserType!,
+          preferredLanguage: _translationService.currentLanguageCode,
+        );
+
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) =>
+                Nutritioniste1(nutritionistData: nutritionistData),
           ),
         );
         return;
