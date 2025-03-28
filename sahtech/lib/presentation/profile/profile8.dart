@@ -463,7 +463,7 @@ class _Profile8State extends State<Profile8> {
 
                           // Next button
                           Padding(
-                            padding: EdgeInsets.only(bottom: height * 0.02),
+                            padding: EdgeInsets.only(bottom: height * 0.05),
                             child: SizedBox(
                               width: double.infinity,
                               height: height * 0.06,

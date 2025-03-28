@@ -309,7 +309,7 @@ class _Profile6State extends State<Profile6> {
                           // Next button
                           Padding(
                             padding:
-                                EdgeInsets.symmetric(vertical: height * 0.02),
+                                EdgeInsets.symmetric(vertical: height * 0.05),
                             child: SizedBox(
                               width: double.infinity,
                               height: height * 0.065,

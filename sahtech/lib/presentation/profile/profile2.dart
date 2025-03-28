@@ -332,7 +332,7 @@ class _Profile2State extends State<Profile2> {
                   // Next button - match Figma styling
                   Padding(
                     padding: EdgeInsets.symmetric(
-                        horizontal: width * 0.06, vertical: height * 0.02),
+                        horizontal: width * 0.06, vertical: height * 0.05),
                     child: SizedBox(
                       width: double.infinity,
                       height: height * 0.065,
