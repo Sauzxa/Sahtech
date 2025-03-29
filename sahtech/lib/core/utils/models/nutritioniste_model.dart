@@ -38,6 +38,7 @@ class NutritionisteModel {
   String? licenseNumber;
   String? licenseImageUrl;
   String? identityDocumentUrl;
+  String? diplomaImagePath; // Path to the diploma image file on the device
 
   NutritionisteModel({
     required this.userType,
@@ -69,6 +70,7 @@ class NutritionisteModel {
     this.licenseNumber,
     this.licenseImageUrl,
     this.identityDocumentUrl,
+    this.diplomaImagePath,
   }) {
     this.expertiseAreas = expertiseAreas ?? [];
     this.languagesSpoken = languagesSpoken ?? [];
@@ -106,6 +108,7 @@ class NutritionisteModel {
       licenseNumber: map['licenseNumber'],
       licenseImageUrl: map['licenseImageUrl'],
       identityDocumentUrl: map['identityDocumentUrl'],
+      diplomaImagePath: map['diplomaImagePath'],
     );
   }
 
@@ -141,6 +144,7 @@ class NutritionisteModel {
       'licenseNumber': licenseNumber,
       'licenseImageUrl': licenseImageUrl,
       'identityDocumentUrl': identityDocumentUrl,
+      'diplomaImagePath': diplomaImagePath,
     };
   }
 }
