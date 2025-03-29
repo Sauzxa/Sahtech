@@ -4,6 +4,7 @@ import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
+import 'package:sahtech/presentation/nutritionist/nutritioniste3.dart';
 
 class Nutritioniste2 extends StatefulWidget {
   final NutritionisteModel nutritionistData;
@@ -133,6 +134,7 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
         SnackBar(
           content: Text(_translations['select_option']!),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 1),
         ),
       );
       return;
@@ -151,17 +153,17 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
       ),
     );
 
-    // Navigate to the next screen (will be implemented in future)
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => Nutritioniste3(
-    //       nutritionistData: widget.nutritionistData,
-    //       currentStep: widget.currentStep + 1,
-    //       totalSteps: widget.totalSteps,
-    //     ),
-    //   ),
-    // );
+    // Navigate to the next screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Nutritioniste3(
+          nutritionistData: widget.nutritionistData,
+          currentStep: widget.currentStep + 1,
+          totalSteps: widget.totalSteps,
+        ),
+      ),
+    );
   }
 
   @override
