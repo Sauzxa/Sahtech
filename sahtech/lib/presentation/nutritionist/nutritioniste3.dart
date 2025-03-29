@@ -44,6 +44,9 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
     'gallery_permission_error': 'Veuillez autoriser l\'accès à la galerie',
     'camera_permission_error': 'Veuillez autoriser l\'accès à la caméra',
     'image_required': 'Une image de diplôme est requise pour continuer',
+    'image_removed': 'Image supprimée',
+    'upload_in_progress': 'Veuillez attendre la fin du téléchargement',
+    'image_saved': 'Image de diplôme enregistrée avec succès!',
   };
 
   @override
@@ -54,11 +57,21 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
     _loadTranslations();
 
     // Initialize with existing data if available
-    if (widget.nutritionistData.diplomaImagePath != null) {
-      _selectedImage = File(widget.nutritionistData.diplomaImagePath!);
-      _selectedImageName =
-          path.basename(widget.nutritionistData.diplomaImagePath!);
-      _uploadProgress = 1.0; // If image already exists, show as fully uploaded
+    if (widget.nutritionistData.diplomaImagePath != null &&
+        widget.nutritionistData.diplomaImagePath!.isNotEmpty) {
+      final imagePath = widget.nutritionistData.diplomaImagePath!;
+      final file = File(imagePath);
+
+      // Only set the file if it exists
+      if (file.existsSync()) {
+        _selectedImage = file;
+        _selectedImageName = path.basename(imagePath);
+        _uploadProgress =
+            1.0; // If image already exists, show as fully uploaded
+      } else {
+        // Clear the path if the file doesn't exist
+        widget.nutritionistData.diplomaImagePath = null;
+      }
     }
   }
 
@@ -138,8 +151,7 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
 
         await _simulateUpload();
 
-        // Save the path to the nutritionist model
-        widget.nutritionistData.diplomaImagePath = image.path;
+        // The path will be saved to the model only when the user presses the Continue button
       }
     } catch (e) {
       debugPrint('Error picking image: $e');
@@ -166,8 +178,7 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
 
         await _simulateUpload();
 
-        // Save the path to the nutritionist model
-        widget.nutritionistData.diplomaImagePath = image.path;
+        // The path will be saved to the model only when the user presses the Continue button
       }
     } catch (e) {
       debugPrint('Error taking photo: $e');
@@ -187,9 +198,36 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
     );
   }
 
+  // Remove the selected image
+  void _removeSelectedImage() {
+    setState(() {
+      _selectedImage = null;
+      _selectedImageName = null;
+      _uploadProgress = 0.0;
+    });
+
+    // Clear the path in the nutritionist model
+    widget.nutritionistData.diplomaImagePath = null;
+
+    // Show confirmation message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_translations['image_removed']!),
+        backgroundColor: Colors.orange,
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
   void _continueToNextScreen() {
     if (_selectedImage == null) {
       _showErrorSnackbar(_translations['image_required']!);
+      return;
+    }
+
+    // Check if upload is in progress
+    if (_isUploading || _uploadProgress < 1.0) {
+      _showErrorSnackbar(_translations['upload_in_progress']!);
       return;
     }
 
@@ -199,7 +237,7 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
     // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Image de diplôme enregistrée avec succès!'),
+        content: Text(_translations['image_saved']!),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 1),
       ),
@@ -340,13 +378,44 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
                                       ),
                                     ),
                                     child: _selectedImage != null
-                                        ? ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(14),
-                                            child: Image.file(
-                                              _selectedImage!,
-                                              fit: BoxFit.cover,
-                                            ),
+                                        ? Stack(
+                                            children: [
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(14),
+                                                child: Image.file(
+                                                  _selectedImage!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                ),
+                                              ),
+                                              // Only show the remove button after upload is complete
+                                              if (_uploadProgress >= 1.0)
+                                                Positioned(
+                                                  top: 8,
+                                                  right: 8,
+                                                  child: GestureDetector(
+                                                    onTap: _removeSelectedImage,
+                                                    behavior:
+                                                        HitTestBehavior.opaque,
+                                                    child: Container(
+                                                      padding:
+                                                          EdgeInsets.all(6),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.white
+                                                            .withOpacity(0.8),
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                      child: Icon(
+                                                        Icons.close,
+                                                        color: Colors.red,
+                                                        size: width * 0.05,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
                                           )
                                         : Column(
                                             mainAxisAlignment:
@@ -448,12 +517,22 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
-                                            if (_uploadProgress >= 1.0)
+                                            if (_uploadProgress >= 1.0) ...[
                                               Icon(
                                                 Icons.check_circle,
                                                 color: Colors.green,
                                                 size: width * 0.05,
                                               ),
+                                              SizedBox(width: width * 0.02),
+                                              GestureDetector(
+                                                onTap: _removeSelectedImage,
+                                                child: Icon(
+                                                  Icons.close,
+                                                  color: Colors.red,
+                                                  size: width * 0.05,
+                                                ),
+                                              ),
+                                            ],
                                           ],
                                         ),
                                         SizedBox(height: height * 0.01),
