@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
+import 'package:sahtech/presentation/nutritionist/nutritioniste4.dart';
 
 class Nutritioniste3 extends StatefulWidget {
   final NutritionisteModel nutritionistData;
@@ -243,17 +244,17 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
       ),
     );
 
-    // Navigation to the next screen will be implemented in the future
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => Nutritioniste4(
-    //       nutritionistData: widget.nutritionistData,
-    //       currentStep: widget.currentStep + 1,
-    //       totalSteps: widget.totalSteps,
-    //     ),
-    //   ),
-    // );
+    // Navigate to the map screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Nutritioniste4(
+          nutritionistData: widget.nutritionistData,
+          currentStep: widget.currentStep + 1,
+          totalSteps: widget.totalSteps,
+        ),
+      ),
+    );
   }
 
   @override
