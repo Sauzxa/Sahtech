@@ -36,6 +36,12 @@ dependencies:
   shared_preferences: ^2.2.2
   provider: ^6.1.2
   image_picker: ^1.1.2
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  path: ^1.8.3
+  geolocator: ^11.0.0
+  permission_handler: ^11.3.0
+  geocoding: ^2.1.1
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +75,7 @@ flutter:
     - lib/assets/images/logo2.jpg
     - lib/assets/images/mainlogo.jpg
     - lib/assets/images/google.jpg
+    - lib/assets/images/map_background.jpg
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

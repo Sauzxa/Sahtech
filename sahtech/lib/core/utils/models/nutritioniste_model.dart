@@ -27,6 +27,9 @@ class NutritionisteModel {
   String? postalCode;
   String? clinicName;
   String? websiteUrl;
+  double? latitude; // Added for storing cabinet location
+  double? longitude; // Added for storing cabinet location
+  String? cabinetAddress; // Added for storing cabinet address
 
   // Social media profiles
   String? linkedInUrl;
@@ -71,6 +74,9 @@ class NutritionisteModel {
     this.licenseImageUrl,
     this.identityDocumentUrl,
     this.diplomaImagePath,
+    this.latitude,
+    this.longitude,
+    this.cabinetAddress,
   }) {
     this.expertiseAreas = expertiseAreas ?? [];
     this.languagesSpoken = languagesSpoken ?? [];
@@ -109,6 +115,9 @@ class NutritionisteModel {
       licenseImageUrl: map['licenseImageUrl'],
       identityDocumentUrl: map['identityDocumentUrl'],
       diplomaImagePath: map['diplomaImagePath'],
+      latitude: map['latitude'],
+      longitude: map['longitude'],
+      cabinetAddress: map['cabinetAddress'],
     );
   }
 
@@ -145,6 +154,9 @@ class NutritionisteModel {
       'licenseImageUrl': licenseImageUrl,
       'identityDocumentUrl': identityDocumentUrl,
       'diplomaImagePath': diplomaImagePath,
+      'latitude': latitude,
+      'longitude': longitude,
+      'cabinetAddress': cabinetAddress,
     };
   }
 }
