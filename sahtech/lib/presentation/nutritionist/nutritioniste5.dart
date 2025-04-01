@@ -463,16 +463,6 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: Text(_translations['title']!),
-        backgroundColor: AppColors.lightTeal,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator(color: AppColors.lightTeal))
           : Stack(
@@ -513,12 +503,18 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                   right: 0,
                   child: Container(
                     color: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      top: 20,
+                      bottom: 10,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Search bar
                         Container(
+                          margin: EdgeInsets.only(top: 25),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(30),
