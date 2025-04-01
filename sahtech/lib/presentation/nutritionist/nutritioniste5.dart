@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
+import 'dart:math';
 
 class NutritionisteMap extends StatefulWidget {
   final NutritionisteModel nutritionistData;
@@ -171,15 +172,34 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
     setState(() {
       _markers = [
         Marker(
-          width: 40.0,
-          height: 40.0,
+          width: 50.0,
+          height: 50.0,
           point: position,
           child: GestureDetector(
-            onTap: _showLocationConfirmationDialog,
-            child: Icon(
-              Icons.location_on,
-              color: AppColors.lightTeal,
-              size: 40.0,
+            onTap: () {
+              // Show the dialog when the marker is tapped
+              if (mounted) {
+                _showLocationConfirmationDialog();
+              }
+            },
+            child: Container(
+              padding: EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.7),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.location_on,
+                color: AppColors.lightTeal,
+                size: 44.0,
+                shadows: [
+                  Shadow(
+                    offset: Offset(0, 2),
+                    blurRadius: 4.0,
+                    color: Colors.black.withOpacity(0.4),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -223,14 +243,29 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
         Location location = locations.first;
         LatLng newLocation = LatLng(location.latitude, location.longitude);
 
-        // Zoom in on search results - use a higher zoom level for search results
-        _currentZoom = 16.0;
+        // Clear any existing markers first
+        setState(() {
+          _markers = [];
+        });
 
-        // First move the map to center the search result
+        // Get the address before showing the marker
+        await _getAddressFromLatLng(newLocation);
+
+        // Now set the marker and update the state
+        setState(() {
+          _selectedLocation = newLocation;
+          _updateCoordinateControllers(newLocation);
+          _isLocationConfirmed = false;
+        });
+
+        // Set the marker
+        _setMarker(newLocation);
+
+        // Set a zoom level for search results and animate to the location
+        _currentZoom = 16.0;
         _mapController.move(newLocation, _currentZoom);
 
-        // Then select the location which will trigger the confirmation dialog
-        _selectLocation(newLocation);
+        // No confirmation dialog here - user must tap on marker to see it
       } else {
         _showErrorMessage(
             '${_translations['search_error']} - ${_translations['try_again']}');
@@ -290,18 +325,30 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
 
   // Select a location on the map
   void _selectLocation(LatLng location) async {
+    // Clear existing markers first
     setState(() {
+      _markers = [];
       _selectedLocation = location;
       _updateCoordinateControllers(location);
       _isLocationConfirmed =
           false; // Reset confirmation when new location is selected
     });
 
+    // Get the address for the selected location
     await _getAddressFromLatLng(location);
+
+    // Set the marker
     _setMarker(location);
 
-    // Show confirmation dialog
-    _showLocationConfirmationDialog();
+    // Animate to the selected location with zoom
+    _mapController.move(location, 16.0);
+
+    // Show confirmation dialog with a slight delay to allow animation to complete
+    Future.delayed(Duration(milliseconds: 200), () {
+      if (mounted) {
+        _showLocationConfirmationDialog();
+      }
+    });
   }
 
   // Save selected location
@@ -365,6 +412,17 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
 
   // Location confirmation dialog
   void _showLocationConfirmationDialog() {
+    // Only show the dialog if we have a valid location
+    if (_selectedLocation == null) {
+      return;
+    }
+
+    // Make sure we have an address
+    if (_selectedLocationAddress == null) {
+      _selectedLocationAddress =
+          'Cabinet à ${_selectedLocation!.latitude.toStringAsFixed(4)}, ${_selectedLocation!.longitude.toStringAsFixed(4)}';
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -378,19 +436,16 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (_selectedLocationAddress != null)
-              Text(
-                _selectedLocationAddress!,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16),
-              ),
+            Text(
+              _selectedLocationAddress!,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16),
+            ),
             SizedBox(height: 24),
             // Green confirm button
             ElevatedButton(
               onPressed: () {
                 setState(() {
-                  _selectedLocation = _selectedLocation;
-                  _showAddLocationDialog = false;
                   _isLocationConfirmed = true;
                 });
                 Navigator.of(context).pop();
@@ -416,7 +471,6 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                   _selectedLocation = null;
                   _selectedLocationAddress = null;
                   _markers = [];
-                  _showAddLocationDialog = false;
                   _isLocationConfirmed = false;
                 });
                 Navigator.of(context).pop();
@@ -476,7 +530,27 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                     interactionOptions: InteractionOptions(
                       flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                     ),
-                    onTap: (_, point) => _selectLocation(point),
+                    onTap: (_, point) {
+                      // Check if we tapped on a marker first
+                      bool tappedOnMarker = false;
+                      if (_markers.isNotEmpty) {
+                        final marker = _markers[0];
+                        final markerPoint = marker.point;
+                        // Calculate distance between tap point and marker point
+                        final distance = _calculateDistance(point, markerPoint);
+                        // If the distance is small enough, consider it a tap on the marker
+                        if (distance < 0.0005) {
+                          // Roughly 50 meters at equator
+                          tappedOnMarker = true;
+                          _showLocationConfirmationDialog();
+                        }
+                      }
+
+                      // If not tapped on a marker, select a new location
+                      if (!tappedOnMarker) {
+                        _selectLocation(point);
+                      }
+                    },
                     onPositionChanged: (position, hasGesture) {
                       if (position.zoom != null) {
                         _currentZoom = position.zoom!;
@@ -539,8 +613,15 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                                 horizontal: 20,
                               ),
                             ),
-                            onSubmitted: (value) => _searchLocation(value),
-                            textInputAction: TextInputAction.search,
+                            onSubmitted: (value) {
+                              if (value.isNotEmpty) {
+                                // Clear focus and hide keyboard
+                                FocusScope.of(context).unfocus();
+                                // Perform the search
+                                _searchLocation(value);
+                              }
+                            },
+                            textInputAction: TextInputAction.done,
                           ),
                         ),
 
@@ -832,5 +913,11 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
               ],
             ),
     );
+  }
+
+  // Calculate distance between two LatLng points
+  double _calculateDistance(LatLng point1, LatLng point2) {
+    return sqrt(pow(point1.latitude - point2.latitude, 2) +
+        pow(point1.longitude - point2.longitude, 2));
   }
 }
