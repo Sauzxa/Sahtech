@@ -102,8 +102,8 @@ class _Nutritioniste4State extends State<Nutritioniste4> {
   }
 
   // Navigate to map screen
-  void _navigateToMapScreen(bool locationEnabled) {
-    Navigator.push(
+  void _navigateToMapScreen(bool locationEnabled) async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => NutritionisteMap(
@@ -114,6 +114,16 @@ class _Nutritioniste4State extends State<Nutritioniste4> {
         ),
       ),
     );
+
+    // Update nutritionist data if returned from the map screen
+    if (result != null && result is NutritionisteModel) {
+      // Update the local data with the returned data
+      setState(() {
+        widget.nutritionistData.latitude = result.latitude;
+        widget.nutritionistData.longitude = result.longitude;
+        widget.nutritionistData.cabinetAddress = result.cabinetAddress;
+      });
+    }
   }
 
   // Handle language change
