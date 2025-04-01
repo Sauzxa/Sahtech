@@ -426,74 +426,133 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text(
-          _translations['is_this_your_cabinet']!,
-          textAlign: TextAlign.center,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              _selectedLocationAddress!,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16),
-            ),
-            SizedBox(height: 24),
-            // Green confirm button
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _isLocationConfirmed = true;
-                });
-                Navigator.of(context).pop();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                minimumSize: Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-              ),
-              child: Text(
-                _translations['confirm']!,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-            SizedBox(height: 16),
-            // Red refuse button
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _selectedLocation = null;
-                  _selectedLocationAddress = null;
-                  _markers = [];
-                  _isLocationConfirmed = false;
-                });
-                Navigator.of(context).pop();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                minimumSize: Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-              ),
-              child: Text(
-                _translations['refuse']!,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
+      builder: (context) => Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        contentPadding: EdgeInsets.fromLTRB(24, 20, 24, 24),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Image section at the top
+              Container(
+                height: 180,
+                decoration: BoxDecoration(
+                  color: Color(0xFFB4DE7D).withOpacity(0.2),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                width: double.infinity,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Location pin icon
+                    Icon(
+                      Icons.location_on,
+                      color: Color(0xFF8BC34A),
+                      size: 80,
+                    ),
+                    // Close button
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          padding: EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.8),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.close, size: 20),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Content section
+              Padding(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Text(
+                      _translations['is_this_your_cabinet']!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      _selectedLocationAddress!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.black54),
+                    ),
+                    SizedBox(height: 24),
+
+                    // Confirm button - Green
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _isLocationConfirmed = true;
+                        });
+                        Navigator.of(context).pop();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF8BC34A),
+                        foregroundColor: Colors.white,
+                        minimumSize: Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                      child: Text(
+                        _translations['confirm']!,
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+
+                    // Refuse button - Orange/Red
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedLocation = null;
+                          _selectedLocationAddress = null;
+                          _markers = [];
+                          _isLocationConfirmed = false;
+                        });
+                        Navigator.of(context).pop();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFFF5722),
+                        foregroundColor: Colors.white,
+                        minimumSize: Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                      child: Text(
+                        _translations['refuse']!,
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -556,14 +615,18 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                         _currentZoom = position.zoom!;
                       }
                     },
+                    minZoom: 2.0,
+                    maxZoom: 19.0,
+                    keepAlive: true,
                   ),
                   children: [
                     TileLayer(
                       urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.example.sahtech',
+                          'https://tile.openstreetmap.de/{z}/{x}/{y}.png',
                       maxZoom: 19,
-                      minZoom: 3,
+                      minZoom: 2,
+                      userAgentPackageName: 'com.example.sahtech',
+                      tileProvider: NetworkTileProvider(),
                     ),
                     // Display markers
                     MarkerLayer(markers: _markers),
@@ -746,9 +809,11 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                     children: [
                       FloatingActionButton(
                         onPressed: () {
+                          double newZoom = _currentZoom + 1;
+                          if (newZoom > 19) newZoom = 19;
                           _mapController.move(
                             _mapController.camera.center,
-                            _currentZoom + 1,
+                            newZoom,
                           );
                         },
                         backgroundColor: Colors.white,
@@ -761,14 +826,32 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                       SizedBox(height: 8),
                       FloatingActionButton(
                         onPressed: () {
+                          double newZoom = _currentZoom - 1;
+                          if (newZoom < 2) newZoom = 2;
                           _mapController.move(
                             _mapController.camera.center,
-                            _currentZoom - 1,
+                            newZoom,
                           );
                         },
                         backgroundColor: Colors.white,
                         child: Icon(
                           Icons.remove,
+                          color: Colors.black87,
+                        ),
+                        mini: true,
+                      ),
+                      SizedBox(height: 8),
+                      // World button - zoom out to see the whole world
+                      FloatingActionButton(
+                        onPressed: () {
+                          _mapController.move(
+                            LatLng(30, 0), // Center of the world map roughly
+                            2, // Very zoomed out to see most of the world
+                          );
+                        },
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          Icons.public,
                           color: Colors.black87,
                         ),
                         mini: true,
