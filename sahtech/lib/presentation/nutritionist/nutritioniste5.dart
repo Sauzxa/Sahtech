@@ -38,9 +38,11 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
   LatLng? _selectedLocation;
   LatLng _initialCenter = LatLng(36.7538, 3.0588); // Algiers default
   bool _showAddLocationDialog = false;
+  bool _isLocationConfirmed = false; // Added for confirmation tracking
   String? _selectedLocationAddress;
   List<Marker> _markers = [];
-  double _currentZoom = 13.0;
+  double _currentZoom =
+      12.0; // Changed to zoom level 12.0 for better initial view
   final FocusNode _searchFocusNode = FocusNode();
   final FocusNode _latitudeFocusNode = FocusNode();
   final FocusNode _longitudeFocusNode = FocusNode();
@@ -48,11 +50,11 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
   // Translations
   Map<String, String> _translations = {
     'title': 'Localisation du cabinet',
-    'search_hint': 'Rechercher un lieu',
+    'search_hint': 'Rechercher votre cabinet',
     'latitude': 'Latitude',
     'longitude': 'Longitude',
     'confirm': 'Confirmer',
-    'discard': 'Annuler',
+    'refuse': 'Refuser',
     'add_location': 'Voulez-vous vraiment ajouter votre localisation ?',
     'continue': 'Continuer',
     'save_location': 'Enregistrer la localisation',
@@ -63,6 +65,7 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
     'location_error': 'Veuillez sélectionner une localisation valide',
     'search_error': 'Aucun résultat trouvé',
     'try_again': 'Veuillez réessayer',
+    'is_this_your_cabinet': 'Est-ce votre cabinet?',
   };
 
   @override
@@ -171,10 +174,13 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
           width: 40.0,
           height: 40.0,
           point: position,
-          child: Icon(
-            Icons.location_on,
-            color: AppColors.lightTeal,
-            size: 40.0,
+          child: GestureDetector(
+            onTap: _showLocationConfirmationDialog,
+            child: Icon(
+              Icons.location_on,
+              color: AppColors.lightTeal,
+              size: 40.0,
+            ),
           ),
         ),
       ];
@@ -217,7 +223,13 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
         Location location = locations.first;
         LatLng newLocation = LatLng(location.latitude, location.longitude);
 
+        // Zoom in on search results - use a higher zoom level for search results
+        _currentZoom = 16.0;
+
+        // First move the map to center the search result
         _mapController.move(newLocation, _currentZoom);
+
+        // Then select the location which will trigger the confirmation dialog
         _selectLocation(newLocation);
       } else {
         _showErrorMessage(
@@ -281,15 +293,15 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
     setState(() {
       _selectedLocation = location;
       _updateCoordinateControllers(location);
+      _isLocationConfirmed =
+          false; // Reset confirmation when new location is selected
     });
 
     await _getAddressFromLatLng(location);
     _setMarker(location);
 
     // Show confirmation dialog
-    setState(() {
-      _showAddLocationDialog = true;
-    });
+    _showLocationConfirmationDialog();
   }
 
   // Save selected location
@@ -310,8 +322,9 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
     // Wait for snackbar to show before navigating
     Future.delayed(Duration(milliseconds: 1200), () {
       if (!mounted) return;
-      // Navigate to registration completion or next step
-      Navigator.pop(context); // Return to previous screen for now
+
+      // Return to previous screen with updated data
+      Navigator.pop(context, widget.nutritionistData);
 
       // Alternatively, if there's another step, navigate to it:
       // Navigator.push(
@@ -348,6 +361,87 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
       _latitudeController.clear();
       _longitudeController.clear();
     });
+  }
+
+  // Location confirmation dialog
+  void _showLocationConfirmationDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(
+          _translations['is_this_your_cabinet']!,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_selectedLocationAddress != null)
+              Text(
+                _selectedLocationAddress!,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16),
+              ),
+            SizedBox(height: 24),
+            // Green confirm button
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _selectedLocation = _selectedLocation;
+                  _showAddLocationDialog = false;
+                  _isLocationConfirmed = true;
+                });
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                minimumSize: Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+              child: Text(
+                _translations['confirm']!,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+            SizedBox(height: 16),
+            // Red refuse button
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _selectedLocation = null;
+                  _selectedLocationAddress = null;
+                  _markers = [];
+                  _showAddLocationDialog = false;
+                  _isLocationConfirmed = false;
+                });
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                minimumSize: Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+              child: Text(
+                _translations['refuse']!,
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        contentPadding: EdgeInsets.fromLTRB(24, 20, 24, 24),
+      ),
+    );
   }
 
   @override
@@ -389,6 +483,9 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                   options: MapOptions(
                     initialCenter: _initialCenter,
                     initialZoom: _currentZoom,
+                    interactionOptions: InteractionOptions(
+                      flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                    ),
                     onTap: (_, point) => _selectLocation(point),
                     onPositionChanged: (position, hasGesture) {
                       if (position.zoom != null) {
@@ -401,6 +498,8 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                       urlTemplate:
                           'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.example.sahtech',
+                      maxZoom: 19,
+                      minZoom: 3,
                     ),
                     // Display markers
                     MarkerLayer(markers: _markers),
@@ -438,13 +537,6 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                               hintText: _translations['search_hint'],
                               prefixIcon:
                                   Icon(Icons.search, color: Colors.grey),
-                              suffixIcon: IconButton(
-                                icon: Icon(Icons.clear, color: Colors.grey),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  _searchFocusNode.unfocus();
-                                },
-                              ),
                               border: InputBorder.none,
                               contentPadding: EdgeInsets.symmetric(
                                 vertical: 15,
@@ -452,6 +544,7 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                               ),
                             ),
                             onSubmitted: (value) => _searchLocation(value),
+                            textInputAction: TextInputAction.search,
                           ),
                         ),
 
@@ -637,7 +730,9 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                           ),
                         ElevatedButton(
                           onPressed:
-                              _selectedLocation != null ? _saveLocation : null,
+                              _selectedLocation != null && _isLocationConfirmed
+                                  ? _saveLocation
+                                  : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.lightTeal,
                             foregroundColor: Colors.white,
@@ -717,11 +812,7 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                                   ),
                                 SizedBox(height: 24),
                                 ElevatedButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _showAddLocationDialog = false;
-                                    });
-                                  },
+                                  onPressed: _showLocationConfirmationDialog,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.lightTeal,
                                     foregroundColor: Colors.white,
