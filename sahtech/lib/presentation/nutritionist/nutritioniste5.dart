@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map/src/map/camera/camera.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/theme/colors.dart';
@@ -9,6 +8,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'dart:math';
+import 'package:sahtech/presentation/nutritionist/nutritioniste_phone.dart';
 
 class NutritionisteMap extends StatefulWidget {
   final NutritionisteModel nutritionistData;
@@ -17,12 +17,12 @@ class NutritionisteMap extends StatefulWidget {
   final bool locationEnabled;
 
   const NutritionisteMap({
-    Key? key,
+    super.key,
     required this.nutritionistData,
     this.currentStep = 4,
     this.totalSteps = 5,
     this.locationEnabled = false,
-  }) : super(key: key);
+  });
 
   @override
   _NutritionisteMapState createState() => _NutritionisteMapState();
@@ -351,38 +351,56 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
     });
   }
 
-  // Save selected location
-  void _saveLocation() {
-    if (_selectedLocation == null) {
-      _showErrorMessage(_translations['location_error']!);
+  // Save location data and continue to next screen
+  void _saveLocationAndContinue() {
+    // Make sure both conditions are met: location is selected AND confirmed
+    if (_selectedLocation == null || !_isLocationConfirmed) {
+      // Show error message if trying to save without confirming
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_translations['location_error'] ?? 'Please confirm your location first'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
       return;
     }
-
-    // Save location to nutritionist model
-    widget.nutritionistData.latitude = _selectedLocation!.latitude;
-    widget.nutritionistData.longitude = _selectedLocation!.longitude;
-    widget.nutritionistData.cabinetAddress = _selectedLocationAddress;
-
-    // Show success message
-    _showSuccessMessage(_translations['location_saved']!);
-
-    // Wait for snackbar to show before navigating
-    Future.delayed(Duration(milliseconds: 1200), () {
-      if (!mounted) return;
-
-      // Return to previous screen with updated data
-      Navigator.pop(context, widget.nutritionistData);
-
-      // Alternatively, if there's another step, navigate to it:
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(
-      //     builder: (context) => NextScreen(
-      //       nutritionistData: widget.nutritionistData,
-      //     ),
-      //   ),
-      // );
+    
+    // Set loading state to indicate processing
+    setState(() {
+      _isLoading = true;
     });
+    
+    try {
+      // Update location data in the nutritionist model
+      widget.nutritionistData.latitude = _selectedLocation!.latitude;
+      widget.nutritionistData.longitude = _selectedLocation!.longitude;
+      widget.nutritionistData.cabinetAddress = _selectedLocationAddress;
+
+      // Use pushReplacement instead of push to avoid screen stacking issues
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => NutritionistePhone(
+            nutritionistData: widget.nutritionistData,
+          ),
+        ),
+      );
+    } catch (e) {
+      // Reset loading state if there's an error
+      setState(() {
+        _isLoading = false;
+      });
+      
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Navigation error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   // Show success message
@@ -418,10 +436,7 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
     }
 
     // Make sure we have an address
-    if (_selectedLocationAddress == null) {
-      _selectedLocationAddress =
-          'Cabinet à ${_selectedLocation!.latitude.toStringAsFixed(4)}, ${_selectedLocation!.longitude.toStringAsFixed(4)}';
-    }
+    _selectedLocationAddress ??= 'Cabinet à ${_selectedLocation!.latitude.toStringAsFixed(4)}, ${_selectedLocation!.longitude.toStringAsFixed(4)}';
 
     showDialog(
       context: context,
@@ -499,25 +514,30 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                     SizedBox(height: 24),
 
                     // Confirm button - Green
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _isLocationConfirmed = true;
-                        });
-                        Navigator.of(context).pop();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF8BC34A),
-                        foregroundColor: Colors.white,
-                        minimumSize: Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _isLocationConfirmed = true;
+                          });
+                          Navigator.of(context).pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFF8BC34A),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        _translations['confirm']!,
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
+                        child: Text(
+                          _translations['confirm']!,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                     SizedBox(height: 12),
@@ -611,10 +631,8 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                       }
                     },
                     onPositionChanged: (position, hasGesture) {
-                      if (position.zoom != null) {
-                        _currentZoom = position.zoom!;
-                      }
-                    },
+                      _currentZoom = position.zoom;
+                                        },
                     minZoom: 2.0,
                     maxZoom: 19.0,
                     keepAlive: true,
@@ -888,26 +906,30 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        ElevatedButton(
-                          onPressed:
-                              _selectedLocation != null && _isLocationConfirmed
-                                  ? _saveLocation
-                                  : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.lightTeal,
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _isLocationConfirmed
+                                ? _saveLocationAndContinue
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.lightTeal,
+                              foregroundColor: Colors.black,
+                              disabledForegroundColor:
+                                  Colors.grey.withOpacity(0.38),
+                              disabledBackgroundColor:
+                                  Colors.grey.withOpacity(0.12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
-                            disabledBackgroundColor: Colors.grey.shade300,
-                            disabledForegroundColor: Colors.grey.shade600,
-                          ),
-                          child: Text(
-                            _translations['save_location']!,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                            child: Text(
+                              _translations['confirm']!,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
