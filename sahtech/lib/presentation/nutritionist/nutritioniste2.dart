@@ -12,11 +12,11 @@ class Nutritioniste2 extends StatefulWidget {
   final int totalSteps;
 
   const Nutritioniste2({
-    Key? key,
+    super.key,
     required this.nutritionistData,
     this.currentStep = 2,
     this.totalSteps = 5,
-  }) : super(key: key);
+  });
 
   @override
   State<Nutritioniste2> createState() => _Nutritioniste2State();
@@ -42,6 +42,7 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
     'speciality_label': 'Choisir votre Specialité',
     'next': 'suivant',
     'select_option': 'Veuillez sélectionner une option',
+    'success_message': 'Informations enregistrées avec succès!',
   };
 
   // Gender options
@@ -58,6 +59,10 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
     'Nutrition et Santé Digestive',
     'Diététique'
   ];
+
+  // Translated versions of option lists
+  List<String> _translatedGenderOptions = [];
+  List<String> _translatedSpecialityOptions = [];
 
   @override
   void initState() {
@@ -79,33 +84,37 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
     try {
       // Only translate if not French (default language)
       if (_translationService.currentLanguageCode != 'fr') {
+        // Add a small delay to ensure the TranslationService is ready
+        await Future.delayed(const Duration(milliseconds: 100));
+        
         final translatedStrings =
             await _translationService.translateMap(_translations);
 
         // Translate gender options
-        List<String> translatedGenderOptions = [];
+        _translatedGenderOptions = [];
         for (final gender in _genderOptions) {
-          translatedGenderOptions
+          _translatedGenderOptions
               .add(await _translationService.translate(gender));
         }
 
         // Translate speciality options
-        List<String> translatedSpecialityOptions = [];
+        _translatedSpecialityOptions = [];
         for (final speciality in _specialityOptions) {
-          translatedSpecialityOptions
+          _translatedSpecialityOptions
               .add(await _translationService.translate(speciality));
         }
 
         if (mounted) {
           setState(() {
             _translations = translatedStrings;
-            // Uncommenting these would enable translation of options
-            // _genderOptions = translatedGenderOptions;
-            // _specialityOptions = translatedSpecialityOptions;
             _isLoading = false;
           });
         }
       } else {
+        // Use original options for French
+        _translatedGenderOptions = List.from(_genderOptions);
+        _translatedSpecialityOptions = List.from(_specialityOptions);
+        
         if (mounted) {
           setState(() => _isLoading = false);
         }
@@ -119,12 +128,21 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
   }
 
   // Handle language change
-  void _handleLanguageChanged(String languageCode) {
-    // Update nutritionist model with the new language
-    widget.nutritionistData.preferredLanguage = languageCode;
+  void _handleLanguageChanged(String languageCode) async {
+    // Show loading indicator
+    setState(() => _isLoading = true);
+    
+    try {
+      // Update nutritionist model with the new language
+      widget.nutritionistData.preferredLanguage = languageCode;
 
-    // Reload translations with the new language
-    _loadTranslations();
+      // Reload translations with the new language
+      await _loadTranslations();
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   void _continueToNextScreen() {
@@ -144,14 +162,24 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
     widget.nutritionistData.specialization = _selectedSpeciality;
     widget.nutritionistData.gender = _selectedGender;
 
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Informations enregistrées avec succès!'),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 1),
-      ),
-    );
+    // Show success message only if this is the final step in the flow
+    // This prevents duplicate messages across screens
+    if (widget.currentStep >= widget.totalSteps - 1) {
+      // This is the last step, show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_translations['success_message']!),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+      
+      // Here you would eventually save the data to Firebase
+      debugPrint('Final step reached - data ready for Firebase submission');
+      debugPrint('Nutritionist data: ${widget.nutritionistData.name}, '
+          'Gender: ${widget.nutritionistData.gender}, '
+          'Specialization: ${widget.nutritionistData.specialization}');
+    }
 
     // Navigate to the next screen
     Navigator.push(
@@ -276,7 +304,9 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
                                 _buildDropdownWithCheckbox(
                                   hint: _translations['gender_label']!,
                                   value: _selectedGender,
-                                  options: _genderOptions,
+                                  options: _translationService.currentLanguageCode != 'fr' 
+                                      ? _translatedGenderOptions 
+                                      : _genderOptions,
                                   isExpanded: _isGenderExpanded,
                                   onChanged: (value) {
                                     setState(() {
@@ -302,7 +332,9 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
                                 _buildDropdownWithCheckbox(
                                   hint: _translations['speciality_label']!,
                                   value: _selectedSpeciality,
-                                  options: _specialityOptions,
+                                  options: _translationService.currentLanguageCode != 'fr' 
+                                      ? _translatedSpecialityOptions 
+                                      : _specialityOptions,
                                   isExpanded: _isSpecialityExpanded,
                                   onChanged: (value) {
                                     setState(() {

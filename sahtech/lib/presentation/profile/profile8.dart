@@ -12,11 +12,11 @@ class Profile8 extends StatefulWidget {
   final int totalSteps;
 
   const Profile8({
-    Key? key,
+    super.key,
     required this.userData,
     this.currentStep = 2,
     this.totalSteps = 5,
-  }) : super(key: key);
+  });
 
   @override
   State<Profile8> createState() => _Profile8State();
@@ -357,7 +357,7 @@ class _Profile8State extends State<Profile8> {
                                 SizedBox(height: height * 0.03),
 
                                 // Scale markings and slider
-                                Container(
+                                SizedBox(
                                   width: width * 0.7,
                                   child: Column(
                                     children: [

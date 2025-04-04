@@ -129,8 +129,7 @@ mixin TranslationMixin<T extends StatefulWidget> on State<T> {
 class LanguageSelectorWidget extends StatelessWidget {
   final Function() onTap;
 
-  const LanguageSelectorWidget({Key? key, required this.onTap})
-      : super(key: key);
+  const LanguageSelectorWidget({super.key, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

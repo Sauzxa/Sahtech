@@ -13,11 +13,11 @@ class Nutritioniste4 extends StatefulWidget {
   final int totalSteps;
 
   const Nutritioniste4({
-    Key? key,
+    super.key,
     required this.nutritionistData,
     this.currentStep = 4,
     this.totalSteps = 5,
-  }) : super(key: key);
+  });
 
   @override
   State<Nutritioniste4> createState() => _Nutritioniste4State();

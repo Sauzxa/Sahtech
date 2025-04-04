@@ -1,0 +1,2 @@
+A:/Sahtech/sahtech/android/app/.cxx/Debug/2n6se3sv/armeabi-v7a/CMakeFiles/edit_cache.dir
+A:/Sahtech/sahtech/android/app/.cxx/Debug/2n6se3sv/armeabi-v7a/CMakeFiles/rebuild_cache.dir

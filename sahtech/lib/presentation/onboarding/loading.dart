@@ -5,7 +5,7 @@ import 'package:sahtech/presentation/onboarding/onboardingscreen1.dart';
 import 'package:sahtech/core/base/base_screen.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();

@@ -4,7 +4,7 @@ import 'package:sahtech/presentation/profile/getstarted.dart';
 import 'package:sahtech/core/base/base_screen.dart';
 
 class Onboardingscreen3 extends StatefulWidget {
-  const Onboardingscreen3({Key? key}) : super(key: key);
+  const Onboardingscreen3({super.key});
 
   @override
   State<Onboardingscreen3> createState() => _Onboardingscreen3State();
@@ -97,7 +97,7 @@ class _Onboardingscreen3State extends State<Onboardingscreen3>
                             textAlign: TextAlign.center,
                           ),
                           SizedBox(height: height * 0.015),
-                          Container(
+                          SizedBox(
                             width: width * 0.8, // Constrain text width
                             child: Text(
                               translations['subtitle']!,

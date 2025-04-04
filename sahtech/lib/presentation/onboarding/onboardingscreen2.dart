@@ -4,7 +4,7 @@ import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/base/base_screen.dart';
 
 class OnboardingScreen2 extends StatefulWidget {
-  const OnboardingScreen2({Key? key}) : super(key: key);
+  const OnboardingScreen2({super.key});
 
   @override
   State<OnboardingScreen2> createState() => _OnboardingScreen2State();

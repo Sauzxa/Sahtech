@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 class SignupUser extends StatefulWidget {
   final UserModel userData;
 
-  const SignupUser({Key? key, required this.userData}) : super(key: key);
+  const SignupUser({super.key, required this.userData});
 
   @override
   State<SignupUser> createState() => _SignupUserState();

@@ -9,7 +9,7 @@ import 'package:sahtech/presentation/profile/profile6.dart';
 class Profile5 extends StatefulWidget {
   final UserModel userData;
 
-  const Profile5({Key? key, required this.userData}) : super(key: key);
+  const Profile5({super.key, required this.userData});
 
   @override
   State<Profile5> createState() => _Profile5State();

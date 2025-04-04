@@ -4,7 +4,7 @@ import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 
 class LanguageSelector extends StatelessWidget {
-  const LanguageSelector({Key? key}) : super(key: key);
+  const LanguageSelector({super.key});
 
   @override
   Widget build(BuildContext context) {

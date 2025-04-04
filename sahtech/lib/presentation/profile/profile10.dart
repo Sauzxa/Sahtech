@@ -5,7 +5,6 @@ import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:sahtech/core/auth/signinUser.dart';
-import 'package:sahtech/core/auth/signupUser.dart';
 import 'dart:math';
 
 class Profile10 extends StatefulWidget {
@@ -14,11 +13,11 @@ class Profile10 extends StatefulWidget {
   final int totalSteps;
 
   const Profile10({
-    Key? key,
+    super.key,
     required this.userData,
     this.currentStep = 4,
     this.totalSteps = 5,
-  }) : super(key: key);
+  });
 
   @override
   State<Profile10> createState() => _Profile10State();

@@ -15,11 +15,11 @@ class Nutritioniste3 extends StatefulWidget {
   final int totalSteps;
 
   const Nutritioniste3({
-    Key? key,
+    super.key,
     required this.nutritionistData,
     this.currentStep = 3,
     this.totalSteps = 5,
-  }) : super(key: key);
+  });
 
   @override
   State<Nutritioniste3> createState() => _Nutritioniste3State();
@@ -235,14 +235,8 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
     // Save the data to the nutritionist model
     widget.nutritionistData.diplomaImagePath = _selectedImage!.path;
 
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_translations['image_saved']!),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 1),
-      ),
-    );
+    // Do not show success message on intermediate screens to avoid duplication
+    // Success message will only be shown at final step
 
     // Navigate to the map screen
     Navigator.push(

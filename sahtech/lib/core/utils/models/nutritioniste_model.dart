@@ -3,6 +3,7 @@ class NutritionisteModel {
   String? name;
   String? email;
   String? phoneNumber;
+  String? password; // Added for authentication
   String? profileImageUrl;
   String? preferredLanguage;
   String? gender; // Added to store gender information
@@ -48,6 +49,7 @@ class NutritionisteModel {
     this.name,
     this.email,
     this.phoneNumber,
+    this.password,
     this.profileImageUrl,
     this.preferredLanguage,
     this.gender,
@@ -89,6 +91,7 @@ class NutritionisteModel {
       name: map['name'],
       email: map['email'],
       phoneNumber: map['phoneNumber'],
+      password: map['password'],
       profileImageUrl: map['profileImageUrl'],
       preferredLanguage: map['preferredLanguage'],
       gender: map['gender'],
@@ -128,6 +131,7 @@ class NutritionisteModel {
       'name': name,
       'email': email,
       'phoneNumber': phoneNumber,
+      'password': password,
       'profileImageUrl': profileImageUrl,
       'preferredLanguage': preferredLanguage,
       'gender': gender,

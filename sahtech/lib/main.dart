@@ -23,7 +23,7 @@ void main() async {
 class Main extends StatefulWidget {
   final TranslationService translationService;
 
-  const Main({Key? key, required this.translationService}) : super(key: key);
+  const Main({super.key, required this.translationService});
 
   @override
   State<Main> createState() => _MainState();

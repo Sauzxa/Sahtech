@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:sahtech/presentation/profile/profile1.dart';
 import 'package:sahtech/core/base/base_screen.dart';
-import 'package:provider/provider.dart';
-import 'package:sahtech/core/services/translation_service.dart';
 
 class Getstarted extends StatefulWidget {
-  const Getstarted({Key? key}) : super(key: key);
+  const Getstarted({super.key});
 
   @override
   State<Getstarted> createState() => _GetstartedState();

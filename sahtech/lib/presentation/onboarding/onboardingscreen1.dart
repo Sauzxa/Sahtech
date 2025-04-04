@@ -4,7 +4,7 @@ import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/base/base_screen.dart';
 
 class OnboardingScreen1 extends StatefulWidget {
-  const OnboardingScreen1({Key? key}) : super(key: key);
+  const OnboardingScreen1({super.key});
 
   @override
   State<OnboardingScreen1> createState() => _OnboardingScreen1State();
@@ -15,7 +15,7 @@ class _OnboardingScreen1State extends State<OnboardingScreen1>
   @override
   Map<String, String> get initialTranslations => {
         'skip': 'Skip',
-        'title': 'Bienvenue dans SahTech',
+        'title': 'Bienvenue a SahTech',
         'subtitle':
             'Scannez pour connaître les ingrédients de vos produits alimentaires et recevez des recommandations adaptées à votre profil.',
         'next': 'Suivant',

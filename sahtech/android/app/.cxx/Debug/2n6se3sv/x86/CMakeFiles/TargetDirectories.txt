@@ -1,0 +1,2 @@
+A:/Sahtech/sahtech/android/app/.cxx/Debug/2n6se3sv/x86/CMakeFiles/edit_cache.dir
+A:/Sahtech/sahtech/android/app/.cxx/Debug/2n6se3sv/x86/CMakeFiles/rebuild_cache.dir
