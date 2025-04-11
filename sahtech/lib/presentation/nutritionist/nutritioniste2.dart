@@ -5,6 +5,7 @@ import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:sahtech/presentation/nutritionist/nutritioniste3.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class Nutritioniste2 extends StatefulWidget {
   final NutritionisteModel nutritionistData;
@@ -129,20 +130,11 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
 
   // Handle language change
   void _handleLanguageChanged(String languageCode) async {
-    // Show loading indicator
-    setState(() => _isLoading = true);
-    
-    try {
-      // Update nutritionist model with the new language
-      widget.nutritionistData.preferredLanguage = languageCode;
+    // Update nutritionist model with the new language
+    widget.nutritionistData.preferredLanguage = languageCode;
 
-      // Reload translations with the new language
-      await _loadTranslations();
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    // Reload translations with the new language
+    await _loadTranslations();
   }
 
   void _continueToNextScreen() {
@@ -196,24 +188,20 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final height = size.height;
-    final width = size.width;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leadingWidth: width * 0.12,
+        leadingWidth: 45.w,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios,
             color: AppColors.lightTeal,
-            size: width * 0.05,
+            size: 20.w,
           ),
           onPressed: () => Navigator.pop(context),
-          padding: EdgeInsets.only(left: width * 0.04),
+          padding: EdgeInsets.only(left: 15.w),
         ),
         title: Image.asset(
           'lib/assets/images/mainlogo.jpg',
@@ -222,9 +210,8 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
         ),
         centerTitle: true,
         actions: [
-          // Language selector button
           LanguageSelectorButton(
-            width: width,
+            width: 1.sw,
             onLanguageChanged: _handleLanguageChanged,
           ),
         ],
@@ -237,21 +224,20 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
                   // Progress bar at the top
                   Container(
                     width: double.infinity,
-                    height: 4,
+                    height: 4.h,
                     decoration: BoxDecoration(
                       color: Colors.grey[200],
                     ),
                     child: Row(
                       children: [
                         Container(
-                          width:
-                              width * (widget.currentStep / widget.totalSteps),
-                          height: 4,
+                          width: 1.sw * (widget.currentStep / widget.totalSteps),
+                          height: 4.h,
                           decoration: BoxDecoration(
                             color: AppColors.lightTeal,
                             borderRadius: BorderRadius.only(
-                              topRight: Radius.circular(2),
-                              bottomRight: Radius.circular(2),
+                              topRight: Radius.circular(2.r),
+                              bottomRight: Radius.circular(2.r),
                             ),
                           ),
                         ),
@@ -262,45 +248,43 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
                   Expanded(
                     child: Stack(
                       children: [
-                        // Scrollable content area
                         SingleChildScrollView(
                           child: Padding(
                             padding: EdgeInsets.only(
-                              left: width * 0.06,
-                              right: width * 0.06,
-                              bottom: height *
-                                  0.12, // Extra padding at bottom for button
+                              left: 24.w,
+                              right: 24.w,
+                              bottom: 96.h, // Extra padding for button
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                SizedBox(height: height * 0.05),
+                                SizedBox(height: 40.h),
 
                                 // Title
                                 Text(
                                   _translations['title']!,
                                   style: TextStyle(
-                                    fontSize: width * 0.06,
+                                    fontSize: 24.sp,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.black,
                                   ),
                                 ),
 
-                                SizedBox(height: height * 0.01),
+                                SizedBox(height: 8.h),
 
                                 // Subtitle
                                 Text(
                                   _translations['subtitle']!,
                                   style: TextStyle(
-                                    fontSize: width * 0.035,
+                                    fontSize: 14.sp,
                                     color: Colors.grey[600],
                                     height: 1.3,
                                   ),
                                 ),
 
-                                SizedBox(height: height * 0.05),
+                                SizedBox(height: 40.h),
 
-                                // Gender dropdown with CheckboxListTile
+                                // Gender dropdown
                                 _buildDropdownWithCheckbox(
                                   hint: _translations['gender_label']!,
                                   value: _selectedGender,
@@ -322,13 +306,12 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
                                       }
                                     });
                                   },
-                                  maxHeight: height *
-                                      0.2, // Limited height for gender dropdown
+                                  maxHeight: 0.2.sh,
                                 ),
 
-                                SizedBox(height: height * 0.03),
+                                SizedBox(height: 24.h),
 
-                                // Speciality dropdown with CheckboxListTile - using the same widget as gender
+                                // Speciality dropdown
                                 _buildDropdownWithCheckbox(
                                   hint: _translations['speciality_label']!,
                                   value: _selectedSpeciality,
@@ -344,19 +327,16 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
                                   },
                                   onTap: () {
                                     setState(() {
-                                      _isSpecialityExpanded =
-                                          !_isSpecialityExpanded;
+                                      _isSpecialityExpanded = !_isSpecialityExpanded;
                                       if (_isSpecialityExpanded) {
                                         _isGenderExpanded = false;
                                       }
                                     });
                                   },
-                                  maxHeight: height *
-                                      0.3, // Taller max height for speciality list
+                                  maxHeight: 0.3.sh,
                                 ),
 
-                                // Minimum space to ensure dropdowns have enough room
-                                SizedBox(height: height * 0.05),
+                                SizedBox(height: 40.h),
                               ],
                             ),
                           ),
@@ -370,10 +350,10 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
                           child: Container(
                             color: Colors.white,
                             padding: EdgeInsets.only(
-                              left: width * 0.06,
-                              right: width * 0.06,
-                              top: height * 0.02,
-                              bottom: height * 0.05,
+                              left: 24.w,
+                              right: 24.w,
+                              top: 16.h,
+                              bottom: 40.h,
                             ),
                             child: ElevatedButton(
                               onPressed: _continueToNextScreen,
@@ -381,16 +361,15 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
                                 backgroundColor: AppColors.lightTeal,
                                 foregroundColor: Colors.black87,
                                 elevation: 0,
-                                padding: EdgeInsets.symmetric(
-                                    vertical: height * 0.018),
+                                padding: EdgeInsets.symmetric(vertical: 15.h),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
+                                  borderRadius: BorderRadius.circular(30.r),
                                 ),
                               ),
                               child: Text(
                                 _translations['next']!,
                                 style: TextStyle(
-                                  fontSize: width * 0.045,
+                                  fontSize: 18.sp,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -414,29 +393,25 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
     required bool isExpanded,
     required Function(String) onChanged,
     required VoidCallback onTap,
-    double? maxHeight, // Added parameter for flexible max height
+    double? maxHeight,
   }) {
-    final size = MediaQuery.of(context).size;
-    final height = size.height;
-    final width = size.width;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Dropdown button
         InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(15.r),
           child: Container(
             width: double.infinity,
-            height: height * 0.07,
+            height: 56.h,
             padding: EdgeInsets.symmetric(
-              horizontal: width * 0.04,
-              vertical: height * 0.018,
+              horizontal: 16.w,
+              vertical: 15.h,
             ),
             decoration: BoxDecoration(
               color: const Color(0xFFEFF9E8),
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(15.r),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -444,7 +419,7 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
                 Text(
                   value ?? hint,
                   style: TextStyle(
-                    fontSize: width * 0.04,
+                    fontSize: 16.sp,
                     color: Colors.black87,
                     fontWeight: FontWeight.w400,
                   ),
@@ -454,7 +429,7 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
                       ? Icons.keyboard_arrow_up
                       : Icons.keyboard_arrow_down,
                   color: Colors.black54,
-                  size: width * 0.05,
+                  size: 20.sp,
                 ),
               ],
             ),
@@ -466,20 +441,19 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
           Container(
             width: double.infinity,
             constraints: BoxConstraints(
-              maxHeight: maxHeight ??
-                  height * 0.3, // Use provided maxHeight or default
+              maxHeight: maxHeight ?? 0.3.sh,
             ),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(15),
-                bottomRight: Radius.circular(15),
+                bottomLeft: Radius.circular(15.r),
+                bottomRight: Radius.circular(15.r),
               ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black12,
                   blurRadius: 5,
-                  offset: Offset(0, 2),
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -491,7 +465,7 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
                     title: Text(
                       option,
                       style: TextStyle(
-                        fontSize: width * 0.04,
+                        fontSize: 16.sp,
                         color: Colors.black87,
                       ),
                     ),

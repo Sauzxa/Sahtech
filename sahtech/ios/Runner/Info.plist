@@ -49,5 +49,9 @@
 	<string>We need your location to help find your cabinet on the map.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>This app requires access to your location.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Cette application nécessite l'accès à la caméra pour scanner les codes-barres des produits.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Cette application nécessite l'accès à la galerie photo pour scanner les codes-barres des produits depuis des images.</string>
 </dict>
 </plist>

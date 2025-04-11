@@ -271,4 +271,58 @@ class TranslationService extends ChangeNotifier {
   
   // Check if current language is RTL
   bool get isRTL => rtlLanguages.contains(_currentLanguageCode);
+
+  // Default translations map
+  static final Map<String, String> _defaultTranslations = {
+    'phone_title': 'Ajouter votre numero de telephone',
+    'phone_subtitle': 'We\'ll send you a verification code',
+    'phone_label': 'Veuillez entrer votre numéro de téléphone',
+    'phone_required': 'Phone number is required',
+    'continue': 'Continue',
+    'availability_title': 'Set Your Availability',
+    'availability_subtitle': 'Choose your working hours',
+    'working_days': 'Working Days',
+    'working_hours': 'Working Hours',
+    'start_time': 'Start Time',
+    'end_time': 'End Time',
+    'monday': 'Monday',
+    'tuesday': 'Tuesday',
+    'wednesday': 'Wednesday',
+    'thursday': 'Thursday',
+    'friday': 'Friday',
+    'saturday': 'Saturday',
+    'sunday': 'Sunday',
+    'success_title': 'Donné rempli avec Scucceé',
+    'success_message': 'Est ce que vous voulez publier ces données pour être affiché dans la liste des nutritionistes en ligne',
+    'get_started': 'Commencer',
+    'verification_title': 'Verification SMS',
+    'verification_subtitle': 'Un SMS a etait envoyé veuillez verifier votre telephone',
+    'resend_code': 'Renvoyer',
+    'password_title': 'Veuillez choisir un mot de passe pour votre compte',
+    'password_subtitle': 'Assurez-vous que le mot de passe contient au moins 8 caractères, incluant des lettres majuscules et minuscules, des chiffres et des caractères spéciaux',
+    'password_label': 'Mot de passe',
+    'password_hint': 'Entrer votre mot de passe',
+    'confirm_label': 'Confirmation',
+    'confirm_hint': 'Entrer votre confirmation',
+    'create_account': 'Créer le compte',
+    'password_requirements': 'Le mot de passe doit contenir au moins 8 caractères, incluant des lettres majuscules et minuscules, des chiffres et des caractères spéciaux',
+    'password_mismatch': 'Les mots de passe ne correspondent pas',
+  };
+
+  // Get translations for the current language
+  static Future<Map<String, String>> getTranslations() async {
+    final service = TranslationService();
+    if (service.currentLanguageCode == _defaultLocale) {
+      return _defaultTranslations;
+    }
+
+    final translatedMap = <String, String>{};
+    for (final entry in _defaultTranslations.entries) {
+      translatedMap[entry.key] = await service.translate(
+        entry.value,
+        targetLanguage: service.currentLanguageCode,
+      );
+    }
+    return translatedMap;
+  }
 }

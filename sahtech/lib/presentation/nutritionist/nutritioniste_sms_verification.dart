@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/presentation/nutritionist/nutritioniste_password.dart';
+import 'package:sahtech/core/widgets/language_selector.dart';
 import 'dart:async';
 import '../widgets/custom_button.dart';
 
@@ -16,10 +18,12 @@ class NutritionisteSmsVerification extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<NutritionisteSmsVerification> createState() => _NutritionisteSmsVerificationState();
+  _NutritionisteSmsVerificationState createState() => _NutritionisteSmsVerificationState();
 }
 
 class _NutritionisteSmsVerificationState extends State<NutritionisteSmsVerification> {
+  late Map<String, String> _translations;
+  bool _isLoading = true;
   final List<TextEditingController> _controllers = List.generate(4, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
   Timer? _timer;
@@ -28,7 +32,18 @@ class _NutritionisteSmsVerificationState extends State<NutritionisteSmsVerificat
   @override
   void initState() {
     super.initState();
+    _loadTranslations();
     startTimer();
+  }
+
+  Future<void> _loadTranslations() async {
+    setState(() => _isLoading = true);
+    _translations = await TranslationService.getTranslations();
+    setState(() => _isLoading = false);
+  }
+
+  void _handleLanguageChanged(String newLanguage) {
+    _loadTranslations();
   }
 
   void startTimer() {
@@ -61,227 +76,161 @@ class _NutritionisteSmsVerificationState extends State<NutritionisteSmsVerificat
     super.dispose();
   }
 
+  void _onCodeComplete() {
+    String code = _controllers.map((c) => c.text).join();
+    if (code.length == 4) {
+      // Verify the code here
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => NutritionistePassword(
+            nutritionistData: NutritionisteModel(
+              userType: 'nutritionist',
+              phoneNumber: widget.phoneNumber,
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background with opacity
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF9FE870).withOpacity(0.4),
-            ),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leadingWidth: 45.w,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: AppColors.lightTeal,
+            size: 20.w,
           ),
-
-          // Main content
-          SafeArea(
-            child: Column(
-              children: [
-                // Top section with back button and logo
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      const Expanded(
-                        child: Center(
-                          child: Padding(
-                            padding: EdgeInsets.only(right: 40),
-                            child: Image(
-                              image: AssetImage('lib/assets/images/mainlogo.jpg'),
-                              height: 40,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // White card
-                Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.only(top: 24),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(35),
-                        topRight: Radius.circular(35),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 15,
-                          offset: Offset(0, -3),
-                        ),
-                      ],
-                    ),
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Verification SMS',
-                              style: TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Un SMS a etait envoyé veuillez verifier votre telephone',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                            
-                            // Timer
-                            Center(
-                              child: Text(
-                                formattedTime,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF9FE870),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-
-                            // OTP Input fields
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: List.generate(4, (index) {
-                                return Container(
-                                  width: 60,
-                                  height: 60,
-                                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: const Color(0xFF9FE870),
-                                      width: 1.5,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: TextField(
-                                    controller: _controllers[index],
-                                    focusNode: _focusNodes[index],
-                                    textAlign: TextAlign.center,
-                                    keyboardType: TextInputType.number,
-                                    maxLength: 1,
-                                    style: const TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    decoration: const InputDecoration(
-                                      counterText: '',
-                                      border: InputBorder.none,
-                                    ),
-                                    onChanged: (value) {
-                                      if (value.isNotEmpty && index < 3) {
-                                        _focusNodes[index + 1].requestFocus();
-                                      }
-                                    },
-                                  ),
-                                );
-                              }),
-                            ),
-                            const SizedBox(height: 24),
-
-                            // Resend code text
-                            Center(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'Vous n\'avez pas reçu le code ? ',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: _timeLeft == 0 ? () {
-                                      setState(() {
-                                        _timeLeft = 180;
-                                      });
-                                      startTimer();
-                                    } : null,
-                                    child: Text(
-                                      'Renvoyer',
-                                      style: TextStyle(
-                                        color: _timeLeft == 0 ? const Color(0xFF9FE870) : Colors.grey,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 300),
-
-                            // Submit button
-                            CustomButton(
-                              text: 'Envoyer',
-                              onPressed: () {
-                                // Get entered OTP
-                                String enteredOTP = '';
-                                for (var controller in _controllers) {
-                                  enteredOTP += controller.text;
-                                }
-                                
-                                // Check if OTP is complete (4 digits)
-                                if (enteredOTP.length == 4) {
-                                  // In a real app, you would verify the OTP with a backend service
-                                  // For now, we'll just proceed to the password screen
-                                  
-                                  // Create a NutritionisteModel with the phone number
-                                  final nutritionistData = NutritionisteModel(
-                                    userType: 'nutritionist',
-                                    phoneNumber: widget.phoneNumber,
-                                  );
-                                  
-                                  // Navigate to password screen
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => NutritionistePassword(
-                                        nutritionistData: nutritionistData,
-                                      ),
-                                    ),
-                                  );
-                                } else {
-                                  // Show error for incomplete OTP
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Please enter the complete 4-digit code'),
-                                      backgroundColor: Colors.red,
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                }
-                              },
-                              isEnabled: true, // Enable button regardless of OTP completion
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          onPressed: () => Navigator.pop(context),
+          padding: EdgeInsets.only(left: 15.w),
+        ),
+        title: Image.asset(
+          'lib/assets/images/mainlogo.jpg',
+          height: kToolbarHeight * 0.6,
+          fit: BoxFit.contain,
+        ),
+        centerTitle: true,
+        actions: [
+          LanguageSelectorButton(
+            width: 1.sw,
+            onLanguageChanged: _handleLanguageChanged,
           ),
         ],
       ),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator(color: AppColors.lightTeal))
+          : SafeArea(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(24.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _translations['verification_title'] ?? 'SMS Verification',
+                      style: TextStyle(
+                        fontSize: 24.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                    Text(
+                      _translations['verification_subtitle'] ?? 'Enter the verification code sent to your phone',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    SizedBox(height: 32.h),
+
+                    // Timer
+                    Center(
+                      child: Text(
+                        formattedTime,
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.lightTeal,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 32.h),
+
+                    // OTP Input fields
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(4, (index) {
+                        return Container(
+                          width: 60.w,
+                          height: 60.w,
+                          margin: EdgeInsets.symmetric(horizontal: 8.w),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: AppColors.lightTeal,
+                              width: 1.5,
+                            ),
+                            borderRadius: BorderRadius.circular(12.r),
+                          ),
+                          child: TextField(
+                            controller: _controllers[index],
+                            focusNode: _focusNodes[index],
+                            textAlign: TextAlign.center,
+                            keyboardType: TextInputType.number,
+                            maxLength: 1,
+                            style: TextStyle(
+                              fontSize: 24.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            decoration: const InputDecoration(
+                              counterText: '',
+                              border: InputBorder.none,
+                            ),
+                            onChanged: (value) {
+                              if (value.isNotEmpty) {
+                                if (index < 3) {
+                                  _focusNodes[index + 1].requestFocus();
+                                } else {
+                                  _onCodeComplete();
+                                }
+                              }
+                            },
+                          ),
+                        );
+                      }),
+                    ),
+                    SizedBox(height: 32.h),
+
+                    // Resend code text
+                    Center(
+                      child: TextButton(
+                        onPressed: _timeLeft == 0 ? () {
+                          setState(() {
+                            _timeLeft = 180;
+                          });
+                          startTimer();
+                          // Implement resend code logic here
+                        } : null,
+                        child: Text(
+                          _translations['resend_code'] ?? 'Resend Code',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            color: _timeLeft == 0 ? AppColors.lightTeal : Colors.grey,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 } 

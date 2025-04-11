@@ -5,37 +5,48 @@ import 'package:sahtech/core/services/translation_service.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
-import 'package:sahtech/presentation/profile/profile6.dart';
 import 'package:sahtech/presentation/widgets/custom_button.dart';
+import 'package:sahtech/presentation/profile/profile4.dart';
 
-class Profile5 extends StatefulWidget {
+class AllergySelection extends StatefulWidget {
   final UserModel userData;
 
-  const Profile5({super.key, required this.userData});
+  const AllergySelection({super.key, required this.userData});
 
   @override
-  State<Profile5> createState() => _Profile5State();
+  State<AllergySelection> createState() => _AllergySelectionState();
 }
 
-class _Profile5State extends State<Profile5> {
+class _AllergySelectionState extends State<AllergySelection> {
   late TranslationService _translationService;
   bool _isLoading = false;
   bool _isDropdownOpen = false;
-  final Map<String, bool> _objectives = {
-    'Contrôle du diabète': false,
-    'Perte de poid': false,
-    'Réduction du cholestérol': false,
+  final Map<String, bool> _allergies = {
+    'Arachides': false,
+    'Fruits à coque': false,
+    'Lait': false,
+    'Oeufs': false,
+    'Poisson': false,
+    'Crustacés': false,
+    'Blé': false,
+    'Soja': false,
+    'Sésame': false,
+    'Moutarde': false,
+    'Sulfites': false,
+    'Lupin': false,
+    'Céleri': false,
+    'Mollusques': false,
   };
 
-  List<String> _selectedObjectives = [];
+  List<String> _selectedAllergies = [];
   Map<String, String> _translations = {
-    'title': 'Choisir votre objectif dans notre appli ?',
-    'subtitle': 'Choisissez un objectif pour mieux adapter votre expérience. Cette option est optionnelle',
-    'dropdown_label': 'Choisir votre objectif',
+    'title': 'Choisir vos allergies',
+    'subtitle': 'Afin de vous offrir une expérience optimale et des recommandations personnalisées, veuillez choisir vos allergies',
+    'dropdown_label': 'Choisir vos allergies',
     'next': 'suivant',
-    'select_condition': 'Veuillez sélectionner au moins un objectif',
+    'select_condition': 'Veuillez sélectionner au moins une allergie',
     'success_message': 'Informations enregistrées avec succès!',
-    'objectives_selected': 'objectifs sélectionnés',
+    'allergies_selected': 'allergies sélectionnées',
   };
 
   @override
@@ -52,10 +63,10 @@ class _Profile5State extends State<Profile5> {
       if (_translationService.currentLanguageCode != 'fr') {
         final translatedStrings = await _translationService.translateMap(_translations);
 
-        final translatedObjectives = <String, bool>{};
-        for (final objective in _objectives.keys) {
-          final translatedObjective = await _translationService.translate(objective);
-          translatedObjectives[translatedObjective] = false;
+        final translatedAllergies = <String, bool>{};
+        for (final allergy in _allergies.keys) {
+          final translatedAllergy = await _translationService.translate(allergy);
+          translatedAllergies[translatedAllergy] = false;
         }
 
         if (mounted) {
@@ -89,10 +100,10 @@ class _Profile5State extends State<Profile5> {
     });
   }
 
-  void _toggleObjective(String objective) {
+  void _toggleAllergy(String allergy) {
     setState(() {
-      _objectives[objective] = !_objectives[objective]!;
-      _selectedObjectives = _objectives.entries
+      _allergies[allergy] = !_allergies[allergy]!;
+      _selectedAllergies = _allergies.entries
           .where((e) => e.value)
           .map((e) => e.key)
           .toList();
@@ -100,30 +111,16 @@ class _Profile5State extends State<Profile5> {
   }
 
   String _getDropdownLabel() {
-    if (_selectedObjectives.isEmpty) {
+    if (_selectedAllergies.isEmpty) {
       return _translations['dropdown_label']!;
     } else {
-      return "${_selectedObjectives.length} ${_translations['objectives_selected'] ?? 'objectifs sélectionnés'}";
+      return "${_selectedAllergies.length} ${_translations['allergies_selected'] ?? 'allergies sélectionnées'}";
     }
   }
 
   void _continueToNextScreen() async {
-    // Check if any objectives are selected
-    if (_selectedObjectives.isEmpty) {
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_translations['select_condition']!),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      // Don't proceed to the next screen
-      return;
-    }
-    
-    // Save selected objectives to user model
-    widget.userData.healthGoals = _selectedObjectives;
+    // Save selected allergies to user model
+    widget.userData.allergies = _selectedAllergies;
 
     // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
@@ -134,15 +131,17 @@ class _Profile5State extends State<Profile5> {
       ),
     );
 
-    // Navigate to Profile6 (Weight Input)
+    // Navigate to Profile4
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => Profile6(userData: widget.userData)),
+      MaterialPageRoute(
+        builder: (context) => Profile4(userData: widget.userData),
+      ),
     );
   }
 
-  Widget _buildObjectiveOption(String objective, bool isSelected) {
+  Widget _buildAllergyOption(String allergy, bool isSelected) {
     return InkWell(
-      onTap: () => _toggleObjective(objective),
+      onTap: () => _toggleAllergy(allergy),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         child: Row(
@@ -169,7 +168,7 @@ class _Profile5State extends State<Profile5> {
             SizedBox(width: 12.w),
             Expanded(
               child: Text(
-                objective,
+                allergy,
                 style: TextStyle(
                   fontSize: 16.sp,
                   fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
@@ -218,7 +217,7 @@ class _Profile5State extends State<Profile5> {
           : SafeArea(
               child: Column(
                 children: [
-                  // Progress Bar (50%)
+                  // Progress Bar (30%)
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     child: Container(
@@ -230,7 +229,7 @@ class _Profile5State extends State<Profile5> {
                       child: Row(
                         children: [
                           Container(
-                            width: 1.sw * 0.5 - 3.2.w,
+                            width: 1.sw * 0.3 - 3.2.w,
                             height: 4.h,
                             decoration: BoxDecoration(
                               color: AppColors.lightTeal,
@@ -248,23 +247,22 @@ class _Profile5State extends State<Profile5> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(height: 32.h),
+                            SizedBox(height: 40.h),
                             Text(
                               _translations['title']!,
                               style: TextStyle(
-                                fontSize: 24.sp,
+                                fontSize: 25.sp,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                                letterSpacing: -0.5,
+                                color: Colors.black,
                               ),
                             ),
                             SizedBox(height: 12.h),
                             Text(
                               _translations['subtitle']!,
                               style: TextStyle(
-                                fontSize: 14.sp,
-                                color: Colors.grey[700],
-                                height: 1.4,
+                                fontSize: 15.sp,
+                                color: Colors.grey[600],
+                                height: 1.3,
                               ),
                             ),
                             SizedBox(height: 30.h),
@@ -292,7 +290,7 @@ class _Profile5State extends State<Profile5> {
                                         _getDropdownLabel(),
                                         style: TextStyle(
                                           fontSize: 16.sp,
-                                          color: _selectedObjectives.isNotEmpty
+                                          color: _selectedAllergies.isNotEmpty
                                               ? Colors.black87
                                               : Colors.black54,
                                           overflow: TextOverflow.ellipsis,
@@ -312,7 +310,7 @@ class _Profile5State extends State<Profile5> {
                               ),
                             ),
 
-                            // Objective options (properly scrollable dropdown)
+                            // Allergy options (properly scrollable dropdown)
                             if (_isDropdownOpen)
                               Container(
                                 margin: EdgeInsets.only(top: 4.h),
@@ -336,8 +334,8 @@ class _Profile5State extends State<Profile5> {
                                     physics: const BouncingScrollPhysics(),
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      children: _objectives.entries
-                                          .map((entry) => _buildObjectiveOption(entry.key, entry.value))
+                                      children: _allergies.entries
+                                          .map((entry) => _buildAllergyOption(entry.key, entry.value))
                                           .toList(),
                                     ),
                                   ),
@@ -350,11 +348,27 @@ class _Profile5State extends State<Profile5> {
                   ),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 32.h),
-                    child: CustomButton(
-                      text: _translations['next']!,
-                      onPressed: _continueToNextScreen,
-                      width: 1.sw - 32.w,
+                    child: SizedBox(
+                      width: double.infinity,
                       height: 50.h,
+                      child: ElevatedButton(
+                        onPressed: _continueToNextScreen,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.lightTeal,
+                          foregroundColor: Colors.black87,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30.r),
+                          ),
+                        ),
+                        child: Text(
+                          _translations['next']!,
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -362,4 +376,4 @@ class _Profile5State extends State<Profile5> {
             ),
     );
   }
-}
+} 

@@ -1,47 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
-  final VoidCallback? onPressed;
-  final double? borderRadius;
-  final bool isEnabled;
-  final double? width;
+  final VoidCallback onPressed;
+  final double width;
   final double height;
 
   const CustomButton({
     Key? key,
     required this.text,
     required this.onPressed,
-    this.borderRadius = 15.0,
-    this.isEnabled = true,
-    this.width = double.infinity,
-    this.height = 56.0,
+    required this.width,
+    required this.height,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      height: height,
-      child: ElevatedButton(
-        onPressed: isEnabled ? onPressed : null,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF9FE870).withOpacity(0.8),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadius!),
+    return Container(
+      width: width, // Responsive width
+      height: height, // Responsive height
+      decoration: BoxDecoration(
+        color: const Color(0xFF9FE870), // Button color (green)
+        borderRadius: BorderRadius.circular(30.r), // Rounded corners
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
-          disabledBackgroundColor: Colors.grey.withOpacity(0.3),
+        ],
+      ),
+      child: MaterialButton(
+        onPressed: onPressed,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30.r),
         ),
         child: Text(
           text,
-          style: const TextStyle(
-            color: Colors.black87,
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
+          style: TextStyle(
+            fontSize: 16.sp, // Updated to consistent size
+            fontWeight: FontWeight.w500, // Medium font weight for consistency
+            color: Colors.black,
           ),
         ),
       ),
     );
   }
-} 
+}

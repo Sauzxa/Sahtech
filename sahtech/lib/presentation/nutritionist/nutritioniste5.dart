@@ -9,14 +9,16 @@ import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'dart:math';
 import 'package:sahtech/presentation/nutritionist/nutritioniste_phone.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:sahtech/core/widgets/language_selector.dart';
 
-class NutritionisteMap extends StatefulWidget {
+class Nutritioniste5 extends StatefulWidget {
   final NutritionisteModel nutritionistData;
   final int currentStep;
   final int totalSteps;
   final bool locationEnabled;
 
-  const NutritionisteMap({
+  const Nutritioniste5({
     super.key,
     required this.nutritionistData,
     this.currentStep = 4,
@@ -25,10 +27,10 @@ class NutritionisteMap extends StatefulWidget {
   });
 
   @override
-  _NutritionisteMapState createState() => _NutritionisteMapState();
+  _Nutritioniste5State createState() => _Nutritioniste5State();
 }
 
-class _NutritionisteMapState extends State<NutritionisteMap> {
+class _Nutritioniste5State extends State<Nutritioniste5> {
   late TranslationService _translationService;
   bool _isLoading = false;
   final MapController _mapController = MapController();
@@ -373,7 +375,7 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
         context,
         MaterialPageRoute(
           builder: (context) => NutritionistePhone(
-            nutritionistData: widget.nutritionistData,
+            nutritioniste: widget.nutritionistData,
           ),
         ),
       );
@@ -575,12 +577,34 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final height = size.height;
-    final width = size.width;
-
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leadingWidth: 45.w,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: AppColors.lightTeal,
+            size: 20.w,
+          ),
+          onPressed: () => Navigator.pop(context),
+          padding: EdgeInsets.only(left: 15.w),
+        ),
+        title: Image.asset(
+          'lib/assets/images/mainlogo.jpg',
+          height: kToolbarHeight * 0.6,
+          fit: BoxFit.contain,
+        ),
+        centerTitle: true,
+        actions: [
+          LanguageSelectorButton(
+            width: 1.sw,
+            onLanguageChanged: _handleLanguageChanged,
+          ),
+        ],
+      ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator(color: AppColors.lightTeal))
           : Stack(
@@ -617,7 +641,7 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                     },
                     onPositionChanged: (position, hasGesture) {
                       _currentZoom = position.zoom;
-                                        },
+                    },
                     minZoom: 2.0,
                     maxZoom: 19.0,
                     keepAlive: true,
@@ -643,18 +667,15 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                   right: 0,
                   child: Container(
                     color: Colors.white,
-                    padding: EdgeInsets.only(
-                      left: 16,
-                      right: 16,
-                      top: 20,
-                      bottom: 10,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Search bar
                         Container(
-                          margin: EdgeInsets.only(top: 25),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(30),
@@ -671,8 +692,7 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                             focusNode: _searchFocusNode,
                             decoration: InputDecoration(
                               hintText: _translations['search_hint'],
-                              prefixIcon:
-                                  Icon(Icons.search, color: Colors.grey),
+                              prefixIcon: Icon(Icons.search, color: Colors.grey),
                               border: InputBorder.none,
                               contentPadding: EdgeInsets.symmetric(
                                 vertical: 15,
@@ -681,9 +701,7 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                             ),
                             onSubmitted: (value) {
                               if (value.isNotEmpty) {
-                                // Clear focus and hide keyboard
                                 FocusScope.of(context).unfocus();
-                                // Perform the search
                                 _searchLocation(value);
                               }
                             },
@@ -792,10 +810,11 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                 if (_markers.isNotEmpty)
                   Positioned(
                     left: 16,
-                    bottom: height * 0.15,
+                    bottom: MediaQuery.of(context).padding.bottom + 80,
                     child: FloatingActionButton(
                       onPressed: _discardLocation,
                       backgroundColor: Colors.white,
+                      elevation: 2,
                       child: Icon(
                         Icons.close,
                         color: Colors.red,
@@ -807,7 +826,7 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                 // Zoom controls
                 Positioned(
                   right: 16,
-                  bottom: height * 0.2,
+                  bottom: MediaQuery.of(context).padding.bottom + 80,
                   child: Column(
                     children: [
                       FloatingActionButton(
@@ -820,6 +839,7 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                           );
                         },
                         backgroundColor: Colors.white,
+                        elevation: 2,
                         child: Icon(
                           Icons.add,
                           color: Colors.black87,
@@ -837,6 +857,7 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                           );
                         },
                         backgroundColor: Colors.white,
+                        elevation: 2,
                         child: Icon(
                           Icons.remove,
                           color: Colors.black87,
@@ -844,15 +865,15 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                         mini: true,
                       ),
                       SizedBox(height: 8),
-                      // World button - zoom out to see the whole world
                       FloatingActionButton(
                         onPressed: () {
                           _mapController.move(
-                            LatLng(30, 0), // Center of the world map roughly
-                            2, // Very zoomed out to see most of the world
+                            LatLng(30, 0),
+                            2,
                           );
                         },
                         backgroundColor: Colors.white,
+                        elevation: 2,
                         child: Icon(
                           Icons.public,
                           color: Colors.black87,
@@ -870,9 +891,11 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                   right: 0,
                   child: Container(
                     color: Colors.white,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
+                    padding: EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      bottom: MediaQuery.of(context).padding.bottom + 16,
+                      top: 16,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -880,12 +903,12 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                       children: [
                         if (_selectedLocationAddress != null)
                           Padding(
-                            padding: EdgeInsets.only(bottom: 8),
+                            padding: EdgeInsets.only(bottom: 12),
                             child: Text(
                               _selectedLocationAddress!,
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 14,
+                                color: Colors.grey[700],
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -900,20 +923,19 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
                                 : null,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.lightTeal,
-                              foregroundColor: Colors.black,
-                              disabledForegroundColor:
-                                  Colors.grey.withOpacity(0.38),
-                              disabledBackgroundColor:
-                                  Colors.grey.withOpacity(0.12),
+                              foregroundColor: Colors.black87,
+                              disabledBackgroundColor: Colors.grey[300],
+                              disabledForegroundColor: Colors.grey[600],
+                              elevation: 0,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(25),
                               ),
                             ),
                             child: Text(
                               _translations['confirm']!,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
@@ -1009,5 +1031,9 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
   double _calculateDistance(LatLng point1, LatLng point2) {
     return sqrt(pow(point1.latitude - point2.latitude, 2) +
         pow(point1.longitude - point2.longitude, 2));
+  }
+
+  void _handleLanguageChanged(String newLanguage) {
+    _loadTranslations();
   }
 }

@@ -40,8 +40,12 @@ dependencies:
   latlong2: ^0.9.1
   path: ^1.8.3
   geolocator: ^11.0.0
-  permission_handler: ^11.3.0
+  permission_handler: ^12.0.0+1
   geocoding: ^2.1.1
+  flutter_screenutil: ^5.9.0
+  intl_phone_field: ^3.2.0
+  mobile_scanner: ^6.0.7
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
@@ -69,7 +73,6 @@ flutter:
   assets:
     - lib/assets/images/onbor1.jpg
     - lib/assets/images/onbor2.jpg
-    - lib/assets/images/onbor3.jpg
     - lib/assets/images/getstarted.jpg
     - lib/assets/images/getstarted2.jpg
     - lib/assets/images/logo2.jpg

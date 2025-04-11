@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sahtech/presentation/nutritionist/nutritioniste5.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class Nutritioniste4 extends StatefulWidget {
   final NutritionisteModel nutritionistData;
@@ -106,7 +107,7 @@ class _Nutritioniste4State extends State<Nutritioniste4> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => NutritionisteMap(
+        builder: (context) => Nutritioniste5(
           nutritionistData: widget.nutritionistData,
           currentStep: widget.currentStep + 1,
           totalSteps: widget.totalSteps,
@@ -137,24 +138,20 @@ class _Nutritioniste4State extends State<Nutritioniste4> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final height = size.height;
-    final width = size.width;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leadingWidth: width * 0.12,
+        leadingWidth: 45.w,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios,
             color: AppColors.lightTeal,
-            size: width * 0.05,
+            size: 20.w,
           ),
           onPressed: () => Navigator.pop(context),
-          padding: EdgeInsets.only(left: width * 0.04),
+          padding: EdgeInsets.only(left: 15.w),
         ),
         title: Image.asset(
           'lib/assets/images/mainlogo.jpg',
@@ -163,9 +160,8 @@ class _Nutritioniste4State extends State<Nutritioniste4> {
         ),
         centerTitle: true,
         actions: [
-          // Language selector button
           LanguageSelectorButton(
-            width: width,
+            width: 1.sw,
             onLanguageChanged: _handleLanguageChanged,
           ),
         ],
@@ -178,21 +174,20 @@ class _Nutritioniste4State extends State<Nutritioniste4> {
                   // Progress bar at the top
                   Container(
                     width: double.infinity,
-                    height: 4,
+                    height: 4.h,
                     decoration: BoxDecoration(
                       color: Colors.grey[200],
                     ),
                     child: Row(
                       children: [
                         Container(
-                          width:
-                              width * (widget.currentStep / widget.totalSteps),
-                          height: 4,
+                          width: 1.sw * (widget.currentStep / widget.totalSteps),
+                          height: 4.h,
                           decoration: BoxDecoration(
                             color: AppColors.lightTeal,
                             borderRadius: BorderRadius.only(
-                              topRight: Radius.circular(2),
-                              bottomRight: Radius.circular(2),
+                              topRight: Radius.circular(2.r),
+                              bottomRight: Radius.circular(2.r),
                             ),
                           ),
                         ),
@@ -203,276 +198,104 @@ class _Nutritioniste4State extends State<Nutritioniste4> {
                   Expanded(
                     child: Stack(
                       children: [
-                        // Background map (blurred/dimmed)
-                        Positioned.fill(
-                          child: Opacity(
-                            opacity: 0.5,
-                            child: Image.asset(
-                              'lib/assets/images/map_background.jpg',
-                              fit: BoxFit.cover,
-                            ),
+                        // Blurred background map
+                        Container(
+                          width: double.infinity,
+                          height: double.infinity,
+                          color: Colors.grey[100],
+                          child: Image.asset(
+                            'lib/assets/images/map_background.jpg',
+                            fit: BoxFit.cover,
                           ),
                         ),
 
-                        // Main content - Location permission dialog
+                        // Centered scrollable content
                         Center(
                           child: SingleChildScrollView(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: width * 0.06),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // Location permission card
-                                  Container(
-                                    width: double.infinity,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 5),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 24.w,
+                              vertical: 16.h,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Location permission card
+                                Card(
+                                  elevation: 4,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20.r),
+                                  ),
+                                  child: Padding(
+                                    padding: EdgeInsets.all(24.w),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          _translations['title']!,
+                                          style: TextStyle(
+                                            fontSize: 20.sp,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black87,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        SizedBox(height: 32.h),
+
+                                        // Precise location option
+                                        _buildLocationOption(
+                                          icon: Icons.location_on,
+                                          title: _translations['precise']!,
+                                          onTap: () =>
+                                              _requestLocationPermission(true),
+                                        ),
+
+                                        SizedBox(height: 16.h),
+
+                                        // Approximate location option
+                                        _buildLocationOption(
+                                          icon: Icons.location_searching,
+                                          title: _translations['approximate']!,
+                                          onTap: () =>
+                                              _requestLocationPermission(false),
+                                        ),
+
+                                        SizedBox(height: 32.h),
+
+                                        // Only this time button
+                                        _buildButton(
+                                          text: _translations['only_this_time']!,
+                                          onPressed: _onlyThisTime,
+                                          backgroundColor: Colors.white,
+                                          textColor: Colors.black87,
+                                          borderColor: Colors.grey[300]!,
+                                        ),
+
+                                        SizedBox(height: 12.h),
+
+                                        // Allow button
+                                        _buildButton(
+                                          text: _translations['allow']!,
+                                          onPressed: () =>
+                                              _requestLocationPermission(true),
+                                          backgroundColor: AppColors.lightTeal,
+                                          textColor: Colors.black87,
+                                        ),
+
+                                        SizedBox(height: 12.h),
+
+                                        // Deny button
+                                        _buildButton(
+                                          text: _translations['deny']!,
+                                          onPressed: _denyLocationPermission,
+                                          backgroundColor: Colors.white,
+                                          textColor: Colors.red,
+                                          borderColor: Colors.red,
                                         ),
                                       ],
                                     ),
-                                    child: Padding(
-                                      padding: EdgeInsets.all(width * 0.04),
-                                      child: Column(
-                                        children: [
-                                          // Location pin icon
-                                          Container(
-                                            width: width * 0.15,
-                                            height: width * 0.15,
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  Colors.green.withOpacity(0.1),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Icon(
-                                              Icons.map,
-                                              color: AppColors.lightTeal,
-                                              size: width * 0.08,
-                                            ),
-                                          ),
-
-                                          SizedBox(height: height * 0.02),
-
-                                          // Title
-                                          Text(
-                                            _translations['title']!,
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              fontSize: width * 0.045,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-
-                                          SizedBox(height: height * 0.03),
-
-                                          // Location options
-                                          Row(
-                                            children: [
-                                              // Precise location option
-                                              Expanded(
-                                                child: GestureDetector(
-                                                  onTap: () =>
-                                                      _requestLocationPermission(
-                                                          true),
-                                                  child: Container(
-                                                    decoration: BoxDecoration(
-                                                      border: Border.all(
-                                                        color: Colors.blue,
-                                                        width: 2,
-                                                      ),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              10),
-                                                    ),
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                      vertical: height * 0.02,
-                                                    ),
-                                                    child: Column(
-                                                      children: [
-                                                        Container(
-                                                          width: width * 0.12,
-                                                          height: width * 0.12,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: Colors.blue
-                                                                .withOpacity(
-                                                                    0.1),
-                                                            shape:
-                                                                BoxShape.circle,
-                                                          ),
-                                                          child: Icon(
-                                                            Icons
-                                                                .location_searching,
-                                                            color: Colors.blue,
-                                                            size: width * 0.06,
-                                                          ),
-                                                        ),
-                                                        SizedBox(
-                                                            height:
-                                                                height * 0.01),
-                                                        Text(
-                                                          _translations[
-                                                              'precise']!,
-                                                          style: TextStyle(
-                                                            fontSize:
-                                                                width * 0.035,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-
-                                              SizedBox(width: width * 0.04),
-
-                                              // Approximate location option
-                                              Expanded(
-                                                child: GestureDetector(
-                                                  onTap: () =>
-                                                      _requestLocationPermission(
-                                                          false),
-                                                  child: Container(
-                                                    decoration: BoxDecoration(
-                                                      border: Border.all(
-                                                        color: Colors.grey,
-                                                        width: 1,
-                                                      ),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              10),
-                                                    ),
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                      vertical: height * 0.02,
-                                                    ),
-                                                    child: Column(
-                                                      children: [
-                                                        Container(
-                                                          width: width * 0.12,
-                                                          height: width * 0.12,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: Colors.grey
-                                                                .withOpacity(
-                                                                    0.1),
-                                                            shape:
-                                                                BoxShape.circle,
-                                                          ),
-                                                          child: Icon(
-                                                            Icons.map,
-                                                            color: Colors.grey,
-                                                            size: width * 0.06,
-                                                          ),
-                                                        ),
-                                                        SizedBox(
-                                                            height:
-                                                                height * 0.01),
-                                                        Text(
-                                                          _translations[
-                                                              'approximate']!,
-                                                          style: TextStyle(
-                                                            fontSize:
-                                                                width * 0.035,
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-
-                                          SizedBox(height: height * 0.03),
-
-                                          // Only this time button
-                                          TextButton(
-                                            onPressed: _onlyThisTime,
-                                            style: TextButton.styleFrom(
-                                              backgroundColor: AppColors
-                                                  .lightTeal
-                                                  .withOpacity(0.1),
-                                              padding: EdgeInsets.symmetric(
-                                                vertical: height * 0.015,
-                                                horizontal: width * 0.04,
-                                              ),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(30),
-                                              ),
-                                            ),
-                                            child: Text(
-                                              _translations['only_this_time']!,
-                                              style: TextStyle(
-                                                fontSize: width * 0.04,
-                                                fontWeight: FontWeight.w500,
-                                                color: AppColors.lightTeal,
-                                              ),
-                                            ),
-                                          ),
-
-                                          SizedBox(height: height * 0.015),
-
-                                          // Allow button
-                                          TextButton(
-                                            onPressed: _onlyThisTime,
-                                            style: TextButton.styleFrom(
-                                              padding: EdgeInsets.symmetric(
-                                                vertical: height * 0.015,
-                                                horizontal: width * 0.04,
-                                              ),
-                                            ),
-                                            child: Text(
-                                              _translations['allow']!,
-                                              style: TextStyle(
-                                                fontSize: width * 0.04,
-                                                fontWeight: FontWeight.w500,
-                                                color: Colors.black87,
-                                              ),
-                                            ),
-                                          ),
-
-                                          // Deny button
-                                          TextButton(
-                                            onPressed: _denyLocationPermission,
-                                            style: TextButton.styleFrom(
-                                              padding: EdgeInsets.symmetric(
-                                                vertical: height * 0.015,
-                                                horizontal: width * 0.04,
-                                              ),
-                                            ),
-                                            child: Text(
-                                              _translations['deny']!,
-                                              style: TextStyle(
-                                                fontSize: width * 0.04,
-                                                fontWeight: FontWeight.w500,
-                                                color: Colors.red.shade400,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
                                   ),
-
-                                  // "Do you want to add your location?" dialog can appear here
-                                  // This is shown in the third image
-                                  // But we'll handle this in the map screen when the user clicks on the map
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -482,6 +305,80 @@ class _Nutritioniste4State extends State<Nutritioniste4> {
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildLocationOption({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15.r),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(
+          horizontal: 16.w,
+          vertical: 16.h,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(15.r),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: AppColors.lightTeal,
+              size: 24.sp,
+            ),
+            SizedBox(width: 12.w),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 16.sp,
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildButton({
+    required String text,
+    required VoidCallback onPressed,
+    required Color backgroundColor,
+    required Color textColor,
+    Color? borderColor,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: backgroundColor,
+          foregroundColor: textColor,
+          elevation: 0,
+          padding: EdgeInsets.symmetric(vertical: 15.h),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30.r),
+            side: borderColor != null
+                ? BorderSide(color: borderColor)
+                : BorderSide.none,
+          ),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
     );
   }
 }

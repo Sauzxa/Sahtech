@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:sahtech/presentation/profile/profile4.dart';
+import 'package:sahtech/presentation/profile/allergy_selection.dart';
+import 'package:sahtech/presentation/widgets/custom_button.dart';
 
 class Profile3 extends StatefulWidget {
   final UserModel userData;
@@ -19,9 +22,8 @@ class _Profile3State extends State<Profile3> {
   late TranslationService _translationService;
   bool _isLoading = false;
   bool _isDropdownOpen = false;
-  String? _selectedDisease;
+  List<String> _selectedDiseases = [];
 
-  // Available chronic conditions with selection state
   final Map<String, bool> _diseases = {
     'Diabète': false,
     'Hypertension artérielle': false,
@@ -34,9 +36,19 @@ class _Profile3State extends State<Profile3> {
     'Conjonctivite': false,
     'Maladie coeliaque': false,
     'Arthrose': false,
+    'Allergie': false,
+    'Maladie de Crohn': false,
+    'Fibromyalgie': false,
+    'Hypothyroïdie': false,
+    'Hyperthyroïdie': false,
+    'Lupus': false,
+    'Sclérose en plaques': false,
+    'Polyarthrite rhumatoïde': false,
+    'Psoriasis': false,
+    'Endométriose': false,
+    'Glaucome': false,
   };
 
-  // Key translations
   Map<String, String> _translations = {
     'title': 'Choisir votre maladies ?',
     'subtitle':
@@ -45,6 +57,7 @@ class _Profile3State extends State<Profile3> {
     'next': 'suivant',
     'select_condition': 'Veuillez sélectionner votre condition',
     'success_message': 'Informations enregistrées avec succès!',
+    'conditions_selected': 'conditions sélectionnées',
   };
 
   @override
@@ -55,18 +68,14 @@ class _Profile3State extends State<Profile3> {
     _loadTranslations();
   }
 
-  // Load all needed translations
   Future<void> _loadTranslations() async {
     setState(() => _isLoading = true);
 
     try {
-      // Only translate if not French (our default language)
       if (_translationService.currentLanguageCode != 'fr') {
-        // Translate the UI strings
         final translatedStrings =
             await _translationService.translateMap(_translations);
 
-        // Translate disease names
         final translatedDiseases = <String, bool>{};
         for (final disease in _diseases.keys) {
           final translatedDisease =
@@ -77,9 +86,6 @@ class _Profile3State extends State<Profile3> {
         if (mounted) {
           setState(() {
             _translations = translatedStrings;
-            // Uncomment to enable disease translation
-            // _diseases.clear();
-            // _diseases.addAll(translatedDiseases);
             _isLoading = false;
           });
         }
@@ -96,15 +102,9 @@ class _Profile3State extends State<Profile3> {
     }
   }
 
-  // Handle language change
   void _handleLanguageChanged(String languageCode) {
-    // Reset loading state and reload translations
     setState(() => _isLoading = true);
-
-    // Update user model with the new language
     widget.userData.preferredLanguage = languageCode;
-
-    // Load translations with the new language
     _loadTranslations();
   }
 
@@ -116,74 +116,68 @@ class _Profile3State extends State<Profile3> {
 
   void _selectDisease(String disease) {
     setState(() {
-      if (_diseases[disease] == true) {
-        _diseases[disease] = false;
-      } else {
-        _diseases[disease] = true;
-      }
-
-      // Update selected disease for dropdown display
-      final selectedDiseases =
-          _diseases.entries.where((e) => e.value).map((e) => e.key).toList();
-      if (selectedDiseases.isNotEmpty) {
-        _selectedDisease = selectedDiseases.first;
-      }
+      _diseases[disease] = !_diseases[disease]!;
+      _selectedDiseases = _diseases.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .toList();
     });
   }
 
-  void _continueToNextScreen() async {
-    final selectedDiseases =
-        _diseases.entries.where((e) => e.value).map((e) => e.key).toList();
+  String _getDropdownLabel() {
+    if (_selectedDiseases.isEmpty) {
+      return _translations['dropdown_label']!;
+    } else {
+      return "${_selectedDiseases.length} ${_translations['conditions_selected'] ?? 'conditions sélectionnées'}";
+    }
+  }
 
-    if (selectedDiseases.isEmpty) {
-      // Show error if no selection made
+  void _continueToNextScreen() async {
+    if (_selectedDiseases.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(await _translationService
-              .translate(_translations['select_condition']!)),
+          content: Text(await _translationService.translate('Veuillez sélectionner votre condition')),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
-    // Update user model with the selected chronic conditions
-    widget.userData.chronicConditions = selectedDiseases;
+    widget.userData.chronicConditions = _selectedDiseases;
 
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_translations['success_message']!),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 1),
-      ),
-    );
-
-    // Navigate to Profile4 with the updated user data
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => Profile4(userData: widget.userData),
-      ),
-    );
+    // Check if user has selected 'Allergie'
+    if (_diseases['Allergie'] == true) {
+      // Navigate to allergy selection screen
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => AllergySelection(userData: widget.userData),
+        ),
+      );
+    } else {
+      // Navigate directly to Profile4
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => Profile4(userData: widget.userData),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final height = size.height;
-    final width = size.width;
-
+    // Calculate progress percentage (20%) - second screen in the flow
+    final progressPercentage = 0.2;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leadingWidth: width * 0.12,
+        leadingWidth: 45.w,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios,
-              color: Colors.black87, size: width * 0.05),
+          icon: Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20.sp),
           onPressed: () => Navigator.pop(context),
-          padding: EdgeInsets.only(left: width * 0.04),
+          padding: EdgeInsets.only(left: 12.w),
         ),
         title: Image.asset(
           'lib/assets/images/mainlogo.jpg',
@@ -192,9 +186,8 @@ class _Profile3State extends State<Profile3> {
         ),
         centerTitle: true,
         actions: [
-          // Language selector button
           LanguageSelectorButton(
-            width: width,
+            width: 1.sw,
             onLanguageChanged: _handleLanguageChanged,
           ),
         ],
@@ -202,169 +195,152 @@ class _Profile3State extends State<Profile3> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
-              child: Stack(
+              child: Column(
                 children: [
-                  Column(
-                    children: [
-                      // Green progress bar/line at the top
-                      Container(
-                        width: double.infinity,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                        ),
-                        child: Row(
+                  // Fixed Progress Bar with correct styling
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Container(
+                          height: 4.h,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(2.r),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: constraints.maxWidth * progressPercentage,
+                                height: 4.h,
+                                decoration: BoxDecoration(
+                                  color: AppColors.lightTeal,
+                                  borderRadius: BorderRadius.circular(2.r),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              width: width *
-                                  0.2, // Representing 20% progress (step 2)
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: AppColors.lightTeal,
-                                borderRadius: BorderRadius.only(
-                                  topRight: Radius.circular(2),
-                                  bottomRight: Radius.circular(2),
+                            SizedBox(height: 32.h),
+                            Text(
+                              _translations['title']!,
+                              style: TextStyle(
+                                fontSize: 24.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            SizedBox(height: 12.h),
+                            Text(
+                              _translations['subtitle']!,
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: Colors.grey[700],
+                                height: 1.4,
+                              ),
+                            ),
+                            SizedBox(height: 30.h),
+
+                            // Dropdown (Fixed Text)
+                            GestureDetector(
+                              onTap: _toggleDropdown,
+                              child: Container(
+                                width: double.infinity,
+                                height: 65.h,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEFF9E8),
+                                  borderRadius: BorderRadius.circular(15.r),
+                                  border: Border.all(
+                                    color: Colors.transparent,
+                                    width: 1.w,
+                                  ),
+                                ),
+                                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _getDropdownLabel(),
+                                        style: TextStyle(
+                                          fontSize: 16.sp,
+                                          color: _selectedDiseases.isNotEmpty
+                                              ? Colors.black87
+                                              : Colors.black54,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                    Icon(
+                                      _isDropdownOpen
+                                          ? Icons.keyboard_arrow_up
+                                          : Icons.keyboard_arrow_down,
+                                      color: Colors.black54,
+                                      size: 24.sp,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
 
-                      Expanded(
-                        child: Padding(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: width * 0.06),
-                          child: SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(height: height * 0.04),
-
-                                // Main question
-                                Text(
-                                  _translations['title']!,
-                                  style: TextStyle(
-                                    fontSize: width * 0.06,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                  ),
+                            // Disease options (properly scrollable dropdown)
+                            if (_isDropdownOpen)
+                              Container(
+                                margin: EdgeInsets.only(top: 4.h),
+                                constraints: BoxConstraints(
+                                  maxHeight: MediaQuery.of(context).size.height * 0.4, // 40% of screen height
                                 ),
-
-                                SizedBox(height: height * 0.02),
-
-                                // Subtitle/explanation
-                                Text(
-                                  _translations['subtitle']!,
-                                  style: TextStyle(
-                                    fontSize: width * 0.035,
-                                    color: Colors.grey[600],
-                                    height: 1.3,
-                                  ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(15.r),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 8.r,
+                                      offset: Offset(0, 3.h),
+                                    ),
+                                  ],
                                 ),
-
-                                SizedBox(height: height * 0.03),
-
-                                // Dropdown
-                                GestureDetector(
-                                  onTap: _toggleDropdown,
-                                  child: Container(
-                                    width: double.infinity,
-                                    height: height * 0.07,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFEFF9E8),
-                                      borderRadius: BorderRadius.circular(15),
-                                      border: Border.all(
-                                        color: Colors.transparent,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: width * 0.04),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          _selectedDisease ??
-                                              _translations['dropdown_label']!,
-                                          style: TextStyle(
-                                            fontSize: width * 0.04,
-                                            color: _selectedDisease != null
-                                                ? Colors.black87
-                                                : Colors.black54,
-                                          ),
-                                        ),
-                                        Icon(
-                                          _isDropdownOpen
-                                              ? Icons.keyboard_arrow_up
-                                              : Icons.keyboard_arrow_down,
-                                          color: Colors.black54,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-
-                                // Disease options (only shown when dropdown is open)
-                                if (_isDropdownOpen)
-                                  Container(
-                                    margin: EdgeInsets.only(top: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(15),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 3),
-                                        ),
-                                      ],
-                                    ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(15.r),
+                                  child: SingleChildScrollView(
+                                    physics: const BouncingScrollPhysics(),
                                     child: Column(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: _diseases.entries
-                                          .map((entry) => _buildDiseaseOption(
-                                              entry.key,
-                                              entry.value,
-                                              width,
-                                              height))
+                                          .map((entry) => _buildDiseaseOption(entry.key, entry.value))
                                           .toList(),
                                     ),
                                   ),
-                              ],
-                            ),
-                          ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
+                    ),
+                  ),
 
-                      // Next button
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: width * 0.06, vertical: height * 0.05),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: height * 0.065,
-                          child: ElevatedButton(
-                            onPressed: _continueToNextScreen,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.lightTeal,
-                              foregroundColor: Colors.black87,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                            ),
-                            child: Text(
-                              _translations['next']!,
-                              style: TextStyle(
-                                fontSize: width * 0.04,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 32.h),
+                    child: CustomButton(
+                      text: _translations['next']!,
+                      onPressed: _continueToNextScreen,
+                      width: 1.sw - 32.w,
+                      height: 50.h,
+                    ),
                   ),
                 ],
               ),
@@ -372,44 +348,41 @@ class _Profile3State extends State<Profile3> {
     );
   }
 
-  Widget _buildDiseaseOption(
-      String disease, bool isSelected, double width, double height) {
+  Widget _buildDiseaseOption(String disease, bool isSelected) {
     return InkWell(
       onTap: () => _selectDisease(disease),
       child: Padding(
-        padding: EdgeInsets.symmetric(
-            horizontal: width * 0.04, vertical: height * 0.012),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         child: Row(
           children: [
-            // Checkbox
             Container(
-              width: width * 0.06,
-              height: width * 0.06,
+              width: 24.w,
+              height: 24.w,
               decoration: BoxDecoration(
                 color: isSelected ? AppColors.lightTeal : Colors.transparent,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(4.r),
                 border: Border.all(
                   color: isSelected ? AppColors.lightTeal : Colors.grey,
-                  width: 1.5,
+                  width: 1.5.w,
                 ),
               ),
               child: isSelected
                   ? Icon(
                       Icons.check,
                       color: Colors.white,
-                      size: width * 0.04,
+                      size: 16.sp,
                     )
                   : null,
             ),
-            SizedBox(width: width * 0.03),
-
-            // Disease name
-            Text(
-              disease,
-              style: TextStyle(
-                fontSize: width * 0.04,
-                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
-                color: Colors.black87,
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Text(
+                disease,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                  color: Colors.black87,
+                ),
               ),
             ),
           ],

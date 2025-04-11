@@ -1,26 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
+import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
-import '../widgets/custom_button.dart';
 import 'dart:math';
-import 'package:sahtech/core/widgets/language_selector.dart';
 
-class NutritionisteSuccess extends StatefulWidget {
-  final NutritionisteModel nutritionistData;
+class UserSuccess extends StatefulWidget {
+  final UserModel userData;
 
-  const NutritionisteSuccess({
-    super.key,
-    required this.nutritionistData,
-  });
+  const UserSuccess({
+    Key? key,
+    required this.userData,
+  }) : super(key: key);
 
   @override
-  State<NutritionisteSuccess> createState() => _NutritionisteSuccessState();
+  State<UserSuccess> createState() => _UserSuccessState();
 }
 
-class _NutritionisteSuccessState extends State<NutritionisteSuccess> {
+class _UserSuccessState extends State<UserSuccess> {
   late Map<String, String> _translations;
   bool _isLoading = true;
 
@@ -36,14 +34,10 @@ class _NutritionisteSuccessState extends State<NutritionisteSuccess> {
     setState(() => _isLoading = false);
   }
 
-  void _handleLanguageChanged(String newLanguage) {
-    _loadTranslations();
-  }
-
   // Navigate to home screen
   void _goToHome() {
     // Reset navigation stack and go to home
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false, arguments: widget.userData);
   }
 
   @override
@@ -53,28 +47,12 @@ class _NutritionisteSuccessState extends State<NutritionisteSuccess> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leadingWidth: 45.w,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: AppColors.lightTeal,
-            size: 20.w,
-          ),
-          onPressed: () => Navigator.pop(context),
-          padding: EdgeInsets.only(left: 15.w),
-        ),
         title: Image.asset(
           'lib/assets/images/mainlogo.jpg',
           height: kToolbarHeight * 0.6,
           fit: BoxFit.contain,
         ),
         centerTitle: true,
-        actions: [
-          LanguageSelectorButton(
-            width: 1.sw,
-            onLanguageChanged: _handleLanguageChanged,
-          ),
-        ],
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator(color: AppColors.lightTeal))
@@ -87,28 +65,6 @@ class _NutritionisteSuccessState extends State<NutritionisteSuccess> {
                   height: double.infinity,
                   child: CustomPaint(
                     painter: ConfettiPainter(),
-                  ),
-                ),
-                
-                // Back Button
-                SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 16.0, top: 16.0),
-                    child: GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.7),
-                          shape: BoxShape.circle,
-                        ),
-                        padding: const EdgeInsets.all(8.0),
-                        child: const Icon(
-                          Icons.arrow_back_ios_new,
-                          color: Colors.black87,
-                          size: 16,
-                        ),
-                      ),
-                    ),
                   ),
                 ),
                 
@@ -127,9 +83,9 @@ class _NutritionisteSuccessState extends State<NutritionisteSuccess> {
                         ),
                         SizedBox(height: 32.h),
 
-                        // Success message
+                        // Success message with new text
                         Text(
-                          _translations['success_title'] ?? 'Registration Successful!',
+                          "Votre compte a été créé avec succès",
                           style: TextStyle(
                             fontSize: 24.sp,
                             fontWeight: FontWeight.bold,
@@ -139,7 +95,7 @@ class _NutritionisteSuccessState extends State<NutritionisteSuccess> {
                         ),
                         SizedBox(height: 16.h),
                         Text(
-                          _translations['success_message'] ?? 'Your account has been created successfully. You can now start using the app.',
+                          "Merci pour nous faire confiance et partager vous donner avec nous",
                           style: TextStyle(
                             fontSize: 16.sp,
                             color: Colors.grey[600],
@@ -162,7 +118,7 @@ class _NutritionisteSuccessState extends State<NutritionisteSuccess> {
                               ),
                             ),
                             child: Text(
-                              _translations['get_started'] ?? 'Get Started',
+                              "Continuer",
                               style: TextStyle(
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.w600,

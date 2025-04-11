@@ -1,149 +1,66 @@
 import 'package:flutter/material.dart';
-import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/theme/colors.dart';
+import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
-import 'package:provider/provider.dart';
 import 'package:sahtech/presentation/nutritionist/nutritioniste_sms_verification.dart';
-import '../widgets/custom_button.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:sahtech/core/widgets/language_selector.dart';
 
 class NutritionistePhone extends StatefulWidget {
-  final NutritionisteModel nutritionistData;
+  final NutritionisteModel nutritioniste;
 
   const NutritionistePhone({
-    super.key,
-    required this.nutritionistData,
-  });
+    Key? key,
+    required this.nutritioniste,
+  }) : super(key: key);
 
   @override
-  State<NutritionistePhone> createState() => _NutritionistePhoneState();
+  _NutritionistePhoneState createState() => _NutritionistePhoneState();
 }
 
 class _NutritionistePhoneState extends State<NutritionistePhone> {
-  late TranslationService _translationService;
-  bool _isLoading = false;
-  final TextEditingController _phoneController = TextEditingController();
-  String selectedCountryCode = '+213';
-  bool isButtonEnabled = false;
-  
-  // List of country codes
-  final List<Map<String, String>> countryCodes = [
-    {'code': '+213', 'country': 'Algeria'},
-    {'code': '+216', 'country': 'Tunisia'},
-    {'code': '+212', 'country': 'Morocco'},
-    {'code': '+33', 'country': 'France'},
-    {'code': '+1', 'country': 'USA'},
-    // Add more countries as needed
-  ];
-
-  // Translations
-  Map<String, String> _translations = {
-    'title': 'Ajouter votre numero de telephone',
-    'subtitle': 'We have send you an One Time Password(OTP) on this mobile number.',
-    'phone_label': 'Veuillez entrer votre numéro de téléphone',
-    'continue': 'Continue',
-  };
+  late Map<String, String> _translations;
+  bool _isLoading = true;
+  String _phoneNumber = '';
+  bool _isValid = false;
 
   @override
   void initState() {
     super.initState();
-    _translationService = Provider.of<TranslationService>(context, listen: false);
     _loadTranslations();
-    
-    // Pre-fill if phone number already exists in model
-    if (widget.nutritionistData.phoneNumber != null) {
-      _phoneController.text = widget.nutritionistData.phoneNumber!;
-    }
+  }
 
-    // Add listener to controller to update button state
-    _phoneController.addListener(() {
-      setState(() {
-        isButtonEnabled = _phoneController.text.length >= 9;
-      });
+  Future<void> _loadTranslations() async {
+    setState(() => _isLoading = true);
+    _translations = await TranslationService.getTranslations();
+    setState(() => _isLoading = false);
+  }
+
+  void _handleLanguageChanged(String newLanguage) {
+    _loadTranslations();
+  }
+
+  void _onPhoneNumberChanged(String number) {
+    setState(() {
+      _phoneNumber = number;
     });
   }
 
-  @override
-  void dispose() {
-    _phoneController.dispose();
-    super.dispose();
+  void _onPhoneNumberValidated(bool isValid) {
+    setState(() {
+      _isValid = isValid;
+    });
   }
 
-  // Load translations based on current language
-  Future<void> _loadTranslations() async {
-    setState(() => _isLoading = true);
-
-    try {
-      if (_translationService.currentLanguageCode != 'fr') {
-        final translatedStrings = await _translationService.translateMap(_translations);
-        if (mounted) {
-          setState(() {
-            _translations = translatedStrings;
-            _isLoading = false;
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
-      }
-    } catch (e) {
-      debugPrint('Translation error: $e');
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  bool isValidPhoneNumber(String phone) {
-    if (phone.isEmpty) return false;
-    
-    // Validation patterns for different country codes
-    Map<String, String> patterns = {
-      '+213': r'^(5|6|7)[0-9]{8}$', // Algeria
-      '+216': r'^[2-9][0-9]{7}$', // Tunisia
-      '+212': r'^[6-7][0-9]{8}$', // Morocco
-      '+33': r'^[67][0-9]{8}$', // France
-      '+1': r'^[2-9][0-9]{9}$', // USA
-    };
-
-    String pattern = patterns[selectedCountryCode] ?? r'^[0-9]{9,}$';
-    return RegExp(pattern).hasMatch(phone);
-  }
-
-  void _handleContinue() {
-    String phoneNumber = _phoneController.text.trim();
-    
-    // Remove leading zero if present for Algerian numbers
-    if (selectedCountryCode == '+213' && phoneNumber.startsWith('0')) {
-      phoneNumber = phoneNumber.substring(1);
-    }
-
-    // Basic validation for Algerian numbers
-    bool isValid = false;
-    if (selectedCountryCode == '+213') {
-      // Check if it starts with 5, 6, or 7 (after removing 0)
-      // and has correct length (9 digits without the leading 0)
-      isValid = phoneNumber.length == 9 && 
-                RegExp(r'^[5-7][0-9]{8}$').hasMatch(phoneNumber);
-    } else {
-      // Other country validations...
-      isValid = phoneNumber.length >= 9;
-    }
-
-    if (isValid) {
-      String fullPhoneNumber = '$selectedCountryCode$phoneNumber';
+  void _proceedToVerification() {
+    if (_isValid && _phoneNumber.isNotEmpty) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => NutritionisteSmsVerification(phoneNumber: fullPhoneNumber),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid phone number'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
+          builder: (context) => NutritionisteSmsVerification(
+            phoneNumber: _phoneNumber,
+          ),
         ),
       );
     }
@@ -151,179 +68,139 @@ class _NutritionistePhoneState extends State<NutritionistePhone> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background with opacity
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF9FE870).withOpacity(0.4),
-            ),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leadingWidth: 45.w,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: AppColors.lightTeal,
+            size: 20.w,
           ),
-          
-          // Main content
-          SafeArea(
-            bottom: false, // Allow content to extend to the bottom edge
-            child: Column(
-              children: [
-                // Logo at the top
-                Padding(
-                  padding: const EdgeInsets.only(top: 24.0, bottom: 16.0),
-                  child: Image.asset(
-                    'lib/assets/images/mainlogo.jpg',
-                    height: 45,
-                  ),
-                ),
-                
-                // White card taking full remaining space
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(35),
-                        topRight: Radius.circular(35),
+          onPressed: () => Navigator.pop(context),
+          padding: EdgeInsets.only(left: 15.w),
+        ),
+        title: Image.asset(
+          'lib/assets/images/mainlogo.jpg',
+          height: kToolbarHeight * 0.6,
+          fit: BoxFit.contain,
+        ),
+        centerTitle: true,
+        actions: [
+          LanguageSelectorButton(
+            width: 1.sw,
+            onLanguageChanged: _handleLanguageChanged,
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator(color: AppColors.lightTeal))
+          : SafeArea(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24.w,
+                        vertical: 16.h,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 15,
-                          offset: Offset(0, -3),
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Title
                           Text(
-                            'Ajouter votre numero\nde telephone',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w700,
+                            _translations['phone_title'] ?? 'Enter Your Phone Number',
+                            style: TextStyle(
+                              fontSize: 24.sp,
+                              fontWeight: FontWeight.bold,
                               color: Colors.black87,
-                              height: 1.3,
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          // Subtitle
+                          SizedBox(height: 8.h),
                           Text(
-                            'We have send you an One Time Password(OTP) on this mobile number.',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Colors.black54,
-                              height: 1.5,
-                              fontSize: 15,
+                            _translations['phone_subtitle'] ?? 'We\'ll send you a verification code',
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              color: Colors.grey[600],
                             ),
                           ),
-                          const SizedBox(height: 40),
-                          // Phone label
-                          Text(
-                            'Veuillez entrer votre numero de téléphone',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Colors.black87,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
+                          SizedBox(height: 32.h),
+
+                          // Phone number input
+                          Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15.r),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Phone number input field
-                          Container(
-                            height: 60,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.shade300, width: 1.5),
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      right: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                            child: Padding(
+                              padding: EdgeInsets.all(16.w),
+                              child: IntlPhoneField(
+                                decoration: InputDecoration(
+                                  labelText: _translations['phone_label'] ?? 'Phone Number',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.r),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.r),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey[300]!,
                                     ),
                                   ),
-                                  child: DropdownButton<String>(
-                                    value: selectedCountryCode,
-                                    underline: const SizedBox(),
-                                    items: countryCodes.map((country) {
-                                      return DropdownMenuItem<String>(
-                                        value: country['code'],
-                                        child: Text(
-                                          country['code']!,
-                                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        selectedCountryCode = value!;
-                                      });
-                                    },
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.r),
+                                    borderSide: BorderSide(
+                                      color: AppColors.lightTeal,
+                                    ),
                                   ),
                                 ),
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _phoneController,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    decoration: InputDecoration(
-                                      border: InputBorder.none,
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                                      hintText: 'Enter phone number',
-                                      hintStyle: TextStyle(
-                                        color: Colors.grey.shade400,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    keyboardType: TextInputType.phone,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          
-                          // Spacer that pushes the button to the bottom
-                          const Spacer(),
-                          
-                          // Continue button at the bottom
-                          Padding(
-                            padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 16),
-                            child: CustomButton(
-                              text: 'Continue',
-                              onPressed: () {
-                                String phoneNumber = _phoneController.text.trim();
-                                String fullPhoneNumber = '$selectedCountryCode$phoneNumber';
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => NutritionisteSmsVerification(phoneNumber: fullPhoneNumber),
-                                  ),
-                                );
-                              },
-                              isEnabled: _phoneController.text.length >= 9,
+                                initialCountryCode: 'MA',
+                                onChanged: (phone) => _onPhoneNumberChanged(phone.completeNumber),
+                                onCountryChanged: (country) {},
+                                validator: (value) {
+                                  if (value == null || value.number.isEmpty) {
+                                    return _translations['phone_required'] ?? 'Phone number is required';
+                                  }
+                                  return null;
+                                },
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                ),
-              ],
+
+                  // Bottom button
+                  Padding(
+                    padding: EdgeInsets.all(16.w),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isValid ? _proceedToVerification : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.lightTeal,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 16.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30.r),
+                          ),
+                          disabledBackgroundColor: Colors.grey[300],
+                        ),
+                        child: Text(
+                          _translations['continue'] ?? 'Continue',
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
     );
   }
 } 

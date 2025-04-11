@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
@@ -12,100 +13,102 @@ class LanguageSelector extends StatelessWidget {
         Provider.of<TranslationService>(context, listen: false);
     final currentLanguage = translationService.currentLanguageCode;
 
-    return PopupMenuButton<String>(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.withOpacity(0.4)),
+        borderRadius: BorderRadius.circular(8.r),
       ),
-      offset: const Offset(0, 40),
-      icon: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            translationService.supportedLanguages[currentLanguage]?['flag'] ??
-                '',
-            style: const TextStyle(fontSize: 20),
+      child: PopupMenuButton<String>(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        offset: Offset(-10.w, 40.h),
+        elevation: 4,
+        padding: EdgeInsets.only(top: 10.h, bottom: 10.h),
+        icon: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                translationService.supportedLanguages[currentLanguage]?['flag'] ?? '',
+                style: TextStyle(fontSize: 24.sp),
+              ),
+              SizedBox(width: 8.w),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: AppColors.lightTeal,
+                size: 20.w,
+              ),
+            ],
           ),
-          const SizedBox(width: 4),
-          Icon(
-            Icons.arrow_drop_down,
-            color: Colors.grey[700],
-          ),
-        ],
-      ),
-      onSelected: (languageCode) {
-        if (languageCode != currentLanguage) {
-          // Update the app's language
-          _changeLanguage(context, languageCode);
-        }
-      },
-      itemBuilder: (context) {
-        return translationService.supportedLanguages.entries.map((entry) {
-          final languageCode = entry.key;
-          final languageInfo = entry.value;
-          final isSelected = languageCode == currentLanguage;
+        ),
+        onSelected: (languageCode) {
+          if (languageCode != currentLanguage) {
+            _changeLanguage(context, languageCode);
+          }
+        },
+        itemBuilder: (context) {
+          return translationService.supportedLanguages.entries.map((entry) {
+            final languageCode = entry.key;
+            final languageInfo = entry.value;
+            final isSelected = languageCode == currentLanguage;
 
-          return PopupMenuItem<String>(
-            value: languageCode,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Language flag and name
-                Row(
-                  children: [
-                    Text(
-                      languageInfo['flag'] ?? '',
-                      style: const TextStyle(fontSize: 20),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
+            return PopupMenuItem<String>(
+              height: 48.h,
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              value: languageCode,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text(
+                    languageInfo['flag'] ?? '',
+                    style: TextStyle(fontSize: 24.sp),
+                  ),
+                  SizedBox(width: 16.w),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: 200.w), // Limit the text width
+                    child: Text(
                       languageInfo['name'] ?? '',
                       style: TextStyle(
-                        fontWeight:
-                            isSelected ? FontWeight.bold : FontWeight.normal,
-                        color:
-                            isSelected ? AppColors.lightTeal : Colors.black87,
+                        fontSize: 16.sp,
+                        color: Colors.black87,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        overflow: TextOverflow.ellipsis, // Prevent overflow of long names
                       ),
                     ),
-                  ],
-                ),
-
-                // Selected checkmark
-                if (isSelected)
-                  Icon(
-                    Icons.check,
-                    color: AppColors.lightTeal,
-                    size: 20,
                   ),
-              ],
-            ),
-          );
-        }).toList();
-      },
+                  if (isSelected)
+                    Icon(
+                      Icons.check_rounded,
+                      color: AppColors.lightTeal,
+                      size: 20.w,
+                    ),
+                ],
+              ),
+            );
+          }).toList();
+        },
+      ),
     );
   }
 
   void _changeLanguage(BuildContext context, String languageCode) async {
-    // Get translation service
     final translationService =
         Provider.of<TranslationService>(context, listen: false);
 
-    // Show loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
+      builder: (context) => Center(
+        child: CircularProgressIndicator(color: AppColors.lightTeal),
       ),
     );
 
     try {
-      // Change the language
       await translationService.setLanguage(languageCode);
     } finally {
-      // Remove loading dialog if context is still valid
-      if (context.mounted) {
-        Navigator.of(context).pop();
-      }
+      if (context.mounted) Navigator.of(context).pop();
     }
   }
 }

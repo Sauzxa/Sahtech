@@ -8,6 +8,7 @@ import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:sahtech/presentation/nutritionist/nutritioniste4.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class Nutritioniste3 extends StatefulWidget {
   final NutritionisteModel nutritionistData;
@@ -253,24 +254,20 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final height = size.height;
-    final width = size.width;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leadingWidth: width * 0.12,
+        leadingWidth: 45.w,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios,
             color: AppColors.lightTeal,
-            size: width * 0.05,
+            size: 20.w,
           ),
           onPressed: () => Navigator.pop(context),
-          padding: EdgeInsets.only(left: width * 0.04),
+          padding: EdgeInsets.only(left: 15.w),
         ),
         title: Image.asset(
           'lib/assets/images/mainlogo.jpg',
@@ -279,9 +276,8 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
         ),
         centerTitle: true,
         actions: [
-          // Language selector button
           LanguageSelectorButton(
-            width: width,
+            width: 1.sw,
             onLanguageChanged: _handleLanguageChanged,
           ),
         ],
@@ -294,21 +290,20 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
                   // Progress bar at the top
                   Container(
                     width: double.infinity,
-                    height: 4,
+                    height: 4.h,
                     decoration: BoxDecoration(
                       color: Colors.grey[200],
                     ),
                     child: Row(
                       children: [
                         Container(
-                          width:
-                              width * (widget.currentStep / widget.totalSteps),
-                          height: 4,
+                          width: 1.sw * (widget.currentStep / widget.totalSteps),
+                          height: 4.h,
                           decoration: BoxDecoration(
                             color: AppColors.lightTeal,
                             borderRadius: BorderRadius.only(
-                              topRight: Radius.circular(2),
-                              bottomRight: Radius.circular(2),
+                              topRight: Radius.circular(2.r),
+                              bottomRight: Radius.circular(2.r),
                             ),
                           ),
                         ),
@@ -319,56 +314,53 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
                   Expanded(
                     child: Stack(
                       children: [
-                        // Scrollable content area
                         SingleChildScrollView(
                           child: Padding(
                             padding: EdgeInsets.only(
-                              left: width * 0.06,
-                              right: width * 0.06,
-                              bottom: height *
-                                  0.12, // Extra padding at bottom for button
+                              left: 24.w,
+                              right: 24.w,
+                              bottom: 96.h, // Extra padding for button
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                SizedBox(height: height * 0.05),
+                                SizedBox(height: 40.h),
 
                                 // Title
                                 Text(
                                   _translations['title']!,
                                   style: TextStyle(
-                                    fontSize: width * 0.06,
+                                    fontSize: 24.sp,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.black,
                                   ),
                                 ),
 
-                                SizedBox(height: height * 0.01),
+                                SizedBox(height: 8.h),
 
                                 // Subtitle
                                 Text(
                                   _translations['subtitle']!,
                                   style: TextStyle(
-                                    fontSize: width * 0.035,
+                                    fontSize: 14.sp,
                                     color: Colors.grey[600],
                                     height: 1.3,
                                   ),
                                 ),
 
-                                SizedBox(height: height * 0.04),
+                                SizedBox(height: 32.h),
 
                                 // Image selection area
                                 GestureDetector(
                                   onTap: _pickImageFromGallery,
                                   child: Container(
                                     width: double.infinity,
-                                    height: height * 0.2,
+                                    height: 0.25.sh,
                                     decoration: BoxDecoration(
                                       color: Colors.white,
-                                      borderRadius: BorderRadius.circular(15),
+                                      borderRadius: BorderRadius.circular(15.r),
                                       border: Border.all(
-                                        color: AppColors.lightTeal
-                                            .withOpacity(0.5),
+                                        color: AppColors.lightTeal.withOpacity(0.5),
                                         width: 1.5,
                                       ),
                                     ),
@@ -376,8 +368,7 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
                                         ? Stack(
                                             children: [
                                               ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(14),
+                                                borderRadius: BorderRadius.circular(14.r),
                                                 child: Image.file(
                                                   _selectedImage!,
                                                   fit: BoxFit.cover,
@@ -385,27 +376,23 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
                                                   height: double.infinity,
                                                 ),
                                               ),
-                                              // Only show the remove button after upload is complete
                                               if (_uploadProgress >= 1.0)
                                                 Positioned(
-                                                  top: 8,
-                                                  right: 8,
+                                                  top: 8.h,
+                                                  right: 8.w,
                                                   child: GestureDetector(
                                                     onTap: _removeSelectedImage,
-                                                    behavior:
-                                                        HitTestBehavior.opaque,
+                                                    behavior: HitTestBehavior.opaque,
                                                     child: Container(
-                                                      padding:
-                                                          EdgeInsets.all(6),
+                                                      padding: EdgeInsets.all(6.r),
                                                       decoration: BoxDecoration(
-                                                        color: Colors.white
-                                                            .withOpacity(0.8),
+                                                        color: Colors.white.withOpacity(0.8),
                                                         shape: BoxShape.circle,
                                                       ),
                                                       child: Icon(
                                                         Icons.close,
                                                         color: Colors.red,
-                                                        size: width * 0.05,
+                                                        size: 20.sp,
                                                       ),
                                                     ),
                                                   ),
@@ -413,19 +400,18 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
                                             ],
                                           )
                                         : Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
+                                            mainAxisAlignment: MainAxisAlignment.center,
                                             children: [
                                               Icon(
                                                 Icons.image_outlined,
                                                 color: Colors.grey[400],
-                                                size: width * 0.12,
+                                                size: 48.sp,
                                               ),
-                                              SizedBox(height: height * 0.01),
+                                              SizedBox(height: 8.h),
                                               Text(
                                                 _translations['select_image']!,
                                                 style: TextStyle(
-                                                  fontSize: width * 0.035,
+                                                  fontSize: 14.sp,
                                                   color: Colors.grey[600],
                                                 ),
                                               ),
@@ -434,7 +420,7 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
                                   ),
                                 ),
 
-                                SizedBox(height: height * 0.03),
+                                SizedBox(height: 24.h),
 
                                 // Camera option
                                 GestureDetector(
@@ -442,25 +428,25 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
                                   child: Container(
                                     width: double.infinity,
                                     padding: EdgeInsets.symmetric(
-                                      horizontal: width * 0.04,
-                                      vertical: height * 0.02,
+                                      horizontal: 16.w,
+                                      vertical: 16.h,
                                     ),
                                     decoration: BoxDecoration(
                                       color: Colors.grey[100],
-                                      borderRadius: BorderRadius.circular(15),
+                                      borderRadius: BorderRadius.circular(15.r),
                                     ),
                                     child: Row(
                                       children: [
                                         Icon(
                                           Icons.camera_alt_outlined,
                                           color: Colors.grey[600],
-                                          size: width * 0.05,
+                                          size: 20.sp,
                                         ),
-                                        SizedBox(width: width * 0.02),
+                                        SizedBox(width: 8.w),
                                         Text(
                                           _translations['take_photo']!,
                                           style: TextStyle(
-                                            fontSize: width * 0.035,
+                                            fontSize: 14.sp,
                                             color: Colors.grey[600],
                                           ),
                                         ),
@@ -469,18 +455,18 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
                                   ),
                                 ),
 
-                                // Show upload progress and file info if there's a selected image
+                                // Show upload progress and file info
                                 if (_selectedImage != null) ...[
-                                  SizedBox(height: height * 0.03),
+                                  SizedBox(height: 24.h),
                                   Container(
                                     width: double.infinity,
                                     padding: EdgeInsets.symmetric(
-                                      horizontal: width * 0.04,
-                                      vertical: height * 0.01,
+                                      horizontal: 16.w,
+                                      vertical: 8.h,
                                     ),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
-                                      borderRadius: BorderRadius.circular(15),
+                                      borderRadius: BorderRadius.circular(15.r),
                                       boxShadow: [
                                         BoxShadow(
                                           color: Colors.black.withOpacity(0.05),
@@ -490,22 +476,21 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
                                       ],
                                     ),
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
                                             Icon(
                                               Icons.description,
                                               color: Colors.grey[600],
-                                              size: width * 0.05,
+                                              size: 20.sp,
                                             ),
-                                            SizedBox(width: width * 0.02),
+                                            SizedBox(width: 8.w),
                                             Expanded(
                                               child: Text(
                                                 _selectedImageName ?? 'Image',
                                                 style: TextStyle(
-                                                  fontSize: width * 0.035,
+                                                  fontSize: 14.sp,
                                                   color: Colors.grey[800],
                                                 ),
                                                 maxLines: 1,
@@ -516,27 +501,27 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
                                               Icon(
                                                 Icons.check_circle,
                                                 color: Colors.green,
-                                                size: width * 0.05,
+                                                size: 20.sp,
                                               ),
-                                              SizedBox(width: width * 0.02),
+                                              SizedBox(width: 8.w),
                                               GestureDetector(
                                                 onTap: _removeSelectedImage,
                                                 child: Icon(
                                                   Icons.close,
                                                   color: Colors.red,
-                                                  size: width * 0.05,
+                                                  size: 20.sp,
                                                 ),
                                               ),
                                             ],
                                           ],
                                         ),
-                                        SizedBox(height: height * 0.01),
+                                        SizedBox(height: 8.h),
                                         Row(
                                           children: [
                                             Text(
                                               '${(_selectedImage!.lengthSync() / 1024).toStringAsFixed(0)} KB',
                                               style: TextStyle(
-                                                fontSize: width * 0.03,
+                                                fontSize: 12.sp,
                                                 color: Colors.grey[600],
                                               ),
                                             ),
@@ -544,29 +529,27 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
                                             Text(
                                               '${(_uploadProgress * 100).toInt()}%',
                                               style: TextStyle(
-                                                fontSize: width * 0.03,
+                                                fontSize: 12.sp,
                                                 color: Colors.grey[600],
                                               ),
                                             ),
                                           ],
                                         ),
-                                        SizedBox(height: height * 0.005),
+                                        SizedBox(height: 4.h),
                                         // Progress bar
                                         Container(
                                           width: double.infinity,
-                                          height: height * 0.005,
+                                          height: 4.h,
                                           decoration: BoxDecoration(
                                             color: Colors.grey[200],
-                                            borderRadius:
-                                                BorderRadius.circular(10),
+                                            borderRadius: BorderRadius.circular(10.r),
                                           ),
                                           child: FractionallySizedBox(
                                             widthFactor: _uploadProgress,
                                             child: Container(
                                               decoration: BoxDecoration(
                                                 color: AppColors.lightTeal,
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
+                                                borderRadius: BorderRadius.circular(10.r),
                                               ),
                                             ),
                                           ),
@@ -579,46 +562,43 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
                             ),
                           ),
                         ),
+                      ],
+                    ),
+                  ),
 
-                        // Fixed button at the bottom
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: Container(
-                            color: Colors.white,
-                            padding: EdgeInsets.only(
-                              left: width * 0.06,
-                              right: width * 0.06,
-                              top: height * 0.02,
-                              bottom: height * 0.05,
-                            ),
-                            child: ElevatedButton(
-                              onPressed:
-                                  _isUploading ? null : _continueToNextScreen,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.lightTeal,
-                                foregroundColor: Colors.black87,
-                                elevation: 0,
-                                padding: EdgeInsets.symmetric(
-                                    vertical: height * 0.018),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                disabledBackgroundColor:
-                                    AppColors.lightTeal.withOpacity(0.5),
-                              ),
-                              child: Text(
-                                _translations['next']!,
-                                style: TextStyle(
-                                  fontSize: width * 0.045,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
+                  // Fixed button at the bottom
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      color: Colors.white,
+                      padding: EdgeInsets.only(
+                        left: 24.w,
+                        right: 24.w,
+                        top: 16.h,
+                        bottom: 40.h,
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _isUploading ? null : _continueToNextScreen,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.lightTeal,
+                          foregroundColor: Colors.black87,
+                          elevation: 0,
+                          padding: EdgeInsets.symmetric(vertical: 15.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30.r),
+                          ),
+                          disabledBackgroundColor: AppColors.lightTeal.withOpacity(0.5),
+                        ),
+                        child: Text(
+                          _translations['next']!,
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ],

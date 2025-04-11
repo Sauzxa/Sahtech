@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import '../utils/models/nutritionist_model.dart';
 
 /// A service to manage nutritionist data persistence, registration, and loading
 class NutritionistService extends ChangeNotifier {
@@ -18,6 +20,12 @@ class NutritionistService extends ChangeNotifier {
   
   bool get isLoading => _isLoading;
   NutritionisteModel? get currentNutritionist => _currentNutritionist;
+  
+  // Base URL of your API
+  static const String baseUrl = 'https://your-api.com/api';
+  
+  // API key or token for authentication
+  static const String apiKey = 'your_api_key_here';
   
   // Check if registration is in progress
   Future<bool> isRegistrationInProgress() async {
@@ -182,6 +190,82 @@ class NutritionistService extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  // Fetch all available nutritionists
+  static Future<List<NutritionistModel>> getAvailableNutritionists() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/nutritionists/available'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $apiKey',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => NutritionistModel.fromMap(json)).toList();
+      } else {
+        print('Error fetching nutritionists: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Exception when fetching nutritionists: $e');
+      // For development, return mock nutritionists
+      return getMockNutritionists();
+    }
+  }
+  
+  // Get nutritionist details by ID
+  static Future<NutritionistModel?> getNutritionistDetails(String id) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/nutritionists/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $apiKey',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return NutritionistModel.fromMap(data);
+      } else {
+        print('Error fetching nutritionist details: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Exception when fetching nutritionist details: $e');
+      // For development, return a mock nutritionist
+      return getMockNutritionists().firstWhere(
+        (n) => n.id == id, 
+        orElse: () => getMockNutritionists().first
+      );
+    }
+  }
+  
+  // Contact a nutritionist
+  static Future<bool> contactNutritionist(String userId, String nutritionistId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/$userId/contacts'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $apiKey',
+        },
+        body: json.encode({
+          'nutritionistId': nutritionistId,
+          'timestamp': DateTime.now().toIso8601String(),
+        }),
+      );
+      
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      print('Exception when contacting nutritionist: $e');
+      // For development, return success
+      return true;
     }
   }
 } 
