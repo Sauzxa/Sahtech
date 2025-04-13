@@ -1,167 +1,163 @@
+// onboardingscreen2.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:sahtech/presentation/profile/getstarted.dart';
 import 'onboardingscreen3.dart';
+
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/base/base_screen.dart';
+import 'package:sahtech/presentation/widgets/custom_button.dart';
 
 class OnboardingScreen2 extends StatefulWidget {
-  const OnboardingScreen2({Key? key}) : super(key: key);
+  const OnboardingScreen2({super.key});
 
   @override
   State<OnboardingScreen2> createState() => _OnboardingScreen2State();
 }
 
-class _OnboardingScreen2State extends State<OnboardingScreen2>
-    with TranslationMixin {
-  @override
-  Map<String, String> get initialTranslations => {
-        'skip': 'Skip',
-        'title': 'Analysez les produits alimentaires',
-        'subtitle':
-            'Recevez des informations détaillées sur la composition nutritionnelle des aliments que vous scannez.',
-        'next': 'Suivant',
-      };
+class _OnboardingScreen2State extends State<OnboardingScreen2> {
+  Map<String, String> translations = {
+    'skip': 'Skip',
+    'title': 'Suivez votre alimentation',
+    'subtitle':
+        'Enregistrez vos repas et recevez des recommandations personnalisées pour une alimentation équilibrée.',
+    'next': 'Suivant',
+  };
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final isSmallDevice = size.height < 700;
-
-    // If still loading translations, show a loading indicator
-    if (isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          LanguageSelectorWidget(
-            onTap: () => showLanguageSelector(context),
-          ),
-        ],
-      ),
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: size.width * 0.08,
-            vertical: size.height * 0.02,
-          ),
-          child: Column(
-            children: [
-              Align(
-                  alignment: Alignment.topRight,
-                  child: MaterialButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const Onboardingscreen3()),
-                        );
-                      },
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            translations['skip']!,
-                            style: const TextStyle(
-                              color: AppColors.gray,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(
-                            Icons.chevron_right,
-                            color: AppColors.lightTeal,
-                            size: 20,
-                          ),
-                        ],
-                      ))),
-              SizedBox(
-                  height:
-                      isSmallDevice ? size.height * 0.02 : size.height * 0.03),
-              Expanded(
-                flex: 4,
-                child: Container(
-                  width: 500,
-                  height: 100,
-                  padding: EdgeInsets.all(size.width * 0.04),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF9FE870).withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Image.asset(
-                    'lib/assets/images/onbor1.jpg',
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-              SizedBox(
-                  height:
-                      isSmallDevice ? size.height * 0.03 : size.height * 0.04),
-              Text(
-                translations['title']!,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                  height: 1.2,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: size.height * 0.02),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: size.width * 0.05),
-                child: Text(
-                  translations['subtitle']!,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                    height: 1.4,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              SizedBox(
-                  height:
-                      isSmallDevice ? size.height * 0.04 : size.height * 0.06),
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
+        child: Column(
+          children: [
+            // Skip button
+            Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: EdgeInsets.only(right: 24.w, top: 16.h),
+                child: TextButton(
                   onPressed: () {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const Onboardingscreen3()),
+                        builder: (context) => const Getstarted(),
+                      ),
                     );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.lightTeal,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                    elevation: 0,
-                  ),
                   child: Text(
-                    translations['next']!,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                    translations['skip']!,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: size.height * 0.03),
-            ],
-          ),
+            ),
+
+            // Image without background container
+            Expanded(
+              child: Center(
+                child: Image.asset(
+                  'lib/assets/images/onbor3.jpg',
+                  width: 300.w,
+                  height: 300.h,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+
+            // Title text
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              child: Text(
+                translations['title']!,
+                style: TextStyle(
+                  fontSize: 32.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
+            SizedBox(height: 16.h),
+
+            // Subtitle text
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              child: Text(
+                translations['subtitle']!,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: Colors.grey[600],
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
+            SizedBox(height: 48.h),
+
+            // Pagination dots
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 8.w,
+                  height: 8.w,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Container(
+                  width: 8.w,
+                  height: 8.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.lightTeal,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Container(
+                  width: 8.w,
+                  height: 8.w,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
+            ),
+
+            // Next button
+            Padding(
+              padding: EdgeInsets.all(24.w),
+              child: CustomButton(
+                text: translations['next']!,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                          const OnboardingScreen3(),
+                      transitionsBuilder:
+                          (context, animation, secondaryAnimation, child) {
+                        return child;
+                      },
+                      transitionDuration: Duration.zero,
+                    ),
+                  );
+                },
+                width: 1.sw,
+                height: 56.h,
+              ),
+            ),
+          ],
         ),
       ),
     );

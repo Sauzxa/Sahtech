@@ -1,148 +1,41 @@
+// onboardingscreen3.dart
 import 'package:flutter/material.dart';
-import 'package:sahtech/core/theme/colors.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/presentation/profile/getstarted.dart';
+import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/base/base_screen.dart';
+import 'package:sahtech/presentation/widgets/custom_button.dart';
 
-class Onboardingscreen3 extends StatefulWidget {
-  const Onboardingscreen3({Key? key}) : super(key: key);
+class OnboardingScreen3 extends StatefulWidget {
+  const OnboardingScreen3({super.key});
 
   @override
-  State<Onboardingscreen3> createState() => _Onboardingscreen3State();
+  State<OnboardingScreen3> createState() => _OnboardingScreen3State();
 }
 
-class _Onboardingscreen3State extends State<Onboardingscreen3>
-    with TranslationMixin {
-  @override
-  Map<String, String> get initialTranslations => {
-        'title': 'Consulter nutritioniste',
-        'subtitle':
-            'Vous pouvez contacter des nutritionnistes qui vous guideront pour améliorer votre hygiène de vie',
-        'next': 'suivant',
-      };
+class _OnboardingScreen3State extends State<OnboardingScreen3> {
+  Map<String, String> translations = {
+    'skip': 'Skip',
+    'title': 'Consulter nutritionniste',
+    'subtitle':
+        'Vous pouvez contacter des nutritionnistes qui vous guideront pour améliorer votre hygiène de vie.',
+    'next': 'Suivant',
+  };
 
   @override
   Widget build(BuildContext context) {
-    // Get screen dimensions for responsive design
-    final screenSize = MediaQuery.of(context).size;
-    final height = screenSize.height;
-    final width = screenSize.width;
-
-    // Calculate responsive font sizes
-    final titleSize = width * 0.06; // Larger title size
-    final subtitleSize = width * 0.04; // More readable subtitle size
-    final buttonTextSize = width * 0.045;
-
-    // If still loading translations, show a loading indicator
-    if (isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
     return Scaffold(
-      backgroundColor: Colors.grey[50], // Light background like in Figma
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          LanguageSelectorWidget(
-            onTap: () => showLanguageSelector(context),
-          ),
-        ],
-      ),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            Expanded(
+            // Skip button
+            Align(
+              alignment: Alignment.topRight,
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: width * 0.05),
-                child: Column(
-                  children: [
-                    // Flexible spacing that adapts to different screens
-                    SizedBox(height: height * 0.08),
-
-                    // Illustration container with green background circle
-                    Expanded(
-                      flex: 5,
-                      child: Center(
-                        child: Container(
-                          width: width * 0.8,
-                          height: width * 0.8,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEFF9E8),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Image.asset(
-                            'lib/assets/images/getstarted.jpg',
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Text content - properly sized and spaced
-                    Expanded(
-                      flex: 3,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            translations['title']!,
-                            style: TextStyle(
-                              fontSize: titleSize,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          SizedBox(height: height * 0.015),
-                          Container(
-                            width: width * 0.8, // Constrain text width
-                            child: Text(
-                              translations['subtitle']!,
-                              style: TextStyle(
-                                fontSize: subtitleSize,
-                                color: Colors.grey[600],
-                                height: 1.3, // Better line spacing
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Page indicator dots - properly sized
-                    Padding(
-                      padding: EdgeInsets.only(bottom: height * 0.02),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildPageIndicator(false),
-                          _buildPageIndicator(false),
-                          _buildPageIndicator(true),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Bottom navigation button - properly styled like Figma
-            Padding(
-              padding: EdgeInsets.only(
-                left: width * 0.05,
-                right: width * 0.05,
-                bottom: height * 0.03,
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                height: height * 0.06,
-                child: ElevatedButton(
+                padding: EdgeInsets.only(right: 24.w, top: 16.h),
+                child: TextButton(
                   onPressed: () {
-                    // Navigate to Getstarted screen
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
@@ -150,39 +43,120 @@ class _Onboardingscreen3State extends State<Onboardingscreen3>
                       ),
                     );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFB7F397),
-                    foregroundColor: Colors.black87,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
                   child: Text(
-                    translations['next']!,
+                    translations['skip']!,
                     style: TextStyle(
-                      fontSize: buttonTextSize,
+                      color: Colors.grey[600],
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
               ),
             ),
+
+            // Image without background container
+            Expanded(
+              child: Center(
+                child: Image.asset(
+                  'lib/assets/images/onbor1.jpg',
+                  width: 300.w,
+                  height: 300.h,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+
+            // Title text
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              child: Text(
+                translations['title']!,
+                style: TextStyle(
+                  fontSize: 32.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
+            SizedBox(height: 16.h),
+
+            // Subtitle text
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              child: Text(
+                translations['subtitle']!,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: Colors.grey[600],
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
+            SizedBox(height: 48.h),
+
+            // Pagination dots
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 8.w,
+                  height: 8.w,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Container(
+                  width: 8.w,
+                  height: 8.w,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Container(
+                  width: 8.w,
+                  height: 8.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.lightTeal,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
+            ),
+
+            // Next button
+            Padding(
+              padding: EdgeInsets.all(24.w),
+              child: CustomButton(
+                text: translations['next']!,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                          const Getstarted(),
+                      transitionsBuilder:
+                          (context, animation, secondaryAnimation, child) {
+                        return child;
+                      },
+                      transitionDuration: Duration.zero,
+                    ),
+                  );
+                },
+                width: 1.sw,
+                height: 56.h,
+              ),
+            ),
           ],
         ),
-      ),
-    );
-  }
-
-  // Helper method to build the page indicator dots
-  Widget _buildPageIndicator(bool isActive) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4.0),
-      height: 8.0,
-      width: isActive ? 20.0 : 8.0,
-      decoration: BoxDecoration(
-        color: isActive ? AppColors.lightTeal : Colors.grey.shade300,
-        borderRadius: BorderRadius.circular(4.0),
       ),
     );
   }

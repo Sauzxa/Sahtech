@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:sahtech/presentation/profile/profile8.dart';
+import 'package:sahtech/presentation/widgets/custom_button.dart';
 
 class Profile7 extends StatefulWidget {
   final UserModel userData;
+  final int currentStep;
+  final int totalSteps;
 
-  const Profile7({Key? key, required this.userData}) : super(key: key);
+  const Profile7({
+    Key? key,
+    required this.userData,
+    this.currentStep = 2,
+    this.totalSteps = 5,
+  }) : super(key: key);
 
   @override
   State<Profile7> createState() => _Profile7State();
@@ -18,26 +27,24 @@ class Profile7 extends StatefulWidget {
 class _Profile7State extends State<Profile7> {
   late TranslationService _translationService;
   bool _isLoading = false;
-  bool _isDropdownOpen = false;
 
-  // Available allergens with selection state
-  final Map<String, bool> _allergens = {
-    'Noix à coque': false,
-    'Soja': false,
-    'Poissons': false,
-    'Blé': false,
-    'Riz': false,
-    'Autres': false,
-  };
+  // Height related variables
+  double _height = 170.0; // Default height in cm
+  String _heightUnit = 'cm'; // Default unit
+
+  // Min and max height values
+  final double _minHeight = 100.0;
+  final double _maxHeight = 200.0;
 
   // Key translations
   Map<String, String> _translations = {
-    'title': 'choisir les choses que vous avez une allergie ?',
+    'title': 'Veuillez saisir votre taille ?',
     'subtitle':
-        'Choisissez un objectif pour mieux adapter votre expérience. Cette option est optionnelle!',
-    'dropdown_label': 'Choisir les allergants',
+        'Pour une expérience optimale. Afin de vous offrir un service personnalisé, nous vous invitons à renseigner certaines informations, telles que votre taille',
+    'cm': 'cm',
+    'inches': 'inches',
     'next': 'suivant',
-    'success_message': 'Allergies enregistrées avec succès!',
+    'success_message': 'Informations enregistrées avec succès!',
   };
 
   @override
@@ -47,6 +54,14 @@ class _Profile7State extends State<Profile7> {
         Provider.of<TranslationService>(context, listen: false);
     _translationService.addListener(_onLanguageChanged);
     _loadTranslations();
+
+    // Initialize height from user data if available
+    if (widget.userData.height != null) {
+      _height = widget.userData.height!;
+    }
+    if (widget.userData.heightUnit != null) {
+      _heightUnit = widget.userData.heightUnit!;
+    }
   }
 
   @override
@@ -68,24 +83,12 @@ class _Profile7State extends State<Profile7> {
     try {
       // Only translate if not French (our default language)
       if (_translationService.currentLanguageCode != 'fr') {
-        // Translate the UI strings
         final translatedStrings =
             await _translationService.translateMap(_translations);
-
-        // Translate allergen names
-        final translatedAllergens = <String, bool>{};
-        for (final allergen in _allergens.keys) {
-          final translatedAllergen =
-              await _translationService.translate(allergen);
-          translatedAllergens[translatedAllergen] = false;
-        }
 
         if (mounted) {
           setState(() {
             _translations = translatedStrings;
-            // Uncomment to enable allergen translation
-            // _allergens.clear();
-            // _allergens.addAll(translatedAllergens);
             _isLoading = false;
           });
         }
@@ -110,61 +113,63 @@ class _Profile7State extends State<Profile7> {
     // Language change is handled by the listener (_onLanguageChanged)
   }
 
-  void _toggleDropdown() {
-    setState(() {
-      _isDropdownOpen = !_isDropdownOpen;
-    });
+  // Toggle between cm and inches
+  void _toggleUnit(String unit) {
+    if (_heightUnit != unit) {
+      setState(() {
+        _heightUnit = unit;
+      });
+    }
   }
 
-  void _toggleAllergen(String allergen) {
-    setState(() {
-      _allergens[allergen] = !_allergens[allergen]!;
-    });
+  // Convert inches to centimeters
+  double _inchesToCm(double inches) {
+    return inches * 2.54;
+  }
+
+  // Convert centimeters to inches
+  double _cmToInches(double cm) {
+    return cm / 2.54;
+  }
+
+  // Format height value for display
+  String _formatHeight(double height) {
+    if (_heightUnit == 'inches') {
+      return _cmToInches(height).toInt().toString();
+    }
+    return height.toInt().toString();
   }
 
   void _continueToNextScreen() {
-    // Get selected allergens
-    final selectedAllergens =
-        _allergens.entries.where((e) => e.value).map((e) => e.key).toList();
+    // Store height value in user's preferred unit
+    widget.userData.height = _height;
+    widget.userData.heightUnit = _heightUnit;
 
-    // Update user model with selected allergens
-    widget.userData.allergies = selectedAllergens;
-
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_translations['success_message']!),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 1),
-      ),
-    );
-
-    // Navigate to Profile8
+    // Navigate to the next screen
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Profile8(userData: widget.userData),
+        builder: (context) => Profile8(
+          userData: widget.userData,
+          currentStep: widget.currentStep + 1,
+          totalSteps: widget.totalSteps,
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final height = size.height;
-    final width = size.width;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leadingWidth: width * 0.12,
+        leadingWidth: 45.w,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios,
-              color: AppColors.lightTeal, size: width * 0.05),
+          icon: Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20.sp),
           onPressed: () => Navigator.pop(context),
-          padding: EdgeInsets.only(left: width * 0.04),
+          padding: EdgeInsets.only(left: 15.w),
         ),
         title: Image.asset(
           'lib/assets/images/mainlogo.jpg',
@@ -175,166 +180,296 @@ class _Profile7State extends State<Profile7> {
         actions: [
           // Language selector button
           LanguageSelectorButton(
-            width: width,
+            width: 1.sw,
             onLanguageChanged: _handleLanguageChanged,
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: AppColors.lightTeal))
           : SafeArea(
               child: Column(
                 children: [
-                  // Green divider line
-                  Container(
-                    width: double.infinity,
-                    height: 1,
-                    color: AppColors.lightTeal,
-                  ),
-
-                  // Green progress bar
-                  Container(
-                    width: double.infinity,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width:
-                              width * 0.6, // Representing 60% progress (step 6)
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: AppColors.lightTeal,
-                            borderRadius: BorderRadius.only(
-                              topRight: Radius.circular(2),
-                              bottomRight: Radius.circular(2),
+                  // Progress Bar (70%)
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    child: Container(
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(2.r),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 1.sw * 0.7 - 3.2.w,
+                            height: 4.h,
+                            decoration: BoxDecoration(
+                              color: AppColors.lightTeal,
+                              borderRadius: BorderRadius.circular(2.r),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
 
                   // Main content
                   Expanded(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: width * 0.06),
+                      padding: EdgeInsets.symmetric(horizontal: 20.w),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(height: height * 0.03),
+                          SizedBox(height: 32.h),
 
                           // Main question
                           Text(
                             _translations['title']!,
                             style: TextStyle(
-                              fontSize: width * 0.07,
+                              fontSize: 24.sp,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                              color: Colors.black87,
+                              letterSpacing: -0.5,
                             ),
                           ),
 
-                          SizedBox(height: height * 0.02),
+                          SizedBox(height: 12.h),
 
                           // Subtitle/explanation
                           Text(
                             _translations['subtitle']!,
                             style: TextStyle(
-                              fontSize: width * 0.04,
-                              color: Colors.grey[600],
-                              height: 1.3,
+                              fontSize: 14.sp,
+                              color: Colors.grey[700],
+                              height: 1.4,
                             ),
                           ),
 
-                          SizedBox(height: height * 0.03),
+                          SizedBox(height: 24.h),
 
-                          // Dropdown button
-                          GestureDetector(
-                            onTap: _toggleDropdown,
+                          // Height unit selector (cm/inches) - pill style toggle
+                          Center(
                             child: Container(
-                              width: double.infinity,
-                              height: height * 0.07,
+                              width: 120.w,
+                              height: 36.h,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFEFF9E8),
-                                borderRadius: BorderRadius.circular(15),
-                                border: Border.all(
-                                  color: Colors.transparent,
-                                  width: 1,
-                                ),
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(20.r),
                               ),
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: width * 0.04),
                               child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    _translations['dropdown_label']!,
-                                    style: TextStyle(
-                                      fontSize: width * 0.04,
-                                      color: Colors.black87,
+                                  // inches selector
+                                  GestureDetector(
+                                    onTap: () => _toggleUnit('inches'),
+                                    child: Container(
+                                      width: 60.w,
+                                      height: 36.h,
+                                      decoration: BoxDecoration(
+                                        color: _heightUnit == 'inches'
+                                            ? Colors.white
+                                            : Colors.grey[200],
+                                        borderRadius:
+                                            BorderRadius.circular(20.r),
+                                        boxShadow: _heightUnit == 'inches'
+                                            ? [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(0.1),
+                                                  blurRadius: 2,
+                                                  spreadRadius: 0.5,
+                                                ),
+                                              ]
+                                            : null,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          'in',
+                                          style: TextStyle(
+                                            fontSize: 14.sp,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                  Icon(
-                                    _isDropdownOpen
-                                        ? Icons.keyboard_arrow_up
-                                        : Icons.keyboard_arrow_down,
-                                    color: Colors.black54,
+                                  // cm selector
+                                  GestureDetector(
+                                    onTap: () => _toggleUnit('cm'),
+                                    child: Container(
+                                      width: 60.w,
+                                      height: 36.h,
+                                      decoration: BoxDecoration(
+                                        color: _heightUnit == 'cm'
+                                            ? AppColors.lightTeal
+                                            : Colors.grey[200],
+                                        borderRadius:
+                                            BorderRadius.circular(20.r),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          'cm',
+                                          style: TextStyle(
+                                            fontSize: 14.sp,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
 
-                          // Allergen options list - only shown when dropdown is open
-                          if (_isDropdownOpen)
-                            Expanded(
-                              child: SingleChildScrollView(
-                                child: Padding(
-                                  padding: EdgeInsets.only(top: 16.0),
-                                  child: Column(
-                                    children: _allergens.entries.map((entry) {
-                                      return _buildAllergenOption(
-                                        entry.key,
-                                        entry.value,
-                                        width,
-                                        height,
-                                      );
-                                    }).toList(),
+                          SizedBox(height: 24.h),
+
+                          // Height display area with slider
+                          Container(
+                            width: double.infinity,
+                            height: 0.3.sh,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF9E8),
+                              borderRadius: BorderRadius.circular(15.r),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Height value display
+                                Container(
+                                  width: 0.5.sw,
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      _formatHeight(_height),
+                                      style: TextStyle(
+                                        fontSize: 80.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
 
-                          if (!_isDropdownOpen) Expanded(child: SizedBox()),
+                                SizedBox(height: 24.h),
+
+                                // Scale markings and slider
+                                Container(
+                                  width: 0.7.sw,
+                                  child: Column(
+                                    children: [
+                                      // Scale markings
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            _heightUnit == 'cm' ? '100' : '39',
+                                            style: TextStyle(
+                                              fontSize: 14.sp,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          Text(
+                                            _heightUnit == 'cm' ? '125' : '49',
+                                            style: TextStyle(
+                                              fontSize: 14.sp,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          Text(
+                                            _heightUnit == 'cm' ? '150' : '59',
+                                            style: TextStyle(
+                                              fontSize: 14.sp,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          Text(
+                                            _heightUnit == 'cm' ? '175' : '69',
+                                            style: TextStyle(
+                                              fontSize: 14.sp,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          Text(
+                                            _heightUnit == 'cm' ? '200' : '79',
+                                            style: TextStyle(
+                                              fontSize: 14.sp,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+
+                                      // Scale ticks
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: List.generate(
+                                          41,
+                                          (index) => Container(
+                                            height:
+                                                index % 10 == 0 ? 12.h : 6.h,
+                                            width: 1.w,
+                                            color: Colors.grey[400],
+                                          ),
+                                        ),
+                                      ),
+
+                                      // Slider
+                                      SliderTheme(
+                                        data: SliderThemeData(
+                                          activeTrackColor: Colors.transparent,
+                                          inactiveTrackColor:
+                                              Colors.transparent,
+                                          thumbColor: Colors.black,
+                                          thumbShape: RoundSliderThumbShape(
+                                            enabledThumbRadius: 6.r,
+                                          ),
+                                          overlayShape: RoundSliderOverlayShape(
+                                            overlayRadius: 12.r,
+                                          ),
+                                          trackHeight: 0,
+                                        ),
+                                        child: Slider(
+                                          value: _height.clamp(100.0, 200.0),
+                                          min: 100.0,
+                                          max: 200.0,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              _height = value;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Height unit
+                                Text(
+                                  _heightUnit,
+                                  style: TextStyle(
+                                    fontSize: 16.sp,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          Spacer(),
 
                           // Next button
                           Padding(
-                            padding:
-                                EdgeInsets.symmetric(vertical: height * 0.05),
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: height * 0.065,
-                              child: ElevatedButton(
-                                onPressed: _continueToNextScreen,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.lightTeal,
-                                  foregroundColor: Colors.black87,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                ),
-                                child: Text(
-                                  _translations['next']!,
-                                  style: TextStyle(
-                                    fontSize: width * 0.04,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
+                            padding: EdgeInsets.only(bottom: 32.h),
+                            child: CustomButton(
+                              text: _translations['next']!,
+                              onPressed: _continueToNextScreen,
+                              width: 1.sw - 32.w,
+                              height: 50.h,
                             ),
                           ),
                         ],
@@ -344,77 +479,6 @@ class _Profile7State extends State<Profile7> {
                 ],
               ),
             ),
-    );
-  }
-
-  Widget _buildAllergenOption(
-      String allergen, bool isSelected, double width, double height) {
-    return Container(
-      width: double.infinity,
-      margin: EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 3,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(15),
-        child: InkWell(
-          onTap: () => _toggleAllergen(allergen),
-          borderRadius: BorderRadius.circular(15),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: width * 0.04,
-              vertical: height * 0.022,
-            ),
-            child: Row(
-              children: [
-                // Checkbox
-                Container(
-                  width: width * 0.06,
-                  height: width * 0.06,
-                  decoration: BoxDecoration(
-                    color:
-                        isSelected ? AppColors.lightTeal : Colors.transparent,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color:
-                          isSelected ? AppColors.lightTeal : Colors.grey[300]!,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: isSelected
-                      ? Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: width * 0.04,
-                        )
-                      : null,
-                ),
-                SizedBox(width: width * 0.03),
-
-                // Allergen name
-                Text(
-                  allergen,
-                  style: TextStyle(
-                    fontSize: width * 0.04,
-                    fontWeight:
-                        isSelected ? FontWeight.w500 : FontWeight.normal,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

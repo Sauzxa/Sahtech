@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
+import 'package:sahtech/core/services/auth_service.dart';
 import 'package:sahtech/core/auth/signupUser.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:sahtech/core/widgets/custom_button.dart';
 
 class SigninUser extends StatefulWidget {
   final UserModel userData;
 
-  const SigninUser({Key? key, required this.userData}) : super(key: key);
+  const SigninUser({super.key, required this.userData});
 
   @override
   State<SigninUser> createState() => _SigninUserState();
@@ -23,6 +27,10 @@ class _SigninUserState extends State<SigninUser> {
   bool _isSubmitting = false;
   late TranslationService _translationService;
 
+  // Add error state variables
+  String? _emailError;
+  String? _passwordError;
+
   // Translations
   Map<String, String> _translations = {
     'login_title': 'Se connecter',
@@ -35,7 +43,7 @@ class _SigninUserState extends State<SigninUser> {
     'button_next': 'suivant',
     'signup_with': 'S\'inscrire avec',
     'no_account': 'Vous n\'avez pas un compte?',
-    'signup': 'S\'authentifier',
+    'signup': '',
     'google_signup': 'S\'inscrire avec google',
     'auth_error': 'Erreur d\'authentification',
     'auth_success': 'Authentification réussie',
@@ -100,42 +108,120 @@ class _SigninUserState extends State<SigninUser> {
   }
 
   Future<void> _handleLoginWithEmail() async {
-    if (_formKey.currentState!.validate()) {
-      // Save email to user data
-      widget.userData.email = _emailController.text.trim();
+    // Clear previous errors
+    setState(() {
+      _emailError = null;
+      _passwordError = null;
+    });
 
-      setState(() => _isSubmitting = true);
+    // Validate manually
+    bool isValid = true;
 
-      try {
-        // Here you will implement Firebase authentication
-        // For now just show a success message
-        Future.delayed(Duration(seconds: 1), () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Login successful with ${_emailController.text}'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 1),
-            ),
-          );
+    if (_emailController.text.isEmpty) {
+      setState(() {
+        _emailError = 'Veuillez entrer votre email';
+      });
+      isValid = false;
+    } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+        .hasMatch(_emailController.text)) {
+      setState(() {
+        _emailError = 'Veuillez entrer un email valide';
+      });
+      isValid = false;
+    }
 
-          if (mounted) {
-            setState(() => _isSubmitting = false);
+    if (_passwordController.text.isEmpty) {
+      setState(() {
+        _passwordError = 'Veuillez entrer votre mot de passe';
+      });
+      isValid = false;
+    } else if (_passwordController.text.length < 6) {
+      setState(() {
+        _passwordError = 'Le mot de passe doit contenir au moins 6 caractères';
+      });
+      isValid = false;
+    }
+
+    if (!isValid) return;
+
+    // Save email to user data
+    widget.userData.email = _emailController.text.trim();
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      // Use the AuthService to log in the user with MongoDB
+      final AuthService authService = AuthService();
+      final loginResult = await authService.loginUser(
+          _emailController.text.trim(), _passwordController.text);
+
+      if (loginResult['success']) {
+        // If login successful, fetch the complete user data
+        if (loginResult['data'] != null &&
+            loginResult['data']['userId'] != null) {
+          final userId = loginResult['data']['userId'];
+          final userData = await authService.getUserData(userId);
+
+          if (userData != null) {
+            // Update the user model with data from MongoDB
+            widget.userData.name = userData.name;
+            widget.userData.email = userData.email;
+            widget.userData.phoneNumber = userData.phoneNumber;
+            widget.userData.profileImageUrl = userData.profileImageUrl;
+            widget.userData.userId = userData.userId;
+            widget.userData.hasChronicDisease = userData.hasChronicDisease;
+            widget.userData.chronicConditions = userData.chronicConditions;
+            widget.userData.preferredLanguage = userData.preferredLanguage;
+            widget.userData.doesExercise = userData.doesExercise;
+            widget.userData.activityLevel = userData.activityLevel;
+            widget.userData.physicalActivities = userData.physicalActivities;
+            widget.userData.dailyActivities = userData.dailyActivities;
+            widget.userData.healthGoals = userData.healthGoals;
+            widget.userData.hasAllergies = userData.hasAllergies;
+            widget.userData.allergies = userData.allergies;
+            widget.userData.allergyYear = userData.allergyYear;
+            widget.userData.allergyMonth = userData.allergyMonth;
+            widget.userData.allergyDay = userData.allergyDay;
+            widget.userData.weight = userData.weight;
+            widget.userData.weightUnit = userData.weightUnit;
+            widget.userData.height = userData.height;
+            widget.userData.heightUnit = userData.heightUnit;
           }
+        }
 
-          // Navigate to home screen after authentication
-          // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeScreen()));
-        });
-      } catch (e) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Connexion réussie!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // Navigate to the home screen after authentication
+        // For example: Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeScreen()));
+      } else {
         // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text('Erreur: ${loginResult['message']}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
-        if (mounted) {
-          setState(() => _isSubmitting = false);
-        }
+      }
+    } catch (e) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
       }
     }
   }
@@ -234,331 +320,387 @@ class _SigninUserState extends State<SigninUser> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final width = size.width;
-    final height = size.height;
-
     return Scaffold(
-      backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: true, // Enable keyboard adjustment
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SafeArea(
-              child: SingleChildScrollView(
-                // Add SingleChildScrollView to enable scrolling
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: width * 0.06,
-                    right: width * 0.06,
-                    bottom: MediaQuery.of(context)
-                        .viewInsets
-                        .bottom, // Add padding for keyboard
-                  ),
-                  child: Form(
-                    key: _formKey,
+          : Stack(
+              children: [
+                // Base white background layer
+                Container(
+                  color: Colors.white,
+                ),
+                // Green overlay with opacity
+                Container(
+                  color: AppColors.lightTeal.withOpacity(0.5),
+                ),
+                // Main content
+                GestureDetector(
+                  onTap: () => FocusScope.of(context).unfocus(),
+                  child: SafeArea(
+                    bottom: false,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(height: height * 0.12),
+                        // Top green area with 20% height
+                        SizedBox(height: 0.1.sh),
 
-                        // Logo centered
-                        Center(
-                          child: Image.asset(
-                            'lib/assets/images/mainlogo.jpg',
-                            height: height * 0.045,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-
-                        SizedBox(height: height * 0.12),
-
-                        // Title
-                        Text(
-                          _translations['login_title']!,
-                          style: TextStyle(
-                            fontSize: width * 0.06,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-
-                        SizedBox(height: height * 0.008),
-
-                        // Subtitle
-                        Text(
-                          _translations['login_subtitle']!,
-                          style: TextStyle(
-                            fontSize: width * 0.035,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-
-                        SizedBox(height: height * 0.04),
-
-                        // Email label
-                        Text(
-                          _translations['email_label']!,
-                          style: TextStyle(
-                            fontSize: width * 0.04,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
-                          ),
-                        ),
-
-                        SizedBox(height: height * 0.008),
-
-                        // Email field
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: TextFormField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: InputDecoration(
-                              hintText: _translations['email_hint'],
-                              hintStyle: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: width * 0.035,
+                        // Bottom white container with curved top (80%)
+                        Expanded(
+                          child: Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(30.r),
+                                topRight: Radius.circular(30.r),
                               ),
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: width * 0.05,
-                                vertical: height * 0.018,
-                              ),
-                              border: InputBorder.none,
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your email';
-                              }
-                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                  .hasMatch(value)) {
-                                return 'Please enter a valid email';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-
-                        SizedBox(height: height * 0.02),
-
-                        // Password label
-                        Text(
-                          _translations['password_label']!,
-                          style: TextStyle(
-                            fontSize: width * 0.04,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
-                          ),
-                        ),
-
-                        SizedBox(height: height * 0.008),
-
-                        // Password field
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: TextFormField(
-                            controller: _passwordController,
-                            obscureText: _obscurePassword,
-                            decoration: InputDecoration(
-                              hintText: _translations['password_hint'],
-                              hintStyle: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: width * 0.035,
-                              ),
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: width * 0.05,
-                                vertical: height * 0.018,
-                              ),
-                              border: InputBorder.none,
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                  color: Colors.grey[600],
-                                  size: width * 0.045,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 10,
+                                  spreadRadius: 0,
+                                  offset: Offset(0, -5),
                                 ),
-                                onPressed: _togglePasswordVisibility,
-                                padding: EdgeInsets.zero,
-                                constraints: BoxConstraints(),
-                              ),
+                              ],
                             ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your password';
-                              }
-                              if (value.length < 6) {
-                                return 'Password must be at least 6 characters';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
+                            child: SingleChildScrollView(
+                              physics: ClampingScrollPhysics(),
+                              child: Padding(
+                                padding: EdgeInsets.only(
+                                  left: 24.w,
+                                  right: 24.w,
+                                  top: 20.h,
+                                  bottom: 30.h, // Extra padding at bottom
+                                ),
+                                child: Form(
+                                  key: _formKey,
+                                  autovalidateMode: AutovalidateMode
+                                      .disabled, // Disable auto validation
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // Logo centered
+                                      Center(
+                                        child: Image.asset(
+                                          'lib/assets/images/mainlogo.jpg',
+                                          height: 50.h,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
 
-                        // Forgot password link
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: _handleForgotPassword,
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size(50, 20),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: Text(
-                              _translations['password_forgot']!,
-                              style: TextStyle(
-                                fontSize: width * 0.03,
-                                color: AppColors.lightTeal,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
+                                      SizedBox(height: 40.h),
 
-                        // Small space instead of spacer
-                        SizedBox(height: height * 0.03),
+                                      // Title
+                                      Text(
+                                        _translations['login_title']!,
+                                        style: TextStyle(
+                                          fontSize: 24.sp,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
 
-                        // Sign in button
-                        SizedBox(
-                          width: double.infinity,
-                          height: height * 0.055,
-                          child: ElevatedButton(
-                            onPressed:
-                                _isSubmitting ? null : _handleLoginWithEmail,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.lightTeal,
-                              foregroundColor: Colors.black87,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              disabledBackgroundColor:
-                                  AppColors.lightTeal.withOpacity(0.6),
-                            ),
-                            child: _isSubmitting
-                                ? SizedBox(
-                                    height: height * 0.022,
-                                    width: height * 0.022,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.black54,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(
-                                    _translations['button_next']!,
-                                    style: TextStyle(
-                                      fontSize: width * 0.04,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                      SizedBox(height: 20.h),
+
+                                      // Subtitle
+                                      Text(
+                                        _translations['login_subtitle']!,
+                                        style: TextStyle(
+                                          fontSize: 14.sp,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+
+                                      SizedBox(height: 20.h),
+
+                                      // Email label
+                                      Text(
+                                        _translations['email_label']!,
+                                        style: TextStyle(
+                                          fontSize: 16.sp,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+
+                                      SizedBox(height: 6.h),
+
+                                      // Email field
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[200],
+                                          borderRadius:
+                                              BorderRadius.circular(30.r),
+                                          border: Border.all(
+                                            color: _emailError != null
+                                                ? Colors.red
+                                                : Colors.transparent,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: TextFormField(
+                                          controller: _emailController,
+                                          keyboardType:
+                                              TextInputType.emailAddress,
+                                          onChanged: (val) {
+                                            if (_emailError != null) {
+                                              setState(() {
+                                                _emailError = null;
+                                              });
+                                            }
+                                          },
+                                          decoration: InputDecoration(
+                                            hintText:
+                                                _translations['email_hint'],
+                                            hintStyle: TextStyle(
+                                              color: Colors.grey[500],
+                                              fontSize: 14.sp,
+                                            ),
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                              horizontal: 20.w,
+                                              vertical: 14.h,
+                                            ),
+                                            border: InputBorder.none,
+                                            errorStyle: TextStyle(
+                                                height: 0, fontSize: 0),
+                                            errorBorder: InputBorder.none,
+                                            focusedErrorBorder:
+                                                InputBorder.none,
+                                          ),
+                                          validator: (_) =>
+                                              null, // No validation here
+                                        ),
+                                      ),
+
+                                      // Email error message
+                                      if (_emailError != null)
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                              top: 4.h, left: 16.w),
+                                          child: Text(
+                                            _emailError!,
+                                            style: TextStyle(
+                                              color: Colors.red,
+                                              fontSize: 12.sp,
+                                            ),
+                                          ),
+                                        ),
+
+                                      SizedBox(
+                                          height:
+                                              _emailError != null ? 8.h : 16.h),
+
+                                      // Password label
+                                      Text(
+                                        _translations['password_label']!,
+                                        style: TextStyle(
+                                          fontSize: 16.sp,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+
+                                      SizedBox(height: 6.h),
+
+                                      // Password field
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[200],
+                                          borderRadius:
+                                              BorderRadius.circular(30.r),
+                                          border: Border.all(
+                                            color: _passwordError != null
+                                                ? Colors.red
+                                                : Colors.transparent,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: TextFormField(
+                                          controller: _passwordController,
+                                          obscureText: _obscurePassword,
+                                          onChanged: (val) {
+                                            if (_passwordError != null) {
+                                              setState(() {
+                                                _passwordError = null;
+                                              });
+                                            }
+                                          },
+                                          decoration: InputDecoration(
+                                            hintText:
+                                                _translations['password_hint'],
+                                            hintStyle: TextStyle(
+                                              color: Colors.grey[500],
+                                              fontSize: 14.sp,
+                                            ),
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                              horizontal: 20.w,
+                                              vertical: 14.h,
+                                            ),
+                                            border: InputBorder.none,
+                                            errorStyle: TextStyle(
+                                                height: 0, fontSize: 0),
+                                            errorBorder: InputBorder.none,
+                                            focusedErrorBorder:
+                                                InputBorder.none,
+                                            suffixIcon: IconButton(
+                                              icon: Icon(
+                                                _obscurePassword
+                                                    ? Icons.visibility_off
+                                                    : Icons.visibility,
+                                                color: Colors.grey[600],
+                                                size: 18.w,
+                                              ),
+                                              onPressed:
+                                                  _togglePasswordVisibility,
+                                              padding: EdgeInsets.zero,
+                                              constraints: BoxConstraints(),
+                                            ),
+                                          ),
+                                          validator: (_) =>
+                                              null, // No validation here
+                                        ),
+                                      ),
+
+                                      // Password error message
+                                      if (_passwordError != null)
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                              top: 4.h, left: 16.w),
+                                          child: Text(
+                                            _passwordError!,
+                                            style: TextStyle(
+                                              color: Colors.red,
+                                              fontSize: 12.sp,
+                                            ),
+                                          ),
+                                        ),
+
+                                      // Forgot password link
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: TextButton(
+                                          onPressed: _handleForgotPassword,
+                                          style: TextButton.styleFrom(
+                                            padding: EdgeInsets.zero,
+                                            minimumSize: Size(50, 20),
+                                            tapTargetSize: MaterialTapTargetSize
+                                                .shrinkWrap,
+                                          ),
+                                          child: Text(
+                                            _translations['password_forgot']!,
+                                            style: TextStyle(
+                                              fontSize: 12.sp,
+                                              color: AppColors.lightTeal,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+
+                                      SizedBox(height: 50.h),
+
+                                      // Custom Button for sign in
+                                      CustomButton(
+                                        text: _translations['button_next']!,
+                                        isLoading: _isSubmitting,
+                                        onPressed: () {
+                                          // Dismiss keyboard first to avoid event issues
+                                          FocusScope.of(context).unfocus();
+                                          // Small delay to ensure keyboard is fully dismissed
+                                          Future.delayed(
+                                              Duration(milliseconds: 100), () {
+                                            _handleLoginWithEmail();
+                                          });
+                                        },
+                                      ),
+
+                                      SizedBox(height: 24.h),
+
+                                      // Divider with text
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Divider(
+                                              color: Colors.grey[300],
+                                              thickness: 1,
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 12.w),
+                                            child: Text(
+                                              _translations['signup_with']!,
+                                              style: TextStyle(
+                                                fontSize: 12.sp,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Divider(
+                                              color: Colors.grey[300],
+                                              thickness: 1,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+
+                                      SizedBox(height: 20.h),
+
+                                      // Google sign in button
+                                      SizedBox(
+                                        width: double.infinity,
+                                        height: 48.h,
+                                        child: OutlinedButton.icon(
+                                          icon: Image.asset(
+                                            'lib/assets/images/google.jpg',
+                                            height: 20.h,
+                                          ),
+                                          label: Text(
+                                            _translations['google_signup'] ??
+                                                'S\'inscrire avec google',
+                                            style: TextStyle(
+                                              fontSize: 14.sp,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            // Dismiss keyboard first
+                                            FocusScope.of(context).unfocus();
+                                            // Small delay to ensure keyboard is fully dismissed
+                                            Future.delayed(
+                                                Duration(milliseconds: 100),
+                                                () {
+                                              _handleGoogleSignIn();
+                                            });
+                                          },
+                                          style: OutlinedButton.styleFrom(
+                                            backgroundColor: Colors.white,
+                                            side: BorderSide(
+                                                color: Colors.grey[300]!),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(30.r),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+
+                                      SizedBox(height: 16.h),
+                                    ],
                                   ),
-                          ),
-                        ),
-
-                        SizedBox(height: height * 0.025),
-
-                        // Divider with text
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Divider(
-                                color: Colors.grey[300],
-                                thickness: 1,
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: width * 0.03),
-                              child: Text(
-                                _translations['signup_with']!,
-                                style: TextStyle(
-                                  fontSize: width * 0.03,
-                                  color: Colors.grey[600],
                                 ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Divider(
-                                color: Colors.grey[300],
-                                thickness: 1,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        SizedBox(height: height * 0.02),
-
-                        // Google sign in button
-                        SizedBox(
-                          width: double.infinity,
-                          height: height * 0.055,
-                          child: OutlinedButton.icon(
-                            icon: Image.asset(
-                              'lib/assets/images/google.jpg',
-                              height: height * 0.022,
-                            ),
-                            label: Text(
-                              _translations['google_signup'] ??
-                                  'S\'inscrire avec google',
-                              style: TextStyle(
-                                fontSize: width * 0.035,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            onPressed:
-                                _isSubmitting ? null : _handleGoogleSignIn,
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: Colors.grey[300]!),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
                               ),
                             ),
                           ),
                         ),
-
-                        SizedBox(height: height * 0.02),
-
-                        // Sign up link
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              _translations['no_account']!,
-                              style: TextStyle(
-                                fontSize: width * 0.035,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: _navigateToSignup,
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.only(left: 4),
-                                minimumSize: Size(50, 25),
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: Text(
-                                _translations['signup']!,
-                                style: TextStyle(
-                                  fontSize: width * 0.035,
-                                  color: AppColors.lightTeal,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        SizedBox(height: height * 0.02),
                       ],
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
     );
   }

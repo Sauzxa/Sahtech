@@ -1,161 +1,100 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
+import 'package:sahtech/core/services/translation_service.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
-import 'package:sahtech/core/services/translation_service.dart';
-import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
+import 'package:sahtech/presentation/widgets/custom_button.dart';
 import 'package:sahtech/presentation/profile/profile5.dart';
-import 'package:sahtech/presentation/profile/profile6.dart';
 
 class Profile4 extends StatefulWidget {
   final UserModel userData;
 
-  const Profile4({Key? key, required this.userData}) : super(key: key);
+  const Profile4({super.key, required this.userData});
 
   @override
   State<Profile4> createState() => _Profile4State();
 }
 
 class _Profile4State extends State<Profile4> {
+  bool? _doesExercise;
   late TranslationService _translationService;
   bool _isLoading = false;
-  bool? _doesExercise; // true = Yes, false = No, null = Not selected yet
-
-  // Key translations
-  Map<String, String> _translations = {
-    'title': 'Pratiquez-vous une activité physique ?',
-    'subtitle':
-        'Pour un suivi plus précis, veuillez spécifier si vous faites de l\'activité physique',
-    'yes': 'Oui',
-    'no': 'Non',
-    'next': 'suivant',
-    'select_option': 'Veuillez sélectionner une option',
-    'success_message': 'Informations enregistrées avec succès!',
-  };
 
   @override
   void initState() {
     super.initState();
     _translationService =
         Provider.of<TranslationService>(context, listen: false);
-    _translationService.addListener(_onLanguageChanged);
-    _loadTranslations();
+  }
+
+  void _handleLanguageChanged(String languageCode) {
+    setState(() => _isLoading = true);
+    Future.delayed(Duration.zero, () async {
+      try {
+        widget.userData.preferredLanguage = languageCode;
+      } catch (e) {
+        debugPrint('Error handling language change: $e');
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    });
   }
 
   @override
   void dispose() {
-    _translationService.removeListener(_onLanguageChanged);
+    if (widget.userData.preferredLanguage !=
+        _translationService.currentLanguageCode) {
+      Navigator.pop(context, 'language_changed');
+    }
     super.dispose();
-  }
-
-  void _onLanguageChanged() {
-    if (mounted) {
-      _loadTranslations();
-    }
-  }
-
-  // Load all needed translations
-  Future<void> _loadTranslations() async {
-    setState(() => _isLoading = true);
-
-    try {
-      // Only translate if not French (our default language)
-      if (_translationService.currentLanguageCode != 'fr') {
-        final translatedStrings =
-            await _translationService.translateMap(_translations);
-
-        if (mounted) {
-          setState(() {
-            _translations = translatedStrings;
-            _isLoading = false;
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
-      }
-    } catch (e) {
-      debugPrint('Translation error: $e');
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  // Handle language change
-  void _handleLanguageChanged(String languageCode) {
-    // Update user model with the new language
-    widget.userData.preferredLanguage = languageCode;
-
-    // Language change is handled by the listener (_onLanguageChanged)
   }
 
   void _continueToNextScreen() async {
     if (_doesExercise == null) {
-      // Show error if no selection made
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_translations['select_option']!),
+          content: Text(await _translationService
+              .translate('Veuillez sélectionner une option')),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
-    // Update user model with the exercise selection
     widget.userData.doesExercise = _doesExercise;
+    widget.userData.preferredLanguage = _translationService.currentLanguageCode;
 
     // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(_translations['success_message']!),
+        content: Text(await _translationService
+            .translate('Informations enregistrées avec succès!')),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 1),
       ),
     );
 
-    // If user does exercise, navigate to Profile5 for activity selection
-    if (_doesExercise == true) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => Profile5(userData: widget.userData),
-        ),
-      );
-    } else {
-      // If user does not exercise, skip to Profile6
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => Profile6(userData: widget.userData),
-        ),
-      );
-    }
+    // Navigate to Profile5
+    Navigator.of(context).push(
+      MaterialPageRoute(
+          builder: (context) => Profile5(userData: widget.userData)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final height = size.height;
-    final width = size.width;
-
-    // Calculate safe padding
-    final double topPadding = MediaQuery.of(context).padding.top;
-    final double bottomPadding = MediaQuery.of(context).padding.bottom;
-
-    // Use safe area values for better positioning on notched devices
-    final double safeAreaVerticalPadding = topPadding + bottomPadding;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leadingWidth: width * 0.12,
+        leadingWidth: 45.w,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios,
-              color: AppColors.lightTeal, size: width * 0.05),
+          icon: Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20.sp),
           onPressed: () => Navigator.pop(context),
-          padding: EdgeInsets.only(left: width * 0.04),
+          padding: EdgeInsets.only(left: 12.w),
         ),
         title: Image.asset(
           'lib/assets/images/mainlogo.jpg',
@@ -164,179 +103,181 @@ class _Profile4State extends State<Profile4> {
         ),
         centerTitle: true,
         actions: [
-          // Language selector button
           LanguageSelectorButton(
-            width: width,
+            width: 1.sw,
             onLanguageChanged: _handleLanguageChanged,
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(
+                color: AppColors.lightTeal,
+              ),
+            )
           : SafeArea(
               child: Column(
                 children: [
-                  // Green progress bar/line at the top
-                  Container(
-                    width: double.infinity,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width:
-                              width * 0.3, // Representing 30% progress (step 3)
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: AppColors.lightTeal,
-                            borderRadius: BorderRadius.only(
-                              topRight: Radius.circular(2),
-                              bottomRight: Radius.circular(2),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Main content
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: width * 0.06),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  // Progress Bar (40%)
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    child: Container(
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(2.r),
+                      ),
+                      child: Row(
                         children: [
-                          SizedBox(height: height * 0.04),
-
-                          // Main question
-                          Text(
-                            _translations['title']!,
-                            style: TextStyle(
-                              fontSize: width * 0.07,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-
-                          SizedBox(height: height * 0.02),
-
-                          // Subtitle/explanation
-                          Text(
-                            _translations['subtitle']!,
-                            style: TextStyle(
-                              fontSize: width * 0.04,
-                              color: Colors.grey[600],
-                              height: 1.3,
-                            ),
-                          ),
-
-                          SizedBox(height: height * 0.06),
-
-                          // Yes button
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _doesExercise = true;
-                              });
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              height: height * 0.07,
-                              decoration: BoxDecoration(
-                                color: _doesExercise == true
-                                    ? AppColors.lightTeal.withOpacity(0.3)
-                                    : AppColors.lightTeal.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(15),
-                                border: Border.all(
-                                  color: _doesExercise == true
-                                      ? AppColors.lightTeal
-                                      : Colors.transparent,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  _translations['yes']!,
-                                  style: TextStyle(
-                                    fontSize: width * 0.045,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          SizedBox(height: height * 0.02),
-
-                          // No button
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _doesExercise = false;
-                              });
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              height: height * 0.07,
-                              decoration: BoxDecoration(
-                                color: _doesExercise == false
-                                    ? AppColors.lightTeal.withOpacity(0.3)
-                                    : AppColors.lightTeal.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(15),
-                                border: Border.all(
-                                  color: _doesExercise == false
-                                      ? AppColors.lightTeal
-                                      : Colors.transparent,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  _translations['no']!,
-                                  style: TextStyle(
-                                    fontSize: width * 0.045,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const Spacer(),
-
-                          // Next button
-                          Padding(
-                            padding: EdgeInsets.only(
-                              bottom: height * 0.07,
-                            ),
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: height * 0.06,
-                              child: ElevatedButton(
-                                onPressed: _continueToNextScreen,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.lightTeal,
-                                  foregroundColor: Colors.black87,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                ),
-                                child: Text(
-                                  _translations['next']!,
-                                  style: TextStyle(
-                                    fontSize: width * 0.045,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
+                          Container(
+                            width: 1.sw * 0.4 - 3.2.w, // 40% progress
+                            height: 4.h,
+                            decoration: BoxDecoration(
+                              color: AppColors.lightTeal,
+                              borderRadius: BorderRadius.circular(2.r),
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: 32.h),
+                            FutureBuilder<String>(
+                              future: _translationService.translate(
+                                  'Pratiquez-vous une activité physique ?'),
+                              builder: (context, snapshot) {
+                                final text = snapshot.data ??
+                                    'Pratiquez-vous une activité physique ?';
+                                return Text(
+                                  text,
+                                  style: TextStyle(
+                                    fontSize: 24.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                    letterSpacing: -0.5,
+                                  ),
+                                );
+                              },
+                            ),
+                            SizedBox(height: 12.h),
+                            FutureBuilder<String>(
+                              future: _translationService.translate(
+                                  'Pour un suivi plus précis, veuillez spécifier si vous faites de l\'activité physique'),
+                              builder: (context, snapshot) {
+                                final text = snapshot.data ?? '';
+                                return Text(
+                                  text,
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: Colors.grey[700],
+                                    height: 1.4,
+                                  ),
+                                );
+                              },
+                            ),
+                            SizedBox(height: 70.h),
+                            // OUI button
+                            FutureBuilder<String>(
+                              future: _translationService.translate('Oui'),
+                              builder: (context, snapshot) {
+                                final yesText = snapshot.data ?? 'Oui';
+                                return GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _doesExercise = true),
+                                  child: Container(
+                                    width: double.infinity,
+                                    height: 70.h,
+                                    decoration: BoxDecoration(
+                                      color: _doesExercise == true
+                                          ? AppColors.lightTeal.withOpacity(0.2)
+                                          : const Color(0xFFEFF9E8),
+                                      borderRadius: BorderRadius.circular(15.r),
+                                      border: Border.all(
+                                        color: _doesExercise == true
+                                            ? AppColors.lightTeal
+                                            : Colors.transparent,
+                                        width: 2.w,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        yesText,
+                                        style: TextStyle(
+                                          fontSize: 15.sp,
+                                          fontWeight: FontWeight.w500,
+                                          color: _doesExercise == true
+                                              ? AppColors.lightTeal
+                                              : Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            SizedBox(height: 15.h),
+                            // NON button
+                            FutureBuilder<String>(
+                              future: _translationService.translate('Non'),
+                              builder: (context, snapshot) {
+                                final noText = snapshot.data ?? 'Non';
+                                return GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _doesExercise = false),
+                                  child: Container(
+                                    width: double.infinity,
+                                    height: 70.h,
+                                    decoration: BoxDecoration(
+                                      color: _doesExercise == false
+                                          ? AppColors.lightTeal.withOpacity(0.2)
+                                          : const Color(0xFFEFF9E8),
+                                      borderRadius: BorderRadius.circular(15.r),
+                                      border: Border.all(
+                                        color: _doesExercise == false
+                                            ? AppColors.lightTeal
+                                            : Colors.transparent,
+                                        width: 2.w,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        noText,
+                                        style: TextStyle(
+                                          fontSize: 15.sp,
+                                          fontWeight: FontWeight.w500,
+                                          color: _doesExercise == false
+                                              ? AppColors.lightTeal
+                                              : Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 16.w, vertical: 32.h),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 50.h,
+                      child: CustomButton(
+                        text: 'suivant',
+                        onPressed: _continueToNextScreen,
+                        width: 1.sw - 32.w, // Full width minus padding
+                        height: 50.h,
                       ),
                     ),
                   ),

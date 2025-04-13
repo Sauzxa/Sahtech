@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
+import 'package:sahtech/core/services/translation_service.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
-import 'package:sahtech/core/services/translation_service.dart';
-import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:sahtech/presentation/profile/profile6.dart';
+import 'package:sahtech/presentation/widgets/custom_button.dart';
 
 class Profile5 extends StatefulWidget {
   final UserModel userData;
 
-  const Profile5({Key? key, required this.userData}) : super(key: key);
+  const Profile5({super.key, required this.userData});
 
   @override
   State<Profile5> createState() => _Profile5State();
@@ -19,31 +21,22 @@ class _Profile5State extends State<Profile5> {
   late TranslationService _translationService;
   bool _isLoading = false;
   bool _isDropdownOpen = false;
-
-  // Available physical activities with selection state
-  final Map<String, bool> _activities = {
-    'Aucune': false, // None option
-    'Musculation': false,
-    'Football': false,
-    'Boxe': false,
-    'Vélo': false,
-    'Natation': false,
-    'Saut à la corde': false,
-    'Handball': false,
-    'Tennis': false,
-    'Kung-fu': false,
-    'Lutte': false,
+  final Map<String, bool> _objectives = {
+    'Contrôle du diabète': false,
+    'Perte de poid': false,
+    'Réduction du cholestérol': false,
   };
 
-  // Key translations
+  List<String> _selectedObjectives = [];
   Map<String, String> _translations = {
-    'title': 'Choisir votre activités physiques ?',
+    'title': 'Choisir votre objectif dans notre appli ?',
     'subtitle':
-        'Pour des recommandations adaptées, veuillez nous informer sur votre fréquence d\'activité physique',
-    'dropdown_label': 'Choisir ton Activité',
+        'Choisissez un objectif pour mieux adapter votre expérience. Cette option est optionnelle',
+    'dropdown_label': 'Choisir votre objectif',
     'next': 'suivant',
-    'select_activity': 'Veuillez sélectionner au moins une activité',
+    'select_condition': 'Veuillez sélectionner au moins un objectif',
     'success_message': 'Informations enregistrées avec succès!',
+    'objectives_selected': 'objectifs sélectionnés',
   };
 
   @override
@@ -51,47 +44,27 @@ class _Profile5State extends State<Profile5> {
     super.initState();
     _translationService =
         Provider.of<TranslationService>(context, listen: false);
-    _translationService.addListener(_onLanguageChanged);
     _loadTranslations();
   }
 
-  @override
-  void dispose() {
-    _translationService.removeListener(_onLanguageChanged);
-    super.dispose();
-  }
-
-  void _onLanguageChanged() {
-    if (mounted) {
-      _loadTranslations();
-    }
-  }
-
-  // Load all needed translations
   Future<void> _loadTranslations() async {
     setState(() => _isLoading = true);
 
     try {
-      // Only translate if not French (our default language)
       if (_translationService.currentLanguageCode != 'fr') {
-        // Translate the UI strings
         final translatedStrings =
             await _translationService.translateMap(_translations);
 
-        // Translate activity names
-        final translatedActivities = <String, bool>{};
-        for (final activity in _activities.keys) {
-          final translatedActivity =
-              await _translationService.translate(activity);
-          translatedActivities[translatedActivity] = false;
+        final translatedObjectives = <String, bool>{};
+        for (final objective in _objectives.keys) {
+          final translatedObjective =
+              await _translationService.translate(objective);
+          translatedObjectives[translatedObjective] = false;
         }
 
         if (mounted) {
           setState(() {
             _translations = translatedStrings;
-            // Uncomment to enable activity translation
-            // _activities.clear();
-            // _activities.addAll(translatedActivities);
             _isLoading = false;
           });
         }
@@ -108,12 +81,10 @@ class _Profile5State extends State<Profile5> {
     }
   }
 
-  // Handle language change
   void _handleLanguageChanged(String languageCode) {
-    // Update user model with the new language
+    setState(() => _isLoading = true);
     widget.userData.preferredLanguage = languageCode;
-
-    // Language change is handled by the listener (_onLanguageChanged)
+    _loadTranslations();
   }
 
   void _toggleDropdown() {
@@ -122,44 +93,39 @@ class _Profile5State extends State<Profile5> {
     });
   }
 
-  void _toggleActivity(String activity) {
+  void _toggleObjective(String objective) {
     setState(() {
-      // If 'None' is selected, unselect all other options
-      if (activity == 'Aucune') {
-        // First unselect all activities
-        _activities.forEach((key, value) {
-          _activities[key] = false;
-        });
-        // Then select only 'Aucune'
-        _activities['Aucune'] = true;
-      } else {
-        // If any other activity is selected, unselect 'None'
-        if (_activities['Aucune'] == true) {
-          _activities['Aucune'] = false;
-        }
-        // Toggle the selected activity
-        _activities[activity] = !_activities[activity]!;
-      }
+      _objectives[objective] = !_objectives[objective]!;
+      _selectedObjectives =
+          _objectives.entries.where((e) => e.value).map((e) => e.key).toList();
     });
   }
 
-  void _continueToNextScreen() async {
-    final selectedActivities =
-        _activities.entries.where((e) => e.value).map((e) => e.key).toList();
+  String _getDropdownLabel() {
+    if (_selectedObjectives.isEmpty) {
+      return _translations['dropdown_label']!;
+    } else {
+      return "${_selectedObjectives.length} ${_translations['objectives_selected'] ?? 'objectifs sélectionnés'}";
+    }
+  }
 
-    if (selectedActivities.isEmpty) {
-      // Show error if no selection made
+  void _continueToNextScreen() async {
+    // Check if any objectives are selected
+    if (_selectedObjectives.isEmpty) {
+      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_translations['select_activity']!),
+          content: Text(_translations['select_condition']!),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
         ),
       );
+      // Don't proceed to the next screen
       return;
     }
 
-    // Update user model with the selected activities
-    widget.userData.physicalActivities = selectedActivities;
+    // Save selected objectives to user model
+    widget.userData.healthGoals = _selectedObjectives;
 
     // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
@@ -170,32 +136,68 @@ class _Profile5State extends State<Profile5> {
       ),
     );
 
-    // Navigate to Profile6 (objectives selection) instead of Profile7
-    Navigator.push(
-      context,
+    // Navigate to Profile6 (Weight Input)
+    Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => Profile6(userData: widget.userData),
+          builder: (context) => Profile6(userData: widget.userData)),
+    );
+  }
+
+  Widget _buildObjectiveOption(String objective, bool isSelected) {
+    return InkWell(
+      onTap: () => _toggleObjective(objective),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        child: Row(
+          children: [
+            Container(
+              width: 24.w,
+              height: 24.w,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.lightTeal : Colors.transparent,
+                borderRadius: BorderRadius.circular(4.r),
+                border: Border.all(
+                  color: isSelected ? AppColors.lightTeal : Colors.grey,
+                  width: 1.5.w,
+                ),
+              ),
+              child: isSelected
+                  ? Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 16.sp,
+                    )
+                  : null,
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Text(
+                objective,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final height = size.height;
-    final width = size.width;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leadingWidth: width * 0.12,
+        leadingWidth: 45.w,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios,
-              color: AppColors.lightTeal, size: width * 0.05),
+          icon: Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20.sp),
           onPressed: () => Navigator.pop(context),
-          padding: EdgeInsets.only(left: width * 0.04),
+          padding: EdgeInsets.only(left: 12.w),
         ),
         title: Image.asset(
           'lib/assets/images/mainlogo.jpg',
@@ -204,226 +206,167 @@ class _Profile5State extends State<Profile5> {
         ),
         centerTitle: true,
         actions: [
-          // Language selector button
           LanguageSelectorButton(
-            width: width,
+            width: 1.sw,
             onLanguageChanged: _handleLanguageChanged,
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(
+                color: AppColors.lightTeal,
+              ),
+            )
           : SafeArea(
               child: Column(
                 children: [
-                  // Green progress bar/line at the top
-                  Container(
-                    width: double.infinity,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width:
-                              width * 0.4, // Representing 40% progress (step 4)
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: AppColors.lightTeal,
-                            borderRadius: BorderRadius.only(
-                              topRight: Radius.circular(2),
-                              bottomRight: Radius.circular(2),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Main content
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: width * 0.06),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  // Progress Bar (50%)
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    child: Container(
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(2.r),
+                      ),
+                      child: Row(
                         children: [
-                          SizedBox(height: height * 0.03),
-
-                          // Main question
-                          Text(
-                            _translations['title']!,
-                            style: TextStyle(
-                              fontSize: width * 0.07,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-
-                          SizedBox(height: height * 0.02),
-
-                          // Subtitle/explanation
-                          Text(
-                            _translations['subtitle']!,
-                            style: TextStyle(
-                              fontSize: width * 0.04,
-                              color: Colors.grey[600],
-                              height: 1.3,
-                            ),
-                          ),
-
-                          SizedBox(height: height * 0.03),
-
-                          // Dropdown button
-                          GestureDetector(
-                            onTap: _toggleDropdown,
-                            child: Container(
-                              width: double.infinity,
-                              height: height * 0.07,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEFF9E8),
-                                borderRadius: BorderRadius.circular(15),
-                                border: Border.all(
-                                  color: Colors.transparent,
-                                  width: 1,
-                                ),
-                              ),
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: width * 0.04),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    _translations['dropdown_label']!,
-                                    style: TextStyle(
-                                      fontSize: width * 0.04,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                  Icon(
-                                    _isDropdownOpen
-                                        ? Icons.keyboard_arrow_up
-                                        : Icons.keyboard_arrow_down,
-                                    color: Colors.black54,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          // Activity options list (always visible, no need for dropdown)
-                          Expanded(
-                            child: SingleChildScrollView(
-                              child: Padding(
-                                padding: EdgeInsets.only(top: 8.0),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(15),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.05),
-                                        blurRadius: 5,
-                                        spreadRadius: 1,
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    children: _activities.entries.map((entry) {
-                                      return _buildActivityOption(
-                                        entry.key,
-                                        entry.value,
-                                        width,
-                                        height,
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          // Next button
-                          Padding(
-                            padding:
-                                EdgeInsets.symmetric(vertical: height * 0.05),
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: height * 0.065,
-                              child: ElevatedButton(
-                                onPressed: _continueToNextScreen,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.lightTeal,
-                                  foregroundColor: Colors.black87,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                ),
-                                child: Text(
-                                  _translations['next']!,
-                                  style: TextStyle(
-                                    fontSize: width * 0.04,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
+                          Container(
+                            width: 1.sw * 0.5 - 3.2.w,
+                            height: 4.h,
+                            decoration: BoxDecoration(
+                              color: AppColors.lightTeal,
+                              borderRadius: BorderRadius.circular(2.r),
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: 32.h),
+                            Text(
+                              _translations['title']!,
+                              style: TextStyle(
+                                fontSize: 24.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            SizedBox(height: 12.h),
+                            Text(
+                              _translations['subtitle']!,
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: Colors.grey[700],
+                                height: 1.4,
+                              ),
+                            ),
+                            SizedBox(height: 30.h),
+
+                            // Dropdown (Fixed Text)
+                            GestureDetector(
+                              onTap: _toggleDropdown,
+                              child: Container(
+                                width: double.infinity,
+                                height: 65.h,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEFF9E8),
+                                  borderRadius: BorderRadius.circular(15.r),
+                                  border: Border.all(
+                                    color: Colors.transparent,
+                                    width: 1.w,
+                                  ),
+                                ),
+                                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _getDropdownLabel(),
+                                        style: TextStyle(
+                                          fontSize: 16.sp,
+                                          color: _selectedObjectives.isNotEmpty
+                                              ? Colors.black87
+                                              : Colors.black54,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                    Icon(
+                                      _isDropdownOpen
+                                          ? Icons.keyboard_arrow_up
+                                          : Icons.keyboard_arrow_down,
+                                      color: Colors.black54,
+                                      size: 24.sp,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            // Objective options (properly scrollable dropdown)
+                            if (_isDropdownOpen)
+                              Container(
+                                margin: EdgeInsets.only(top: 4.h),
+                                constraints: BoxConstraints(
+                                  maxHeight:
+                                      MediaQuery.of(context).size.height * 0.4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(15.r),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 8.r,
+                                      offset: Offset(0, 3.h),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(15.r),
+                                  child: SingleChildScrollView(
+                                    physics: const BouncingScrollPhysics(),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: _objectives.entries
+                                          .map((entry) => _buildObjectiveOption(
+                                              entry.key, entry.value))
+                                          .toList(),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 16.w, vertical: 32.h),
+                    child: CustomButton(
+                      text: _translations['next']!,
+                      onPressed: _continueToNextScreen,
+                      width: 1.sw - 32.w,
+                      height: 50.h,
+                    ),
+                  ),
                 ],
               ),
             ),
-    );
-  }
-
-  Widget _buildActivityOption(
-      String activity, bool isSelected, double width, double height) {
-    return InkWell(
-      onTap: () => _toggleActivity(activity),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-            horizontal: width * 0.04, vertical: height * 0.015),
-        child: Row(
-          children: [
-            // Checkbox
-            Container(
-              width: width * 0.06,
-              height: width * 0.06,
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.lightTeal : Colors.transparent,
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(
-                  color: isSelected ? AppColors.lightTeal : Colors.grey,
-                  width: 1.5,
-                ),
-              ),
-              child: isSelected
-                  ? Icon(
-                      Icons.check,
-                      color: Colors.white,
-                      size: width * 0.04,
-                    )
-                  : null,
-            ),
-            SizedBox(width: width * 0.03),
-
-            // Activity name
-            Text(
-              activity,
-              style: TextStyle(
-                fontSize: width * 0.04,
-                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

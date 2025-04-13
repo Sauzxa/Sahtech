@@ -1,63 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
+import 'package:sahtech/core/services/translation_service.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
-import 'package:sahtech/core/services/translation_service.dart';
-import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
-import 'package:sahtech/presentation/profile/profile4.dart';
-import 'package:sahtech/presentation/profile/allergy_selection.dart';
 import 'package:sahtech/presentation/widgets/custom_button.dart';
+import 'package:sahtech/presentation/profile/profile4.dart';
 
-class Profile3 extends StatefulWidget {
+class AllergySelection extends StatefulWidget {
   final UserModel userData;
 
-  const Profile3({super.key, required this.userData});
+  const AllergySelection({super.key, required this.userData});
 
   @override
-  State<Profile3> createState() => _Profile3State();
+  State<AllergySelection> createState() => _AllergySelectionState();
 }
 
-class _Profile3State extends State<Profile3> {
+class _AllergySelectionState extends State<AllergySelection> {
   late TranslationService _translationService;
   bool _isLoading = false;
   bool _isDropdownOpen = false;
-  List<String> _selectedDiseases = [];
-
-  final Map<String, bool> _diseases = {
-    'Diabète': false,
-    'Hypertension artérielle': false,
-    'Obésité': false,
-    'Asthme': false,
-    'Dépression': false,
-    'Anxiété': false,
-    'Gastrite': false,
-    'Caries dentaires': false,
-    'Conjonctivite': false,
-    'Maladie coeliaque': false,
-    'Arthrose': false,
-    'Allergie': false,
-    'Maladie de Crohn': false,
-    'Fibromyalgie': false,
-    'Hypothyroïdie': false,
-    'Hyperthyroïdie': false,
-    'Lupus': false,
-    'Sclérose en plaques': false,
-    'Polyarthrite rhumatoïde': false,
-    'Psoriasis': false,
-    'Endométriose': false,
-    'Glaucome': false,
+  final Map<String, bool> _allergies = {
+    'Arachides': false,
+    'Fruits à coque': false,
+    'Lait': false,
+    'Oeufs': false,
+    'Poisson': false,
+    'Crustacés': false,
+    'Blé': false,
+    'Soja': false,
+    'Sésame': false,
+    'Moutarde': false,
+    'Sulfites': false,
+    'Lupin': false,
+    'Céleri': false,
+    'Mollusques': false,
   };
 
+  List<String> _selectedAllergies = [];
   Map<String, String> _translations = {
-    'title': 'Choisir votre maladies ?',
+    'title': 'Choisir vos allergies',
     'subtitle':
-        'Afin de vous offrir une expérience optimale et des recommandations personnalisées, veuillez choisir votre maladie',
-    'dropdown_label': 'Choisir ton maladie',
+        'Afin de vous offrir une expérience optimale et des recommandations personnalisées, veuillez choisir vos allergies',
+    'dropdown_label': 'Choisir vos allergies',
     'next': 'suivant',
-    'select_condition': 'Veuillez sélectionner votre condition',
+    'select_condition': 'Veuillez sélectionner au moins une allergie',
     'success_message': 'Informations enregistrées avec succès!',
-    'conditions_selected': 'conditions sélectionnées',
+    'allergies_selected': 'allergies sélectionnées',
   };
 
   @override
@@ -76,11 +66,11 @@ class _Profile3State extends State<Profile3> {
         final translatedStrings =
             await _translationService.translateMap(_translations);
 
-        final translatedDiseases = <String, bool>{};
-        for (final disease in _diseases.keys) {
-          final translatedDisease =
-              await _translationService.translate(disease);
-          translatedDiseases[translatedDisease] = false;
+        final translatedAllergies = <String, bool>{};
+        for (final allergy in _allergies.keys) {
+          final translatedAllergy =
+              await _translationService.translate(allergy);
+          translatedAllergies[translatedAllergy] = false;
         }
 
         if (mounted) {
@@ -114,59 +104,88 @@ class _Profile3State extends State<Profile3> {
     });
   }
 
-  void _selectDisease(String disease) {
+  void _toggleAllergy(String allergy) {
     setState(() {
-      _diseases[disease] = !_diseases[disease]!;
-      _selectedDiseases =
-          _diseases.entries.where((e) => e.value).map((e) => e.key).toList();
+      _allergies[allergy] = !_allergies[allergy]!;
+      _selectedAllergies =
+          _allergies.entries.where((e) => e.value).map((e) => e.key).toList();
     });
   }
 
   String _getDropdownLabel() {
-    if (_selectedDiseases.isEmpty) {
+    if (_selectedAllergies.isEmpty) {
       return _translations['dropdown_label']!;
     } else {
-      return "${_selectedDiseases.length} ${_translations['conditions_selected'] ?? 'conditions sélectionnées'}";
+      return "${_selectedAllergies.length} ${_translations['allergies_selected'] ?? 'allergies sélectionnées'}";
     }
   }
 
   void _continueToNextScreen() async {
-    if (_selectedDiseases.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(await _translationService
-              .translate('Veuillez sélectionner votre condition')),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+    // Save selected allergies to user model
+    widget.userData.allergies = _selectedAllergies;
 
-    widget.userData.chronicConditions = _selectedDiseases;
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_translations['success_message']!),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 1),
+      ),
+    );
 
-    // Check if user has selected 'Allergie'
-    if (_diseases['Allergie'] == true) {
-      // Navigate to allergy selection screen
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => AllergySelection(userData: widget.userData),
+    // Navigate to Profile4
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => Profile4(userData: widget.userData),
+      ),
+    );
+  }
+
+  Widget _buildAllergyOption(String allergy, bool isSelected) {
+    return InkWell(
+      onTap: () => _toggleAllergy(allergy),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        child: Row(
+          children: [
+            Container(
+              width: 24.w,
+              height: 24.w,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.lightTeal : Colors.transparent,
+                borderRadius: BorderRadius.circular(4.r),
+                border: Border.all(
+                  color: isSelected ? AppColors.lightTeal : Colors.grey,
+                  width: 1.5.w,
+                ),
+              ),
+              child: isSelected
+                  ? Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 16.sp,
+                    )
+                  : null,
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Text(
+                allergy,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ],
         ),
-      );
-    } else {
-      // Navigate directly to Profile4
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => Profile4(userData: widget.userData),
-        ),
-      );
-    }
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Calculate progress percentage (20%) - second screen in the flow
-    final progressPercentage = 0.2;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -192,39 +211,37 @@ class _Profile3State extends State<Profile3> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(
+                color: AppColors.lightTeal,
+              ),
+            )
           : SafeArea(
               child: Column(
                 children: [
-                  // Fixed Progress Bar with correct styling
+                  // Progress Bar (30%)
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return Container(
-                          height: 4.h,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(2.r),
+                    child: Container(
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(2.r),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 1.sw * 0.3 - 3.2.w,
+                            height: 4.h,
+                            decoration: BoxDecoration(
+                              color: AppColors.lightTeal,
+                              borderRadius: BorderRadius.circular(2.r),
+                            ),
                           ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width:
-                                    constraints.maxWidth * progressPercentage,
-                                height: 4.h,
-                                decoration: BoxDecoration(
-                                  color: AppColors.lightTeal,
-                                  borderRadius: BorderRadius.circular(2.r),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                        ],
+                      ),
                     ),
                   ),
-
                   Expanded(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -232,23 +249,22 @@ class _Profile3State extends State<Profile3> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(height: 32.h),
+                            SizedBox(height: 40.h),
                             Text(
                               _translations['title']!,
                               style: TextStyle(
-                                fontSize: 24.sp,
+                                fontSize: 25.sp,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                                letterSpacing: -0.5,
+                                color: Colors.black,
                               ),
                             ),
                             SizedBox(height: 12.h),
                             Text(
                               _translations['subtitle']!,
                               style: TextStyle(
-                                fontSize: 14.sp,
-                                color: Colors.grey[700],
-                                height: 1.4,
+                                fontSize: 15.sp,
+                                color: Colors.grey[600],
+                                height: 1.3,
                               ),
                             ),
                             SizedBox(height: 30.h),
@@ -277,7 +293,7 @@ class _Profile3State extends State<Profile3> {
                                         _getDropdownLabel(),
                                         style: TextStyle(
                                           fontSize: 16.sp,
-                                          color: _selectedDiseases.isNotEmpty
+                                          color: _selectedAllergies.isNotEmpty
                                               ? Colors.black87
                                               : Colors.black54,
                                           overflow: TextOverflow.ellipsis,
@@ -297,14 +313,13 @@ class _Profile3State extends State<Profile3> {
                               ),
                             ),
 
-                            // Disease options (properly scrollable dropdown)
+                            // Allergy options (properly scrollable dropdown)
                             if (_isDropdownOpen)
                               Container(
                                 margin: EdgeInsets.only(top: 4.h),
                                 constraints: BoxConstraints(
                                   maxHeight:
-                                      MediaQuery.of(context).size.height *
-                                          0.4, // 40% of screen height
+                                      MediaQuery.of(context).size.height * 0.4,
                                 ),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
@@ -323,8 +338,8 @@ class _Profile3State extends State<Profile3> {
                                     physics: const BouncingScrollPhysics(),
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      children: _diseases.entries
-                                          .map((entry) => _buildDiseaseOption(
+                                      children: _allergies.entries
+                                          .map((entry) => _buildAllergyOption(
                                               entry.key, entry.value))
                                           .toList(),
                                     ),
@@ -336,63 +351,35 @@ class _Profile3State extends State<Profile3> {
                       ),
                     ),
                   ),
-
                   Padding(
                     padding:
                         EdgeInsets.symmetric(horizontal: 16.w, vertical: 32.h),
-                    child: CustomButton(
-                      text: _translations['next']!,
-                      onPressed: _continueToNextScreen,
-                      width: 1.sw - 32.w,
+                    child: SizedBox(
+                      width: double.infinity,
                       height: 50.h,
+                      child: ElevatedButton(
+                        onPressed: _continueToNextScreen,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.lightTeal,
+                          foregroundColor: Colors.black87,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30.r),
+                          ),
+                        ),
+                        child: Text(
+                          _translations['next']!,
+                          style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-    );
-  }
-
-  Widget _buildDiseaseOption(String disease, bool isSelected) {
-    return InkWell(
-      onTap: () => _selectDisease(disease),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-        child: Row(
-          children: [
-            Container(
-              width: 24.w,
-              height: 24.w,
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.lightTeal : Colors.transparent,
-                borderRadius: BorderRadius.circular(4.r),
-                border: Border.all(
-                  color: isSelected ? AppColors.lightTeal : Colors.grey,
-                  width: 1.5.w,
-                ),
-              ),
-              child: isSelected
-                  ? Icon(
-                      Icons.check,
-                      color: Colors.white,
-                      size: 16.sp,
-                    )
-                  : null,
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Text(
-                disease,
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

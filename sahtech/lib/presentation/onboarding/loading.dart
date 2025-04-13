@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:sahtech/presentation/onboarding/onboardingscreen1.dart';
 import 'package:sahtech/core/base/base_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:sahtech/core/theme/colors.dart';
+import 'package:sahtech/presentation/profile/getstarted.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();

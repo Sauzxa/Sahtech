@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:sahtech/presentation/profile/profile7.dart';
+import 'package:sahtech/presentation/widgets/custom_button.dart';
 
 class Profile6 extends StatefulWidget {
   final UserModel userData;
+  final int currentStep;
+  final int totalSteps;
 
-  const Profile6({Key? key, required this.userData}) : super(key: key);
+  const Profile6({
+    Key? key,
+    required this.userData,
+    this.currentStep = 2,
+    this.totalSteps = 5,
+  }) : super(key: key);
 
   @override
   State<Profile6> createState() => _Profile6State();
@@ -18,23 +27,24 @@ class Profile6 extends StatefulWidget {
 class _Profile6State extends State<Profile6> {
   late TranslationService _translationService;
   bool _isLoading = false;
-  bool _isDropdownOpen = false;
 
-  // Available goals with selection state
-  final Map<String, bool> _goals = {
-    'Contrôle du diabète': false,
-    'Perte de poid': false,
-    'Réduction du cholestérol': false,
-  };
+  // Weight related variables
+  double _weight = 70.0; // Default weight in kg
+  String _weightUnit = 'kg'; // Default unit
+
+  // Min and max weight values
+  final double _minWeight = 0.0;
+  final double _maxWeight = 300.0;
 
   // Key translations
   Map<String, String> _translations = {
-    'title': 'choisir votre objectif dans notre application ?',
+    'title': 'Veuillez saisir votre poids ?',
     'subtitle':
-        'Choisissez un objectif pour mieux adapter votre expérience. Cette option est optionnelle!',
-    'dropdown_label': 'Choisir ton objectif',
+        'Pour une expérience optimale. Afin de vous offrir un service personnalisé, nous vous invitons à renseigner certaines informations, telles que votre poids',
+    'kg': 'kg',
+    'lb': 'lb',
     'next': 'suivant',
-    'success_message': 'Objectifs enregistrés avec succès!',
+    'success_message': 'Informations enregistrées avec succès!',
   };
 
   @override
@@ -44,6 +54,14 @@ class _Profile6State extends State<Profile6> {
         Provider.of<TranslationService>(context, listen: false);
     _translationService.addListener(_onLanguageChanged);
     _loadTranslations();
+
+    // Initialize weight from user data if available
+    if (widget.userData.weight != null) {
+      _weight = widget.userData.weight!;
+    }
+    if (widget.userData.weightUnit != null) {
+      _weightUnit = widget.userData.weightUnit!;
+    }
   }
 
   @override
@@ -65,23 +83,12 @@ class _Profile6State extends State<Profile6> {
     try {
       // Only translate if not French (our default language)
       if (_translationService.currentLanguageCode != 'fr') {
-        // Translate the UI strings
         final translatedStrings =
             await _translationService.translateMap(_translations);
-
-        // Translate goal names
-        final translatedGoals = <String, bool>{};
-        for (final goal in _goals.keys) {
-          final translatedGoal = await _translationService.translate(goal);
-          translatedGoals[translatedGoal] = false;
-        }
 
         if (mounted) {
           setState(() {
             _translations = translatedStrings;
-            // Uncomment to enable goal translation
-            // _goals.clear();
-            // _goals.addAll(translatedGoals);
             _isLoading = false;
           });
         }
@@ -106,61 +113,64 @@ class _Profile6State extends State<Profile6> {
     // Language change is handled by the listener (_onLanguageChanged)
   }
 
-  void _toggleDropdown() {
-    setState(() {
-      _isDropdownOpen = !_isDropdownOpen;
-    });
+  // Toggle between kg and lb
+  void _toggleUnit(String unit) {
+    if (_weightUnit != unit) {
+      setState(() {
+        _weightUnit = unit;
+        // No need to convert the internal value, just update the unit
+      });
+    }
   }
 
-  void _toggleGoal(String goal) {
-    setState(() {
-      _goals[goal] = !_goals[goal]!;
-    });
+  // Convert pounds to kilograms
+  double _lbToKg(double lb) {
+    return lb / 2.20462;
+  }
+
+  // Convert kilograms to pounds
+  double _kgToLb(double kg) {
+    return kg * 2.20462;
+  }
+
+  // Format weight value for display
+  String _formatWeight(double weight) {
+    if (_weightUnit == 'lb') {
+      return _kgToLb(weight).toInt().toString();
+    }
+    return weight.toInt().toString();
   }
 
   void _continueToNextScreen() {
-    // Get selected goals
-    final selectedGoals =
-        _goals.entries.where((e) => e.value).map((e) => e.key).toList();
+    // Store weight value in user's preferred unit
+    widget.userData.weight = _weight;
+    widget.userData.weightUnit = _weightUnit;
 
-    // Update user model with selected goals (can be empty since goals are optional)
-    widget.userData.healthGoals = selectedGoals;
-
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_translations['success_message']!),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 1),
-      ),
-    );
-
-    // Navigate to Profile7
+    // Navigate to the height input screen
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Profile7(userData: widget.userData),
+        builder: (context) => Profile7(
+          userData: widget.userData,
+          currentStep: widget.currentStep + 1,
+          totalSteps: widget.totalSteps,
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final height = size.height;
-    final width = size.width;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leadingWidth: width * 0.12,
+        leadingWidth: 45.w,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios,
-              color: AppColors.lightTeal, size: width * 0.05),
+          icon: Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20.sp),
           onPressed: () => Navigator.pop(context),
-          padding: EdgeInsets.only(left: width * 0.04),
+          padding: EdgeInsets.only(left: 15.w),
         ),
         title: Image.asset(
           'lib/assets/images/mainlogo.jpg',
@@ -171,166 +181,296 @@ class _Profile6State extends State<Profile6> {
         actions: [
           // Language selector button
           LanguageSelectorButton(
-            width: width,
+            width: 1.sw,
             onLanguageChanged: _handleLanguageChanged,
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: AppColors.lightTeal))
           : SafeArea(
               child: Column(
                 children: [
-                  // Green divider line
-                  Container(
-                    width: double.infinity,
-                    height: 1,
-                    color: AppColors.lightTeal,
-                  ),
-
-                  // Green progress bar
-                  Container(
-                    width: double.infinity,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width:
-                              width * 0.5, // Representing 50% progress (step 5)
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: AppColors.lightTeal,
-                            borderRadius: BorderRadius.only(
-                              topRight: Radius.circular(2),
-                              bottomRight: Radius.circular(2),
+                  // Progress Bar (60%)
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    child: Container(
+                      height: 4.h,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(2.r),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 1.sw * 0.6 - 3.2.w,
+                            height: 4.h,
+                            decoration: BoxDecoration(
+                              color: AppColors.lightTeal,
+                              borderRadius: BorderRadius.circular(2.r),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
 
                   // Main content
                   Expanded(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: width * 0.06),
+                      padding: EdgeInsets.symmetric(horizontal: 20.w),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(height: height * 0.03),
+                          SizedBox(height: 32.h),
 
                           // Main question
                           Text(
                             _translations['title']!,
                             style: TextStyle(
-                              fontSize: width * 0.07,
+                              fontSize: 24.sp,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                              color: Colors.black87,
+                              letterSpacing: -0.5,
                             ),
                           ),
 
-                          SizedBox(height: height * 0.02),
+                          SizedBox(height: 12.h),
 
                           // Subtitle/explanation
                           Text(
                             _translations['subtitle']!,
                             style: TextStyle(
-                              fontSize: width * 0.04,
-                              color: Colors.grey[600],
-                              height: 1.3,
+                              fontSize: 14.sp,
+                              color: Colors.grey[700],
+                              height: 1.4,
                             ),
                           ),
 
-                          SizedBox(height: height * 0.03),
+                          SizedBox(height: 24.h),
 
-                          // Dropdown button
-                          GestureDetector(
-                            onTap: _toggleDropdown,
+                          // Weight unit selector (kg/lb) - pill style toggle
+                          Center(
                             child: Container(
-                              width: double.infinity,
-                              height: height * 0.07,
+                              width: 120.w,
+                              height: 36.h,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFEFF9E8),
-                                borderRadius: BorderRadius.circular(15),
-                                border: Border.all(
-                                  color: Colors.transparent,
-                                  width: 1,
-                                ),
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(20.r),
                               ),
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: width * 0.04),
                               child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    _translations['dropdown_label']!,
-                                    style: TextStyle(
-                                      fontSize: width * 0.04,
-                                      color: Colors.black87,
+                                  // lb selector
+                                  GestureDetector(
+                                    onTap: () => _toggleUnit('lb'),
+                                    child: Container(
+                                      width: 60.w,
+                                      height: 36.h,
+                                      decoration: BoxDecoration(
+                                        color: _weightUnit == 'lb'
+                                            ? Colors.white
+                                            : Colors.grey[200],
+                                        borderRadius:
+                                            BorderRadius.circular(20.r),
+                                        boxShadow: _weightUnit == 'lb'
+                                            ? [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withOpacity(0.1),
+                                                  blurRadius: 2,
+                                                  spreadRadius: 0.5,
+                                                ),
+                                              ]
+                                            : null,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          'lb',
+                                          style: TextStyle(
+                                            fontSize: 14.sp,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                  Icon(
-                                    _isDropdownOpen
-                                        ? Icons.keyboard_arrow_up
-                                        : Icons.keyboard_arrow_down,
-                                    color: Colors.black54,
+                                  // kg selector
+                                  GestureDetector(
+                                    onTap: () => _toggleUnit('kg'),
+                                    child: Container(
+                                      width: 60.w,
+                                      height: 36.h,
+                                      decoration: BoxDecoration(
+                                        color: _weightUnit == 'kg'
+                                            ? AppColors.lightTeal
+                                            : Colors.grey[200],
+                                        borderRadius:
+                                            BorderRadius.circular(20.r),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          'kg',
+                                          style: TextStyle(
+                                            fontSize: 14.sp,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
 
-                          // Goal options list - only shown when dropdown is open
-                          if (_isDropdownOpen)
-                            Expanded(
-                              child: SingleChildScrollView(
-                                child: Padding(
-                                  padding: EdgeInsets.only(top: 16.0),
-                                  child: Column(
-                                    children: _goals.entries.map((entry) {
-                                      return _buildGoalOption(
-                                        entry.key,
-                                        entry.value,
-                                        width,
-                                        height,
-                                      );
-                                    }).toList(),
+                          SizedBox(height: 24.h),
+
+                          // Weight display area with slider
+                          Container(
+                            width: double.infinity,
+                            height: 0.3.sh,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF9E8),
+                              borderRadius: BorderRadius.circular(15.r),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Weight value display
+                                Container(
+                                  width: 0.5.sw,
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      _formatWeight(_weight),
+                                      style: TextStyle(
+                                        fontSize: 80.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
 
-                          if (!_isDropdownOpen) Expanded(child: SizedBox()),
+                                SizedBox(height: 24.h),
+
+                                // Scale markings and slider
+                                Container(
+                                  width: 0.7.sw,
+                                  child: Column(
+                                    children: [
+                                      // Scale markings
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            _weightUnit == 'kg' ? '30' : '66',
+                                            style: TextStyle(
+                                              fontSize: 14.sp,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          Text(
+                                            _weightUnit == 'kg' ? '70' : '154',
+                                            style: TextStyle(
+                                              fontSize: 14.sp,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          Text(
+                                            _weightUnit == 'kg' ? '115' : '253',
+                                            style: TextStyle(
+                                              fontSize: 14.sp,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          Text(
+                                            _weightUnit == 'kg' ? '160' : '352',
+                                            style: TextStyle(
+                                              fontSize: 14.sp,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          Text(
+                                            _weightUnit == 'kg' ? '200' : '440',
+                                            style: TextStyle(
+                                              fontSize: 14.sp,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+
+                                      // Scale ticks
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: List.generate(
+                                          41,
+                                          (index) => Container(
+                                            height:
+                                                index % 10 == 0 ? 12.h : 6.h,
+                                            width: 1.w,
+                                            color: Colors.grey[400],
+                                          ),
+                                        ),
+                                      ),
+
+                                      // Slider
+                                      SliderTheme(
+                                        data: SliderThemeData(
+                                          activeTrackColor: Colors.transparent,
+                                          inactiveTrackColor:
+                                              Colors.transparent,
+                                          thumbColor: Colors.black,
+                                          thumbShape: RoundSliderThumbShape(
+                                            enabledThumbRadius: 6.r,
+                                          ),
+                                          overlayShape: RoundSliderOverlayShape(
+                                            overlayRadius: 12.r,
+                                          ),
+                                          trackHeight: 0,
+                                        ),
+                                        child: Slider(
+                                          value: _weight.clamp(30.0, 200.0),
+                                          min: 30.0,
+                                          max: 200.0,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              _weight = value;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Weight unit
+                                Text(
+                                  _weightUnit,
+                                  style: TextStyle(
+                                    fontSize: 16.sp,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          Spacer(),
 
                           // Next button
                           Padding(
-                            padding:
-                                EdgeInsets.symmetric(vertical: height * 0.05),
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: height * 0.065,
-                              child: ElevatedButton(
-                                onPressed: _continueToNextScreen,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.lightTeal,
-                                  foregroundColor: Colors.black87,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                ),
-                                child: Text(
-                                  _translations['next']!,
-                                  style: TextStyle(
-                                    fontSize: width * 0.04,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
+                            padding: EdgeInsets.only(bottom: 32.h),
+                            child: CustomButton(
+                              text: _translations['next']!,
+                              onPressed: _continueToNextScreen,
+                              width: 1.sw - 32.w,
+                              height: 50.h,
                             ),
                           ),
                         ],
@@ -340,77 +480,6 @@ class _Profile6State extends State<Profile6> {
                 ],
               ),
             ),
-    );
-  }
-
-  // Updated goal option widget to better match the design
-  Widget _buildGoalOption(
-      String goal, bool isSelected, double width, double height) {
-    return Container(
-      width: double.infinity,
-      margin: EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _toggleGoal(goal),
-          borderRadius: BorderRadius.circular(15),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: width * 0.04,
-              vertical: height * 0.022,
-            ),
-            child: Row(
-              children: [
-                // Checkbox
-                Container(
-                  width: width * 0.06,
-                  height: width * 0.06,
-                  decoration: BoxDecoration(
-                    color:
-                        isSelected ? AppColors.lightTeal : Colors.transparent,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color:
-                          isSelected ? AppColors.lightTeal : Colors.grey[400]!,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: isSelected
-                      ? Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: width * 0.04,
-                        )
-                      : null,
-                ),
-                SizedBox(width: width * 0.03),
-
-                // Goal name
-                Text(
-                  goal,
-                  style: TextStyle(
-                    fontSize: width * 0.04,
-                    fontWeight:
-                        isSelected ? FontWeight.w500 : FontWeight.normal,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
