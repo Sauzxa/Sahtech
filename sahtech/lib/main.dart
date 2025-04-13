@@ -10,7 +10,7 @@ import 'package:sahtech/presentation/profile/getstarted.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+//
   // Initialize translation service
   final translationService = TranslationService();
   await translationService.init();
