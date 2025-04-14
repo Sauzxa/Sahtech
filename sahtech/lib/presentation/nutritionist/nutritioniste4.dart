@@ -185,8 +185,7 @@ class _Nutritioniste4State extends State<Nutritioniste4> {
                     child: Row(
                       children: [
                         Container(
-                          width:
-                              width * (widget.currentStep / widget.totalSteps),
+                          width: width * (widget.currentStep / widget.totalSteps),
                           height: 4,
                           decoration: BoxDecoration(
                             color: AppColors.lightTeal,

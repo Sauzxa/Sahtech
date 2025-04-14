@@ -248,11 +248,11 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Nutritioniste4(
-          nutritionistData: widget.nutritionistData,
-          currentStep: widget.currentStep + 1,
-          totalSteps: widget.totalSteps,
-        ),
+          builder: (context) => Nutritioniste4(
+            nutritionistData: widget.nutritionistData,
+            currentStep: widget.currentStep + 1,
+            totalSteps: widget.totalSteps,
+          ),
       ),
     );
   }
@@ -307,8 +307,7 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
                     child: Row(
                       children: [
                         Container(
-                          width:
-                              width * (widget.currentStep / widget.totalSteps),
+                          width: width * (widget.currentStep / widget.totalSteps),
                           height: 4,
                           decoration: BoxDecoration(
                             color: AppColors.lightTeal,

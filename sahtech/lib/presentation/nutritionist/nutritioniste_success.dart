@@ -72,7 +72,7 @@ class _NutritionisteSuccessState extends State<NutritionisteSuccess> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: const Color(0xFF9FE870)))
+          ? Center(child: CircularProgressIndicator(color: AppColors.lightTeal))
           : Stack(
               children: [
                 // Confetti Background with programmatically drawn pattern
