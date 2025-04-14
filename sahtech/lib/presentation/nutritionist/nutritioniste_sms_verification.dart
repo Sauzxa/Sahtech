@@ -3,16 +3,18 @@ import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
-import 'package:sahtech/presentation/nutritionist/nutritioniste_password.dart';
+import 'package:sahtech/presentation/profile/profile2.dart';
 import 'dart:async';
 import '../widgets/custom_button.dart';
 
 class NutritionisteSmsVerification extends StatefulWidget {
   final String phoneNumber;
+  final NutritionisteModel nutritionistData;
 
   const NutritionisteSmsVerification({
     Key? key,
     required this.phoneNumber,
+    required this.nutritionistData,
   }) : super(key: key);
 
   @override
@@ -243,18 +245,15 @@ class _NutritionisteSmsVerificationState extends State<NutritionisteSmsVerificat
                                   // In a real app, you would verify the OTP with a backend service
                                   // For now, we'll just proceed to the password screen
                                   
-                                  // Create a NutritionisteModel with the phone number
-                                  final nutritionistData = NutritionisteModel(
-                                    userType: 'nutritionist',
-                                    phoneNumber: widget.phoneNumber,
-                                  );
+                                  // OTP verification successful, use the existing nutritionist data model
+                                  // In a real app, you would validate the OTP with a backend
                                   
-                                  // Navigate to password screen
+                                  // Navigate to Profile2 screen to continue the user registration flow
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => NutritionistePassword(
-                                        nutritionistData: nutritionistData,
+                                      builder: (context) => Profile2(
+                                        nutritionistData: widget.nutritionistData,
                                       ),
                                     ),
                                   );

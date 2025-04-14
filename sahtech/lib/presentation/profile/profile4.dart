@@ -4,14 +4,17 @@ import 'package:provider/provider.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
+import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:sahtech/presentation/widgets/custom_button.dart';
 import 'package:sahtech/presentation/profile/profile5.dart';
 
 class Profile4 extends StatefulWidget {
-  final UserModel userData;
+  final UserModel? userData;
+  final NutritionisteModel? nutritionistData;
 
-  const Profile4({super.key, required this.userData});
+  const Profile4({super.key, this.userData, this.nutritionistData})
+      : assert(userData != null || nutritionistData != null, 'Either userData or nutritionistData must be provided');
 
   @override
   State<Profile4> createState() => _Profile4State();
@@ -21,19 +24,24 @@ class _Profile4State extends State<Profile4> {
   bool? _doesExercise;
   late TranslationService _translationService;
   bool _isLoading = false;
+  late final String userType;
 
   @override
   void initState() {
     super.initState();
-    _translationService =
-        Provider.of<TranslationService>(context, listen: false);
+    _translationService = Provider.of<TranslationService>(context, listen: false);
+    userType = widget.nutritionistData?.userType ?? widget.userData?.userType ?? 'user';
   }
 
   void _handleLanguageChanged(String languageCode) {
     setState(() => _isLoading = true);
     Future.delayed(Duration.zero, () async {
       try {
-        widget.userData.preferredLanguage = languageCode;
+        if (userType == 'nutritionist') {
+          widget.nutritionistData!.preferredLanguage = languageCode;
+        } else {
+          widget.userData!.preferredLanguage = languageCode;
+        }
       } catch (e) {
         debugPrint('Error handling language change: $e');
       } finally {
@@ -44,8 +52,15 @@ class _Profile4State extends State<Profile4> {
 
   @override
   void dispose() {
-    if (widget.userData.preferredLanguage !=
-        _translationService.currentLanguageCode) {
+    String? currentPreferredLanguage;
+    
+    if (userType == 'nutritionist') {
+      currentPreferredLanguage = widget.nutritionistData!.preferredLanguage;
+    } else {
+      currentPreferredLanguage = widget.userData!.preferredLanguage;
+    }
+    
+    if (currentPreferredLanguage != null && currentPreferredLanguage != _translationService.currentLanguageCode) {
       Navigator.pop(context, 'language_changed');
     }
     super.dispose();
@@ -63,24 +78,47 @@ class _Profile4State extends State<Profile4> {
       return;
     }
 
-    widget.userData.doesExercise = _doesExercise;
-    widget.userData.preferredLanguage = _translationService.currentLanguageCode;
+    // Update the appropriate model based on user type
+    if (userType == 'nutritionist') {
+      widget.nutritionistData!.doesExercise = _doesExercise;
+      widget.nutritionistData!.preferredLanguage = _translationService.currentLanguageCode;
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(await _translationService
+              .translate('Informations enregistrées avec succès!')),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 1),
+        ),
+      );
 
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(await _translationService
-            .translate('Informations enregistrées avec succès!')),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 1),
-      ),
-    );
+      // Navigate to Profile5
+      Navigator.of(context).push(
+        MaterialPageRoute(
+            builder: (context) => Profile5(nutritionistData: widget.nutritionistData)),
+      );
+    } else {
+      // Handle regular user flow
+      widget.userData!.doesExercise = _doesExercise;
+      widget.userData!.preferredLanguage = _translationService.currentLanguageCode;
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(await _translationService
+              .translate('Informations enregistrées avec succès!')),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 1),
+        ),
+      );
 
-    // Navigate to Profile5
-    Navigator.of(context).push(
-      MaterialPageRoute(
-          builder: (context) => Profile5(userData: widget.userData)),
-    );
+      // Navigate to Profile5
+      Navigator.of(context).push(
+        MaterialPageRoute(
+            builder: (context) => Profile5(userData: widget.userData)),
+      );
+    }
   }
 
   @override

@@ -15,7 +15,7 @@ class Nutritioniste4 extends StatefulWidget {
   const Nutritioniste4({
     Key? key,
     required this.nutritionistData,
-    this.currentStep = 4,
+    this.currentStep = 3,
     this.totalSteps = 5,
   }) : super(key: key);
 

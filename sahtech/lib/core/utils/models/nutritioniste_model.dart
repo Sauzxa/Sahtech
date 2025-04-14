@@ -5,8 +5,18 @@ class NutritionisteModel {
   String? phoneNumber;
   String? password; // Added for authentication
   String? profileImageUrl;
-  String? preferredLanguage;
+  String preferredLanguage;
   String? gender; // Added to store gender information
+  
+  // Fields for profile screens flow
+  bool? hasChronicDisease;
+  List<String>? chronicConditions;
+  List<String>? allergies;
+  String? allergyDay;
+  String? allergyMonth;
+  String? allergyYear;
+  bool? doesExercise;
+  List<String>? healthGoals;
 
   // Nutritionist-specific fields
   String? specialization; // Area of specialization
@@ -51,8 +61,16 @@ class NutritionisteModel {
     this.phoneNumber,
     this.password,
     this.profileImageUrl,
-    this.preferredLanguage,
+    required this.preferredLanguage,
     this.gender,
+    this.hasChronicDisease,
+    this.chronicConditions,
+    this.allergies,
+    this.allergyDay,
+    this.allergyMonth,
+    this.allergyYear,
+    this.doesExercise,
+    this.healthGoals,
     this.specialization,
     this.education,
     this.certification,
@@ -93,8 +111,22 @@ class NutritionisteModel {
       phoneNumber: map['phoneNumber'],
       password: map['password'],
       profileImageUrl: map['profileImageUrl'],
-      preferredLanguage: map['preferredLanguage'],
+      preferredLanguage: map['preferredLanguage'] ?? 'fr',
       gender: map['gender'],
+      hasChronicDisease: map['hasChronicDisease'],
+      chronicConditions: map['chronicConditions'] != null
+        ? List<String>.from(map['chronicConditions'])
+        : null,
+      allergies: map['allergies'] != null
+        ? List<String>.from(map['allergies'])
+        : null,
+      allergyDay: map['allergyDay'],
+      allergyMonth: map['allergyMonth'],
+      allergyYear: map['allergyYear'],
+      doesExercise: map['doesExercise'],
+      healthGoals: map['healthGoals'] != null
+        ? List<String>.from(map['healthGoals'])
+        : null,
       specialization: map['specialization'],
       education: map['education'],
       certification: map['certification'],
@@ -135,6 +167,11 @@ class NutritionisteModel {
       'profileImageUrl': profileImageUrl,
       'preferredLanguage': preferredLanguage,
       'gender': gender,
+      'hasChronicDisease': hasChronicDisease,
+      'chronicConditions': chronicConditions,
+      'allergies': allergies,
+      'doesExercise': doesExercise,
+      'healthGoals': healthGoals,
       'specialization': specialization,
       'education': education,
       'certification': certification,
@@ -174,6 +211,11 @@ class NutritionisteModel {
     String? profileImageUrl,
     String? preferredLanguage,
     String? gender,
+    bool? hasChronicDisease,
+    List<String>? chronicConditions,
+    List<String>? allergies,
+    bool? doesExercise,
+    List<String>? healthGoals,
     String? specialization,
     String? education,
     String? certification,
@@ -210,6 +252,11 @@ class NutritionisteModel {
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
       gender: gender ?? this.gender,
+      hasChronicDisease: hasChronicDisease ?? this.hasChronicDisease,
+      chronicConditions: chronicConditions ?? this.chronicConditions,
+      allergies: allergies ?? this.allergies,
+      doesExercise: doesExercise ?? this.doesExercise,
+      healthGoals: healthGoals ?? this.healthGoals,
       specialization: specialization ?? this.specialization,
       education: education ?? this.education,
       certification: certification ?? this.certification,

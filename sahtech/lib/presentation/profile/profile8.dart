@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
+import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
@@ -12,16 +13,19 @@ import 'package:sahtech/presentation/widgets/custom_button.dart';
 import 'dart:math';
 
 class Profile8 extends StatefulWidget {
-  final UserModel userData;
+  final UserModel? userData;
+  final NutritionisteModel? nutritionistData;
   final int currentStep;
   final int totalSteps;
 
   const Profile8({
     Key? key,
-    required this.userData,
+    this.userData,
+    this.nutritionistData,
     this.currentStep = 4,
     this.totalSteps = 5,
-  }) : super(key: key);
+  }) : assert(userData != null || nutritionistData != null, 'Either userData or nutritionistData must be provided'),
+       super(key: key);
 
   @override
   State<Profile8> createState() => _Profile8State();
@@ -30,6 +34,7 @@ class Profile8 extends StatefulWidget {
 class _Profile8State extends State<Profile8> {
   late TranslationService _translationService;
   bool _isLoading = false;
+  late final String userType;
 
   // Years, months, days for date picker
   final List<String> _years = List.generate(
@@ -99,23 +104,39 @@ class _Profile8State extends State<Profile8> {
   @override
   void initState() {
     super.initState();
-    _translationService =
-        Provider.of<TranslationService>(context, listen: false);
+    _translationService = Provider.of<TranslationService>(context, listen: false);
     _translationService.addListener(_onLanguageChanged);
+    userType = widget.nutritionistData?.userType ?? widget.userData?.userType ?? 'user';
     _loadTranslations();
 
-    // Initialize from user data if available
-    if (widget.userData.allergyYear != null) {
-      _selectedYear = widget.userData.allergyYear!;
-    }
-    if (widget.userData.allergyMonth != null) {
-      _selectedMonth = widget.userData.allergyMonth!;
-    }
-    if (widget.userData.allergyDay != null) {
-      _selectedDay = widget.userData.allergyDay!;
-    }
-    if (widget.userData.allergies.isNotEmpty) {
-      _selectedAllergies.addAll(widget.userData.allergies);
+    // Initialize from model data if available
+    if (userType == 'nutritionist') {
+      if (widget.nutritionistData?.allergyYear != null) {
+        _selectedYear = widget.nutritionistData!.allergyYear!;
+      }
+      if (widget.nutritionistData?.allergyMonth != null) {
+        _selectedMonth = widget.nutritionistData!.allergyMonth!;
+      }
+      if (widget.nutritionistData?.allergyDay != null) {
+        _selectedDay = widget.nutritionistData!.allergyDay!;
+      }
+      if (widget.nutritionistData?.allergies != null && 
+          widget.nutritionistData!.allergies!.isNotEmpty) {
+        _selectedAllergies.addAll(widget.nutritionistData!.allergies!);
+      }
+    } else {
+      if (widget.userData?.allergyYear != null) {
+        _selectedYear = widget.userData!.allergyYear!;
+      }
+      if (widget.userData?.allergyMonth != null) {
+        _selectedMonth = widget.userData!.allergyMonth!;
+      }
+      if (widget.userData?.allergyDay != null) {
+        _selectedDay = widget.userData!.allergyDay!;
+      }
+      if (widget.userData?.allergies.isNotEmpty ?? false) {
+        _selectedAllergies.addAll(widget.userData!.allergies);
+      }
     }
   }
 
@@ -163,7 +184,7 @@ class _Profile8State extends State<Profile8> {
   // Handle language change
   void _handleLanguageChanged(String languageCode) {
     // Update user model with the new language
-    widget.userData.preferredLanguage = languageCode;
+    widget.userData!.preferredLanguage = languageCode;
 
     // Language change is handled by the listener (_onLanguageChanged)
   }
@@ -179,16 +200,32 @@ class _Profile8State extends State<Profile8> {
     });
   }
 
-  void _continueToNextScreen() {
-    // Store allergy data in the user model
-    widget.userData.allergies = List.from(_selectedAllergies);
-    widget.userData.allergyYear = _selectedYear;
-    widget.userData.allergyMonth = _selectedMonth;
-    widget.userData.allergyDay = _selectedDay;
-
-    // Navigate to home screen for testing instead of signup
-    Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false,
-        arguments: widget.userData);
+  void _continueToNextScreen() async {
+    // Save DOB and allergies to appropriate model
+    if (userType == 'nutritionist') {
+      widget.nutritionistData!.allergyDay = _selectedDay;
+      widget.nutritionistData!.allergyMonth = _selectedMonth;
+      widget.nutritionistData!.allergyYear = _selectedYear;
+      if (_selectedAllergies.isNotEmpty) {
+        widget.nutritionistData!.allergies = _selectedAllergies;
+      }
+    } else {
+      widget.userData!.allergyDay = _selectedDay;
+      widget.userData!.allergyMonth = _selectedMonth;
+      widget.userData!.allergyYear = _selectedYear;
+      if (_selectedAllergies.isNotEmpty) {
+        widget.userData!.allergies = _selectedAllergies;
+      }
+    }
+    
+    // Show success message (could also be used to move to next screen)
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(_translations['success_message']!),
+      backgroundColor: Colors.green,
+    ));
+    
+    // Navigate to home screen or next registration step
+    // For now, just showing success message
   }
 
   @override

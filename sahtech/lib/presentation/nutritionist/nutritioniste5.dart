@@ -377,15 +377,27 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
       widget.nutritionistData.longitude = _selectedLocation!.longitude;
       widget.nutritionistData.cabinetAddress = _selectedLocationAddress;
 
-      // Use pushReplacement instead of push to avoid screen stacking issues
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => NutritionistePhone(
-            nutritionistData: widget.nutritionistData,
-          ),
+      // Show success message before navigation
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_translations['location_saved']!),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 1),
         ),
       );
+
+      // Navigate to phone number screen after a brief delay to show the success message
+      Future.delayed(const Duration(milliseconds: 1200), () {
+        // Use push instead of pushReplacement to maintain back navigation capability if needed
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NutritionistePhone(
+              nutritionistData: widget.nutritionistData,
+            ),
+          ),
+        );
+      });
     } catch (e) {
       // Reset loading state if there's an error
       setState(() {

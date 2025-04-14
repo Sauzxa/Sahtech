@@ -71,7 +71,10 @@ class NutritionistService extends ChangeNotifier {
 
       // If no data exists, create a new model
       if (_currentNutritionist == null) {
-        _currentNutritionist = NutritionisteModel(userType: 'nutritionist');
+        _currentNutritionist = NutritionisteModel(
+          userType: 'nutritionist',
+          preferredLanguage: 'fr', // Default to French
+        );
       }
 
       // Mark registration as in progress
@@ -82,7 +85,10 @@ class NutritionistService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error starting registration: $e');
       // Create a default model if loading fails
-      return NutritionisteModel(userType: 'nutritionist');
+      return NutritionisteModel(
+        userType: 'nutritionist',
+        preferredLanguage: 'fr', // Default to French
+      );
     } finally {
       _isLoading = false;
       notifyListeners();

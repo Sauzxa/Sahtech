@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
+import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
@@ -10,9 +11,11 @@ import 'package:sahtech/presentation/profile/allergy_selection.dart';
 import 'package:sahtech/presentation/widgets/custom_button.dart';
 
 class Profile3 extends StatefulWidget {
-  final UserModel userData;
+  final UserModel? userData;
+  final NutritionisteModel? nutritionistData;
 
-  const Profile3({super.key, required this.userData});
+  const Profile3({super.key, this.userData, this.nutritionistData})
+      : assert(userData != null || nutritionistData != null, 'Either userData or nutritionistData must be provided');
 
   @override
   State<Profile3> createState() => _Profile3State();
@@ -23,6 +26,7 @@ class _Profile3State extends State<Profile3> {
   bool _isLoading = false;
   bool _isDropdownOpen = false;
   List<String> _selectedDiseases = [];
+  late final String userType;
 
   final Map<String, bool> _diseases = {
     'Diabète': false,
@@ -63,8 +67,8 @@ class _Profile3State extends State<Profile3> {
   @override
   void initState() {
     super.initState();
-    _translationService =
-        Provider.of<TranslationService>(context, listen: false);
+    _translationService = Provider.of<TranslationService>(context, listen: false);
+    userType = widget.nutritionistData?.userType ?? widget.userData?.userType ?? 'user';
     _loadTranslations();
   }
 
@@ -104,7 +108,11 @@ class _Profile3State extends State<Profile3> {
 
   void _handleLanguageChanged(String languageCode) {
     setState(() => _isLoading = true);
-    widget.userData.preferredLanguage = languageCode;
+    if (userType == 'nutritionist') {
+      widget.nutritionistData!.preferredLanguage = languageCode;
+    } else {
+      widget.userData!.preferredLanguage = languageCode;
+    }
     _loadTranslations();
   }
 
@@ -142,23 +150,46 @@ class _Profile3State extends State<Profile3> {
       return;
     }
 
-    widget.userData.chronicConditions = _selectedDiseases;
+    // Update the appropriate model based on user type
+    if (userType == 'nutritionist') {
+      widget.nutritionistData!.chronicConditions = _selectedDiseases;
 
-    // Check if user has selected 'Allergie'
-    if (_diseases['Allergie'] == true) {
-      // Navigate to allergy selection screen
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => AllergySelection(userData: widget.userData),
-        ),
-      );
+      // Check if nutritionist has selected 'Allergie'
+      if (_diseases['Allergie'] == true) {
+        // Navigate to allergy selection screen
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => AllergySelection(nutritionistData: widget.nutritionistData),
+          ),
+        );
+      } else {
+        // Navigate directly to Profile4
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => Profile4(nutritionistData: widget.nutritionistData),
+          ),
+        );
+      }
     } else {
-      // Navigate directly to Profile4
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => Profile4(userData: widget.userData),
-        ),
-      );
+      // Handle regular user flow
+      widget.userData!.chronicConditions = _selectedDiseases;
+
+      // Check if user has selected 'Allergie'
+      if (_diseases['Allergie'] == true) {
+        // Navigate to allergy selection screen
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => AllergySelection(userData: widget.userData),
+          ),
+        );
+      } else {
+        // Navigate directly to Profile4
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => Profile4(userData: widget.userData),
+          ),
+        );
+      }
     }
   }
 

@@ -168,10 +168,17 @@ class _NutritionistePhoneState extends State<NutritionistePhone> {
 
     if (isValid) {
       String fullPhoneNumber = '$selectedCountryCode$phoneNumber';
+      
+      // Update the phone number in the nutritionist data model
+      widget.nutritionistData.phoneNumber = fullPhoneNumber;
+      
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => NutritionisteSmsVerification(phoneNumber: fullPhoneNumber),
+          builder: (context) => NutritionisteSmsVerification(
+            phoneNumber: fullPhoneNumber,
+            nutritionistData: widget.nutritionistData,
+          ),
         ),
       );
     } else {
