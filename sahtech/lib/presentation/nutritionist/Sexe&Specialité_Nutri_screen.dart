@@ -5,7 +5,7 @@ import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
-import 'package:sahtech/presentation/nutritionist/nutritioniste3.dart';
+import 'package:sahtech/presentation/nutritionist/Attest_nutri_screnn.dart';
 
 class Nutritioniste2 extends StatefulWidget {
   final NutritionisteModel nutritionistData;
@@ -170,7 +170,6 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
             ),
           )
         : Scaffold(
-          
             backgroundColor: Colors.white,
             appBar: AppBar(
               backgroundColor: Colors.white,
@@ -199,14 +198,14 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
                           children: [
                             // Add extra top margin
                             SizedBox(height: 20.h),
-                            
+
                             // Sahtech logo
                             Image.asset(
                               'lib/assets/images/mainlogo.jpg',
                               height: 50.h,
                               fit: BoxFit.contain,
                             ),
-                            
+
                             SizedBox(height: 30.h),
                             // Page title
                             Text(
@@ -271,12 +270,14 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
                                 setState(() {
                                   _selectedSpeciality = value;
                                   _isSpecialityExpanded = false;
-                                  widget.nutritionistData.specialization = value;
+                                  widget.nutritionistData.specialization =
+                                      value;
                                 });
                               },
                               onTap: () {
                                 setState(() {
-                                  _isSpecialityExpanded = !_isSpecialityExpanded;
+                                  _isSpecialityExpanded =
+                                      !_isSpecialityExpanded;
                                   if (_isSpecialityExpanded) {
                                     _isGenderExpanded = false;
                                   }
@@ -319,7 +320,7 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
                 ],
               ),
             ),
-    );
+          );
   }
 
   // Build a dropdown with checkbox list tiles

@@ -6,26 +6,23 @@ import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
-import 'package:sahtech/presentation/profile/profile3.dart';
-import 'package:sahtech/presentation/profile/profile4.dart';
 import 'package:sahtech/presentation/widgets/custom_button.dart';
+import 'package:sahtech/presentation/profile/objectif_screen.dart';
 
-class Profile2 extends StatefulWidget {
+class Profile4 extends StatefulWidget {
   final UserModel? userData;
   final NutritionisteModel? nutritionistData;
 
-  const Profile2({
-    super.key, 
-    this.userData,
-    this.nutritionistData,
-  }) : assert(userData != null || nutritionistData != null, 'Either userData or nutritionistData must be provided');
+  const Profile4({super.key, this.userData, this.nutritionistData})
+      : assert(userData != null || nutritionistData != null,
+            'Either userData or nutritionistData must be provided');
 
   @override
-  State<Profile2> createState() => _Profile2State();
+  State<Profile4> createState() => _Profile4State();
 }
 
-class _Profile2State extends State<Profile2> {
-  bool? _hasChronicDisease;
+class _Profile4State extends State<Profile4> {
+  bool? _doesExercise;
   late TranslationService _translationService;
   bool _isLoading = false;
   late final String userType;
@@ -33,8 +30,11 @@ class _Profile2State extends State<Profile2> {
   @override
   void initState() {
     super.initState();
-    _translationService = Provider.of<TranslationService>(context, listen: false);
-    userType = widget.nutritionistData?.userType ?? widget.userData?.userType ?? 'user';
+    _translationService =
+        Provider.of<TranslationService>(context, listen: false);
+    userType = widget.nutritionistData?.userType ??
+        widget.userData?.userType ??
+        'user';
   }
 
   void _handleLanguageChanged(String languageCode) {
@@ -56,22 +56,23 @@ class _Profile2State extends State<Profile2> {
 
   @override
   void dispose() {
-    String currentPreferredLanguage = '';
-    
+    String? currentPreferredLanguage;
+
     if (userType == 'nutritionist') {
       currentPreferredLanguage = widget.nutritionistData!.preferredLanguage;
     } else {
-      currentPreferredLanguage = widget.userData!.preferredLanguage!;
+      currentPreferredLanguage = widget.userData!.preferredLanguage;
     }
-    
-    if (currentPreferredLanguage != _translationService.currentLanguageCode) {
+
+    if (currentPreferredLanguage != null &&
+        currentPreferredLanguage != _translationService.currentLanguageCode) {
       Navigator.pop(context, 'language_changed');
     }
     super.dispose();
   }
 
   void _continueToNextScreen() async {
-    if (_hasChronicDisease == null) {
+    if (_doesExercise == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(await _translationService
@@ -84,76 +85,47 @@ class _Profile2State extends State<Profile2> {
 
     // Update the appropriate model based on user type
     if (userType == 'nutritionist') {
-      widget.nutritionistData!.hasChronicDisease = _hasChronicDisease;
-      widget.nutritionistData!.preferredLanguage = _translationService.currentLanguageCode;
-      
-      if (_hasChronicDisease == true) {
-        final result = await Navigator.of(context).push(
-          MaterialPageRoute(
-              builder: (context) => Profile3(nutritionistData: widget.nutritionistData)),
-        );
+      widget.nutritionistData!.doesExercise = _doesExercise;
+      widget.nutritionistData!.preferredLanguage =
+          _translationService.currentLanguageCode;
 
-        if (result == 'conditions_selected') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(await _translationService
-                  .translate('Informations enregistrées avec succès!')),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 1),
-            ),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(await _translationService
-                .translate('Informations enregistrées avec succès!')),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 1),
-          ),
-        );
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(await _translationService
+              .translate('Informations enregistrées avec succès!')),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 1),
+        ),
+      );
 
-        Navigator.of(context).push(
-          MaterialPageRoute(
-              builder: (context) => Profile4(nutritionistData: widget.nutritionistData)),
-        );
-      }
+      // Navigate to Profile5
+      Navigator.of(context).push(
+        MaterialPageRoute(
+            builder: (context) =>
+                Profile5(nutritionistData: widget.nutritionistData)),
+      );
     } else {
       // Handle regular user flow
-      widget.userData!.hasChronicDisease = _hasChronicDisease;
-      widget.userData!.preferredLanguage = _translationService.currentLanguageCode;
-      
-      if (_hasChronicDisease == true) {
-        final result = await Navigator.of(context).push(
-          MaterialPageRoute(
-              builder: (context) => Profile3(userData: widget.userData)),
-        );
+      widget.userData!.doesExercise = _doesExercise;
+      widget.userData!.preferredLanguage =
+          _translationService.currentLanguageCode;
 
-        if (result == 'conditions_selected') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(await _translationService
-                  .translate('Informations enregistrées avec succès!')),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 1),
-            ),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(await _translationService
-                .translate('Informations enregistrées avec succès!')),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 1),
-          ),
-        );
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(await _translationService
+              .translate('Informations enregistrées avec succès!')),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 1),
+        ),
+      );
 
-        Navigator.of(context).push(
-          MaterialPageRoute(
-              builder: (context) => Profile4(userData: widget.userData)),
-        );
-      }
+      // Navigate to Profile5
+      Navigator.of(context).push(
+        MaterialPageRoute(
+            builder: (context) => Profile5(userData: widget.userData)),
+      );
     }
   }
 
@@ -184,11 +156,15 @@ class _Profile2State extends State<Profile2> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(
+                color: AppColors.lightTeal,
+              ),
+            )
           : SafeArea(
               child: Column(
                 children: [
-                  // Updated Progress Bar with padding
+                  // Progress Bar (40%)
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     child: Container(
@@ -200,8 +176,7 @@ class _Profile2State extends State<Profile2> {
                       child: Row(
                         children: [
                           Container(
-                            width: 1.sw * 0.1 -
-                                3.2.w, // Adjusting width to account for padding
+                            width: 1.sw * 0.4 - 3.2.w, // 40% progress
                             height: 4.h,
                             decoration: BoxDecoration(
                               color: AppColors.lightTeal,
@@ -222,10 +197,10 @@ class _Profile2State extends State<Profile2> {
                             SizedBox(height: 32.h),
                             FutureBuilder<String>(
                               future: _translationService.translate(
-                                  'Avez vous une maladie chronique ?'),
+                                  'Pratiquez-vous une activité physique ?'),
                               builder: (context, snapshot) {
                                 final text = snapshot.data ??
-                                    'Avez vous une maldie chronique ?';
+                                    'Pratiquez-vous une activité physique ?';
                                 return Text(
                                   text,
                                   style: TextStyle(
@@ -240,7 +215,7 @@ class _Profile2State extends State<Profile2> {
                             SizedBox(height: 12.h),
                             FutureBuilder<String>(
                               future: _translationService.translate(
-                                  'Pour une meilleure expérience et un scan personnalisé adapté à votre profil, nous avons besoin de connaître certaines informations sur votre état de santé'),
+                                  'Pour un suivi plus précis, veuillez spécifier si vous faites de l\'activité physique'),
                               builder: (context, snapshot) {
                                 final text = snapshot.data ?? '';
                                 return Text(
@@ -261,17 +236,17 @@ class _Profile2State extends State<Profile2> {
                                 final yesText = snapshot.data ?? 'Oui';
                                 return GestureDetector(
                                   onTap: () =>
-                                      setState(() => _hasChronicDisease = true),
+                                      setState(() => _doesExercise = true),
                                   child: Container(
                                     width: double.infinity,
                                     height: 70.h,
                                     decoration: BoxDecoration(
-                                      color: _hasChronicDisease == true
+                                      color: _doesExercise == true
                                           ? AppColors.lightTeal.withOpacity(0.2)
                                           : const Color(0xFFEFF9E8),
                                       borderRadius: BorderRadius.circular(15.r),
                                       border: Border.all(
-                                        color: _hasChronicDisease == true
+                                        color: _doesExercise == true
                                             ? AppColors.lightTeal
                                             : Colors.transparent,
                                         width: 2.w,
@@ -283,7 +258,7 @@ class _Profile2State extends State<Profile2> {
                                         style: TextStyle(
                                           fontSize: 15.sp,
                                           fontWeight: FontWeight.w500,
-                                          color: _hasChronicDisease == true
+                                          color: _doesExercise == true
                                               ? AppColors.lightTeal
                                               : Colors.black87,
                                         ),
@@ -300,18 +275,18 @@ class _Profile2State extends State<Profile2> {
                               builder: (context, snapshot) {
                                 final noText = snapshot.data ?? 'Non';
                                 return GestureDetector(
-                                  onTap: () => setState(
-                                      () => _hasChronicDisease = false),
+                                  onTap: () =>
+                                      setState(() => _doesExercise = false),
                                   child: Container(
                                     width: double.infinity,
                                     height: 70.h,
                                     decoration: BoxDecoration(
-                                      color: _hasChronicDisease == false
+                                      color: _doesExercise == false
                                           ? AppColors.lightTeal.withOpacity(0.2)
                                           : const Color(0xFFEFF9E8),
                                       borderRadius: BorderRadius.circular(15.r),
                                       border: Border.all(
-                                        color: _hasChronicDisease == false
+                                        color: _doesExercise == false
                                             ? AppColors.lightTeal
                                             : Colors.transparent,
                                         width: 2.w,
@@ -323,7 +298,7 @@ class _Profile2State extends State<Profile2> {
                                         style: TextStyle(
                                           fontSize: 15.sp,
                                           fontWeight: FontWeight.w500,
-                                          color: _hasChronicDisease == false
+                                          color: _doesExercise == false
                                               ? AppColors.lightTeal
                                               : Colors.black87,
                                         ),
@@ -345,7 +320,7 @@ class _Profile2State extends State<Profile2> {
                       width: double.infinity,
                       height: 50.h,
                       child: CustomButton(
-                        text: 'suivant', // Using your custom button here
+                        text: 'suivant',
                         onPressed: _continueToNextScreen,
                         width: 1.sw - 32.w, // Full width minus padding
                         height: 50.h,

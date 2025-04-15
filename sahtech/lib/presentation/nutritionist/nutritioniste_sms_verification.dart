@@ -3,7 +3,7 @@ import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
-import 'package:sahtech/presentation/profile/profile2.dart';
+import 'package:sahtech/presentation/profile/chronic_disease_screen.dart';
 import 'dart:async';
 import '../widgets/custom_button.dart';
 
@@ -18,11 +18,14 @@ class NutritionisteSmsVerification extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<NutritionisteSmsVerification> createState() => _NutritionisteSmsVerificationState();
+  State<NutritionisteSmsVerification> createState() =>
+      _NutritionisteSmsVerificationState();
 }
 
-class _NutritionisteSmsVerificationState extends State<NutritionisteSmsVerification> {
-  final List<TextEditingController> _controllers = List.generate(4, (_) => TextEditingController());
+class _NutritionisteSmsVerificationState
+    extends State<NutritionisteSmsVerification> {
+  final List<TextEditingController> _controllers =
+      List.generate(4, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
   Timer? _timer;
   int _timeLeft = 180; // 3 minutes in seconds
@@ -85,7 +88,8 @@ class _NutritionisteSmsVerificationState extends State<NutritionisteSmsVerificat
                   child: Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back_ios, color: AppColors.darkBrown),
+                        icon: const Icon(Icons.arrow_back_ios,
+                            color: AppColors.darkBrown),
                         onPressed: () => Navigator.pop(context),
                       ),
                       const Expanded(
@@ -93,7 +97,8 @@ class _NutritionisteSmsVerificationState extends State<NutritionisteSmsVerificat
                           child: Padding(
                             padding: EdgeInsets.only(right: 40),
                             child: Image(
-                              image: AssetImage('lib/assets/images/mainlogo.jpg'),
+                              image:
+                                  AssetImage('lib/assets/images/mainlogo.jpg'),
                               height: 40,
                             ),
                           ),
@@ -144,7 +149,7 @@ class _NutritionisteSmsVerificationState extends State<NutritionisteSmsVerificat
                               ),
                             ),
                             const SizedBox(height: 32),
-                            
+
                             // Timer
                             Center(
                               child: Text(
@@ -165,7 +170,8 @@ class _NutritionisteSmsVerificationState extends State<NutritionisteSmsVerificat
                                 return Container(
                                   width: 60,
                                   height: 60,
-                                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                                  margin:
+                                      const EdgeInsets.symmetric(horizontal: 8),
                                   decoration: BoxDecoration(
                                     border: Border.all(
                                       color: const Color(0xFF9FE870),
@@ -211,16 +217,20 @@ class _NutritionisteSmsVerificationState extends State<NutritionisteSmsVerificat
                                     ),
                                   ),
                                   TextButton(
-                                    onPressed: _timeLeft == 0 ? () {
-                                      setState(() {
-                                        _timeLeft = 180;
-                                      });
-                                      startTimer();
-                                    } : null,
+                                    onPressed: _timeLeft == 0
+                                        ? () {
+                                            setState(() {
+                                              _timeLeft = 180;
+                                            });
+                                            startTimer();
+                                          }
+                                        : null,
                                     child: Text(
                                       'Renvoyer',
                                       style: TextStyle(
-                                        color: _timeLeft == 0 ? const Color(0xFF9FE870) : Colors.grey,
+                                        color: _timeLeft == 0
+                                            ? const Color(0xFF9FE870)
+                                            : Colors.grey,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -239,21 +249,22 @@ class _NutritionisteSmsVerificationState extends State<NutritionisteSmsVerificat
                                 for (var controller in _controllers) {
                                   enteredOTP += controller.text;
                                 }
-                                
+
                                 // Check if OTP is complete (4 digits)
                                 if (enteredOTP.length == 4) {
                                   // In a real app, you would verify the OTP with a backend service
                                   // For now, we'll just proceed to the password screen
-                                  
+
                                   // OTP verification successful, use the existing nutritionist data model
                                   // In a real app, you would validate the OTP with a backend
-                                  
+
                                   // Navigate to Profile2 screen to continue the user registration flow
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => Profile2(
-                                        nutritionistData: widget.nutritionistData,
+                                        nutritionistData:
+                                            widget.nutritionistData,
                                       ),
                                     ),
                                   );
@@ -261,14 +272,16 @@ class _NutritionisteSmsVerificationState extends State<NutritionisteSmsVerificat
                                   // Show error for incomplete OTP
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Please enter the complete 4-digit code'),
+                                      content: Text(
+                                          'Please enter the complete 4-digit code'),
                                       backgroundColor: Colors.red,
                                       behavior: SnackBarBehavior.floating,
                                     ),
                                   );
                                 }
                               },
-                              isEnabled: true, // Enable button regardless of OTP completion
+                              isEnabled:
+                                  true, // Enable button regardless of OTP completion
                             ),
                           ],
                         ),
@@ -283,4 +296,4 @@ class _NutritionisteSmsVerificationState extends State<NutritionisteSmsVerificat
       ),
     );
   }
-} 
+}

@@ -6,14 +6,15 @@ import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
-import 'package:sahtech/presentation/profile/profile4.dart';
+import 'package:sahtech/presentation/profile/physical_activity_question_screen.dart';
 
 class AllergySelection extends StatefulWidget {
   final UserModel? userData;
   final NutritionisteModel? nutritionistData;
 
   const AllergySelection({super.key, this.userData, this.nutritionistData})
-      : assert(userData != null || nutritionistData != null, 'Either userData or nutritionistData must be provided');
+      : assert(userData != null || nutritionistData != null,
+            'Either userData or nutritionistData must be provided');
 
   @override
   State<AllergySelection> createState() => _AllergySelectionState();
@@ -56,8 +57,11 @@ class _AllergySelectionState extends State<AllergySelection> {
   @override
   void initState() {
     super.initState();
-    _translationService = Provider.of<TranslationService>(context, listen: false);
-    userType = widget.nutritionistData?.userType ?? widget.userData?.userType ?? 'user';
+    _translationService =
+        Provider.of<TranslationService>(context, listen: false);
+    userType = widget.nutritionistData?.userType ??
+        widget.userData?.userType ??
+        'user';
     _loadTranslations();
   }
 
@@ -149,7 +153,8 @@ class _AllergySelectionState extends State<AllergySelection> {
     if (userType == 'nutritionist') {
       Navigator.of(context).push(
         MaterialPageRoute(
-            builder: (context) => Profile4(nutritionistData: widget.nutritionistData)),
+            builder: (context) =>
+                Profile4(nutritionistData: widget.nutritionistData)),
       );
     } else {
       Navigator.of(context).push(

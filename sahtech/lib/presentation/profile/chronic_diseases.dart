@@ -6,7 +6,7 @@ import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
-import 'package:sahtech/presentation/profile/profile4.dart';
+import 'package:sahtech/presentation/profile/physical_activity_question_screen.dart';
 import 'package:sahtech/presentation/profile/allergy_selection.dart';
 import 'package:sahtech/presentation/widgets/custom_button.dart';
 
@@ -15,7 +15,8 @@ class Profile3 extends StatefulWidget {
   final NutritionisteModel? nutritionistData;
 
   const Profile3({super.key, this.userData, this.nutritionistData})
-      : assert(userData != null || nutritionistData != null, 'Either userData or nutritionistData must be provided');
+      : assert(userData != null || nutritionistData != null,
+            'Either userData or nutritionistData must be provided');
 
   @override
   State<Profile3> createState() => _Profile3State();
@@ -67,8 +68,11 @@ class _Profile3State extends State<Profile3> {
   @override
   void initState() {
     super.initState();
-    _translationService = Provider.of<TranslationService>(context, listen: false);
-    userType = widget.nutritionistData?.userType ?? widget.userData?.userType ?? 'user';
+    _translationService =
+        Provider.of<TranslationService>(context, listen: false);
+    userType = widget.nutritionistData?.userType ??
+        widget.userData?.userType ??
+        'user';
     _loadTranslations();
   }
 
@@ -159,14 +163,16 @@ class _Profile3State extends State<Profile3> {
         // Navigate to allergy selection screen
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => AllergySelection(nutritionistData: widget.nutritionistData),
+            builder: (context) =>
+                AllergySelection(nutritionistData: widget.nutritionistData),
           ),
         );
       } else {
         // Navigate directly to Profile4
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => Profile4(nutritionistData: widget.nutritionistData),
+            builder: (context) =>
+                Profile4(nutritionistData: widget.nutritionistData),
           ),
         );
       }

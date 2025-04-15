@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
-import 'package:sahtech/presentation/nutritionist/nutritioniste4.dart';
+import 'package:sahtech/presentation/nutritionist/AllowMap_screen.dart';
 
 class Nutritioniste3 extends StatefulWidget {
   final NutritionisteModel nutritionistData;
@@ -248,11 +248,11 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
     Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (context) => Nutritioniste4(
-            nutritionistData: widget.nutritionistData,
-            currentStep: widget.currentStep + 1,
-            totalSteps: widget.totalSteps,
-          ),
+        builder: (context) => Nutritioniste4(
+          nutritionistData: widget.nutritionistData,
+          currentStep: widget.currentStep + 1,
+          totalSteps: widget.totalSteps,
+        ),
       ),
     );
   }
@@ -307,7 +307,8 @@ class _Nutritioniste3State extends State<Nutritioniste3> {
                     child: Row(
                       children: [
                         Container(
-                          width: width * (widget.currentStep / widget.totalSteps),
+                          width:
+                              width * (widget.currentStep / widget.totalSteps),
                           height: 4,
                           decoration: BoxDecoration(
                             color: AppColors.lightTeal,

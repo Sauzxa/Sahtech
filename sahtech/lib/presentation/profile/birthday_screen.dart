@@ -24,8 +24,9 @@ class Profile8 extends StatefulWidget {
     this.nutritionistData,
     this.currentStep = 4,
     this.totalSteps = 5,
-  }) : assert(userData != null || nutritionistData != null, 'Either userData or nutritionistData must be provided'),
-       super(key: key);
+  })  : assert(userData != null || nutritionistData != null,
+            'Either userData or nutritionistData must be provided'),
+        super(key: key);
 
   @override
   State<Profile8> createState() => _Profile8State();
@@ -104,9 +105,12 @@ class _Profile8State extends State<Profile8> {
   @override
   void initState() {
     super.initState();
-    _translationService = Provider.of<TranslationService>(context, listen: false);
+    _translationService =
+        Provider.of<TranslationService>(context, listen: false);
     _translationService.addListener(_onLanguageChanged);
-    userType = widget.nutritionistData?.userType ?? widget.userData?.userType ?? 'user';
+    userType = widget.nutritionistData?.userType ??
+        widget.userData?.userType ??
+        'user';
     _loadTranslations();
 
     // Initialize from model data if available
@@ -120,7 +124,7 @@ class _Profile8State extends State<Profile8> {
       if (widget.nutritionistData?.allergyDay != null) {
         _selectedDay = widget.nutritionistData!.allergyDay!;
       }
-      if (widget.nutritionistData?.allergies != null && 
+      if (widget.nutritionistData?.allergies != null &&
           widget.nutritionistData!.allergies!.isNotEmpty) {
         _selectedAllergies.addAll(widget.nutritionistData!.allergies!);
       }
@@ -217,13 +221,13 @@ class _Profile8State extends State<Profile8> {
         widget.userData!.allergies = _selectedAllergies;
       }
     }
-    
+
     // Show success message (could also be used to move to next screen)
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(_translations['success_message']!),
       backgroundColor: Colors.green,
     ));
-    
+
     // Navigate to home screen or next registration step
     // For now, just showing success message
   }

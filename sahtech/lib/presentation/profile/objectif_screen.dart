@@ -6,7 +6,7 @@ import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
-import 'package:sahtech/presentation/profile/profile8.dart';
+import 'package:sahtech/presentation/profile/birthday_screen.dart';
 import 'package:sahtech/presentation/widgets/custom_button.dart';
 
 class Profile5 extends StatefulWidget {
@@ -14,7 +14,8 @@ class Profile5 extends StatefulWidget {
   final NutritionisteModel? nutritionistData;
 
   const Profile5({super.key, this.userData, this.nutritionistData})
-      : assert(userData != null || nutritionistData != null, 'Either userData or nutritionistData must be provided');
+      : assert(userData != null || nutritionistData != null,
+            'Either userData or nutritionistData must be provided');
 
   @override
   State<Profile5> createState() => _Profile5State();
@@ -46,8 +47,11 @@ class _Profile5State extends State<Profile5> {
   @override
   void initState() {
     super.initState();
-    _translationService = Provider.of<TranslationService>(context, listen: false);
-    userType = widget.nutritionistData?.userType ?? widget.userData?.userType ?? 'user';
+    _translationService =
+        Provider.of<TranslationService>(context, listen: false);
+    userType = widget.nutritionistData?.userType ??
+        widget.userData?.userType ??
+        'user';
     _loadTranslations();
   }
 
@@ -138,13 +142,14 @@ class _Profile5State extends State<Profile5> {
       // Note: we need to add healthGoals to the NutritionisteModel class
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => Profile8(nutritionistData: widget.nutritionistData),
+          builder: (context) =>
+              Profile8(nutritionistData: widget.nutritionistData),
         ),
       );
     } else {
       // Save to user model
       widget.userData!.healthGoals = _selectedObjectives;
-      
+
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => Profile8(userData: widget.userData),

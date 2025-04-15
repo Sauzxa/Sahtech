@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:sahtech/presentation/onboarding/onboardingscreen1.dart';
 import 'package:sahtech/presentation/onboarding/onboardingscreen2.dart';
 import 'package:sahtech/presentation/onboarding/onboardingscreen3.dart';
-import 'package:sahtech/presentation/profile/profile1.dart';
+import 'package:sahtech/presentation/profile/choice_screen.dart';
 import 'package:sahtech/presentation/profile/getstarted.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/presentation/home/home_screen.dart';

@@ -5,15 +5,15 @@ import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
-import 'package:sahtech/presentation/profile/profile7.dart';
+import 'package:sahtech/presentation/profile/birthday_screen.dart';
 import 'package:sahtech/presentation/widgets/custom_button.dart';
 
-class Profile6 extends StatefulWidget {
+class Profile7 extends StatefulWidget {
   final UserModel userData;
   final int currentStep;
   final int totalSteps;
 
-  const Profile6({
+  const Profile7({
     Key? key,
     required this.userData,
     this.currentStep = 2,
@@ -21,28 +21,28 @@ class Profile6 extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<Profile6> createState() => _Profile6State();
+  State<Profile7> createState() => _Profile7State();
 }
 
-class _Profile6State extends State<Profile6> {
+class _Profile7State extends State<Profile7> {
   late TranslationService _translationService;
   bool _isLoading = false;
 
-  // Weight related variables
-  double _weight = 70.0; // Default weight in kg
-  String _weightUnit = 'kg'; // Default unit
+  // Height related variables
+  double _height = 170.0; // Default height in cm
+  String _heightUnit = 'cm'; // Default unit
 
-  // Min and max weight values
-  final double _minWeight = 0.0;
-  final double _maxWeight = 300.0;
+  // Min and max height values
+  final double _minHeight = 100.0;
+  final double _maxHeight = 200.0;
 
   // Key translations
   Map<String, String> _translations = {
-    'title': 'Veuillez saisir votre poids ?',
+    'title': 'Veuillez saisir votre taille ?',
     'subtitle':
-        'Pour une expérience optimale. Afin de vous offrir un service personnalisé, nous vous invitons à renseigner certaines informations, telles que votre poids',
-    'kg': 'kg',
-    'lb': 'lb',
+        'Pour une expérience optimale. Afin de vous offrir un service personnalisé, nous vous invitons à renseigner certaines informations, telles que votre taille',
+    'cm': 'cm',
+    'inches': 'inches',
     'next': 'suivant',
     'success_message': 'Informations enregistrées avec succès!',
   };
@@ -55,12 +55,12 @@ class _Profile6State extends State<Profile6> {
     _translationService.addListener(_onLanguageChanged);
     _loadTranslations();
 
-    // Initialize weight from user data if available
-    if (widget.userData.weight != null) {
-      _weight = widget.userData.weight!;
+    // Initialize height from user data if available
+    if (widget.userData.height != null) {
+      _height = widget.userData.height!;
     }
-    if (widget.userData.weightUnit != null) {
-      _weightUnit = widget.userData.weightUnit!;
+    if (widget.userData.heightUnit != null) {
+      _heightUnit = widget.userData.heightUnit!;
     }
   }
 
@@ -113,44 +113,43 @@ class _Profile6State extends State<Profile6> {
     // Language change is handled by the listener (_onLanguageChanged)
   }
 
-  // Toggle between kg and lb
+  // Toggle between cm and inches
   void _toggleUnit(String unit) {
-    if (_weightUnit != unit) {
+    if (_heightUnit != unit) {
       setState(() {
-        _weightUnit = unit;
-        // No need to convert the internal value, just update the unit
+        _heightUnit = unit;
       });
     }
   }
 
-  // Convert pounds to kilograms
-  double _lbToKg(double lb) {
-    return lb / 2.20462;
+  // Convert inches to centimeters
+  double _inchesToCm(double inches) {
+    return inches * 2.54;
   }
 
-  // Convert kilograms to pounds
-  double _kgToLb(double kg) {
-    return kg * 2.20462;
+  // Convert centimeters to inches
+  double _cmToInches(double cm) {
+    return cm / 2.54;
   }
 
-  // Format weight value for display
-  String _formatWeight(double weight) {
-    if (_weightUnit == 'lb') {
-      return _kgToLb(weight).toInt().toString();
+  // Format height value for display
+  String _formatHeight(double height) {
+    if (_heightUnit == 'inches') {
+      return _cmToInches(height).toInt().toString();
     }
-    return weight.toInt().toString();
+    return height.toInt().toString();
   }
 
   void _continueToNextScreen() {
-    // Store weight value in user's preferred unit
-    widget.userData.weight = _weight;
-    widget.userData.weightUnit = _weightUnit;
+    // Store height value in user's preferred unit
+    widget.userData.height = _height;
+    widget.userData.heightUnit = _heightUnit;
 
-    // Navigate to the height input screen
+    // Navigate to the next screen
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Profile7(
+        builder: (context) => Profile8(
           userData: widget.userData,
           currentStep: widget.currentStep + 1,
           totalSteps: widget.totalSteps,
@@ -191,7 +190,7 @@ class _Profile6State extends State<Profile6> {
           : SafeArea(
               child: Column(
                 children: [
-                  // Progress Bar (60%)
+                  // Progress Bar (70%)
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     child: Container(
@@ -203,7 +202,7 @@ class _Profile6State extends State<Profile6> {
                       child: Row(
                         children: [
                           Container(
-                            width: 1.sw * 0.6 - 3.2.w,
+                            width: 1.sw * 0.7 - 3.2.w,
                             height: 4.h,
                             decoration: BoxDecoration(
                               color: AppColors.lightTeal,
@@ -249,7 +248,7 @@ class _Profile6State extends State<Profile6> {
 
                           SizedBox(height: 24.h),
 
-                          // Weight unit selector (kg/lb) - pill style toggle
+                          // Height unit selector (cm/inches) - pill style toggle
                           Center(
                             child: Container(
                               width: 120.w,
@@ -260,19 +259,19 @@ class _Profile6State extends State<Profile6> {
                               ),
                               child: Row(
                                 children: [
-                                  // lb selector
+                                  // inches selector
                                   GestureDetector(
-                                    onTap: () => _toggleUnit('lb'),
+                                    onTap: () => _toggleUnit('inches'),
                                     child: Container(
                                       width: 60.w,
                                       height: 36.h,
                                       decoration: BoxDecoration(
-                                        color: _weightUnit == 'lb'
+                                        color: _heightUnit == 'inches'
                                             ? Colors.white
                                             : Colors.grey[200],
                                         borderRadius:
                                             BorderRadius.circular(20.r),
-                                        boxShadow: _weightUnit == 'lb'
+                                        boxShadow: _heightUnit == 'inches'
                                             ? [
                                                 BoxShadow(
                                                   color: Colors.black
@@ -285,7 +284,7 @@ class _Profile6State extends State<Profile6> {
                                       ),
                                       child: Center(
                                         child: Text(
-                                          'lb',
+                                          'in',
                                           style: TextStyle(
                                             fontSize: 14.sp,
                                             fontWeight: FontWeight.w500,
@@ -295,14 +294,14 @@ class _Profile6State extends State<Profile6> {
                                       ),
                                     ),
                                   ),
-                                  // kg selector
+                                  // cm selector
                                   GestureDetector(
-                                    onTap: () => _toggleUnit('kg'),
+                                    onTap: () => _toggleUnit('cm'),
                                     child: Container(
                                       width: 60.w,
                                       height: 36.h,
                                       decoration: BoxDecoration(
-                                        color: _weightUnit == 'kg'
+                                        color: _heightUnit == 'cm'
                                             ? AppColors.lightTeal
                                             : Colors.grey[200],
                                         borderRadius:
@@ -310,7 +309,7 @@ class _Profile6State extends State<Profile6> {
                                       ),
                                       child: Center(
                                         child: Text(
-                                          'kg',
+                                          'cm',
                                           style: TextStyle(
                                             fontSize: 14.sp,
                                             fontWeight: FontWeight.w500,
@@ -327,7 +326,7 @@ class _Profile6State extends State<Profile6> {
 
                           SizedBox(height: 24.h),
 
-                          // Weight display area with slider
+                          // Height display area with slider
                           Container(
                             width: double.infinity,
                             height: 0.3.sh,
@@ -338,13 +337,13 @@ class _Profile6State extends State<Profile6> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                // Weight value display
+                                // Height value display
                                 Container(
                                   width: 0.5.sw,
                                   child: FittedBox(
                                     fit: BoxFit.scaleDown,
                                     child: Text(
-                                      _formatWeight(_weight),
+                                      _formatHeight(_height),
                                       style: TextStyle(
                                         fontSize: 80.sp,
                                         fontWeight: FontWeight.bold,
@@ -367,35 +366,35 @@ class _Profile6State extends State<Profile6> {
                                             MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
-                                            _weightUnit == 'kg' ? '30' : '66',
+                                            _heightUnit == 'cm' ? '100' : '39',
                                             style: TextStyle(
                                               fontSize: 14.sp,
                                               color: Colors.grey[600],
                                             ),
                                           ),
                                           Text(
-                                            _weightUnit == 'kg' ? '70' : '154',
+                                            _heightUnit == 'cm' ? '125' : '49',
                                             style: TextStyle(
                                               fontSize: 14.sp,
                                               color: Colors.grey[600],
                                             ),
                                           ),
                                           Text(
-                                            _weightUnit == 'kg' ? '115' : '253',
+                                            _heightUnit == 'cm' ? '150' : '59',
                                             style: TextStyle(
                                               fontSize: 14.sp,
                                               color: Colors.grey[600],
                                             ),
                                           ),
                                           Text(
-                                            _weightUnit == 'kg' ? '160' : '352',
+                                            _heightUnit == 'cm' ? '175' : '69',
                                             style: TextStyle(
                                               fontSize: 14.sp,
                                               color: Colors.grey[600],
                                             ),
                                           ),
                                           Text(
-                                            _weightUnit == 'kg' ? '200' : '440',
+                                            _heightUnit == 'cm' ? '200' : '79',
                                             style: TextStyle(
                                               fontSize: 14.sp,
                                               color: Colors.grey[600],
@@ -435,12 +434,12 @@ class _Profile6State extends State<Profile6> {
                                           trackHeight: 0,
                                         ),
                                         child: Slider(
-                                          value: _weight.clamp(30.0, 200.0),
-                                          min: 30.0,
+                                          value: _height.clamp(100.0, 200.0),
+                                          min: 100.0,
                                           max: 200.0,
                                           onChanged: (value) {
                                             setState(() {
-                                              _weight = value;
+                                              _height = value;
                                             });
                                           },
                                         ),
@@ -449,9 +448,9 @@ class _Profile6State extends State<Profile6> {
                                   ),
                                 ),
 
-                                // Weight unit
+                                // Height unit
                                 Text(
-                                  _weightUnit,
+                                  _heightUnit,
                                   style: TextStyle(
                                     fontSize: 16.sp,
                                     color: Colors.grey[600],

@@ -5,7 +5,7 @@ import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:sahtech/presentation/nutritionist/nutritioniste5.dart';
+import 'package:sahtech/presentation/nutritionist/gps_screen.dart';
 
 class Nutritioniste4 extends StatefulWidget {
   final NutritionisteModel nutritionistData;
@@ -185,7 +185,8 @@ class _Nutritioniste4State extends State<Nutritioniste4> {
                     child: Row(
                       children: [
                         Container(
-                          width: width * (widget.currentStep / widget.totalSteps),
+                          width:
+                              width * (widget.currentStep / widget.totalSteps),
                           height: 4,
                           decoration: BoxDecoration(
                             color: AppColors.lightTeal,

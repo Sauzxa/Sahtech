@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:sahtech/presentation/profile/profile1.dart';
+import 'package:sahtech/presentation/profile/choice_screen.dart';
 import 'package:sahtech/core/theme/colors.dart';
 
 class Getstarted extends StatefulWidget {

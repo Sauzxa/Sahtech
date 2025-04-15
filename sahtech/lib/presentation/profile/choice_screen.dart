@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
-import 'package:sahtech/presentation/profile/profile2.dart';
-import 'package:sahtech/presentation/nutritionist/nutritioniste2.dart';
+import 'package:sahtech/presentation/profile/chronic_disease_screen.dart';
+import 'package:sahtech/presentation/nutritionist/Sexe&Specialit%C3%A9_Nutri_screen.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
@@ -147,7 +147,8 @@ class _Profile1State extends State<Profile1> with WidgetsBindingObserver {
 
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => Nutritioniste2(nutritionistData: nutritionistData),
+          builder: (context) =>
+              Nutritioniste2(nutritionistData: nutritionistData),
         ),
       );
     }
