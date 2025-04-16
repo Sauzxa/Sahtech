@@ -9,19 +9,22 @@ import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:sahtech/presentation/widgets/custom_button.dart';
 import 'package:sahtech/presentation/profile/objectif_screen.dart';
 
-class Profile4 extends StatefulWidget {
+class PhysicalActivityQuestionScreen extends StatefulWidget {
   final UserModel? userData;
   final NutritionisteModel? nutritionistData;
 
-  const Profile4({super.key, this.userData, this.nutritionistData})
+  const PhysicalActivityQuestionScreen(
+      {super.key, this.userData, this.nutritionistData})
       : assert(userData != null || nutritionistData != null,
             'Either userData or nutritionistData must be provided');
 
   @override
-  State<Profile4> createState() => _Profile4State();
+  State<PhysicalActivityQuestionScreen> createState() =>
+      _PhysicalActivityQuestionScreenState();
 }
 
-class _Profile4State extends State<Profile4> {
+class _PhysicalActivityQuestionScreenState
+    extends State<PhysicalActivityQuestionScreen> {
   bool? _doesExercise;
   late TranslationService _translationService;
   bool _isLoading = false;
@@ -103,7 +106,7 @@ class _Profile4State extends State<Profile4> {
       Navigator.of(context).push(
         MaterialPageRoute(
             builder: (context) =>
-                Profile5(nutritionistData: widget.nutritionistData)),
+                ObjectifScreen(nutritionistData: widget.nutritionistData)),
       );
     } else {
       // Handle regular user flow
@@ -124,7 +127,7 @@ class _Profile4State extends State<Profile4> {
       // Navigate to Profile5
       Navigator.of(context).push(
         MaterialPageRoute(
-            builder: (context) => Profile5(userData: widget.userData)),
+            builder: (context) => ObjectifScreen(userData: widget.userData)),
       );
     }
   }

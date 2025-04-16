@@ -7,29 +7,34 @@ import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:sahtech/presentation/profile/birthday_screen.dart';
+import 'package:sahtech/presentation/profile/weight_screen.dart';
 import 'package:sahtech/presentation/widgets/custom_button.dart';
 
-class Profile5 extends StatefulWidget {
+class ObjectifScreen extends StatefulWidget {
   final UserModel? userData;
   final NutritionisteModel? nutritionistData;
 
-  const Profile5({super.key, this.userData, this.nutritionistData})
+  const ObjectifScreen({super.key, this.userData, this.nutritionistData})
       : assert(userData != null || nutritionistData != null,
             'Either userData or nutritionistData must be provided');
 
   @override
-  State<Profile5> createState() => _Profile5State();
+  State<ObjectifScreen> createState() => _ObjectifScreenState();
 }
 
-class _Profile5State extends State<Profile5> {
+class _ObjectifScreenState extends State<ObjectifScreen> {
   late TranslationService _translationService;
   bool _isLoading = false;
   bool _isDropdownOpen = false;
   late final String userType;
   final Map<String, bool> _objectives = {
-    'Contrôle du diabète': false,
-    'Perte de poid': false,
-    'Réduction du cholestérol': false,
+    'Réduire le cholestérol': false,
+    'Perdre du poids': false,
+    'Prendre du muscle': false,
+    'Améliorer la digestion': false,
+    'Réduire la tension artérielle': false,
+    'Adopter une alimentation saine': false,
+    'Éviter les produits allergènes': false,
   };
 
   List<String> _selectedObjectives = [];
@@ -139,11 +144,13 @@ class _Profile5State extends State<Profile5> {
     // Save selected objectives to the appropriate model
     if (userType == 'nutritionist') {
       // Save to nutritionist model
-      // Note: we need to add healthGoals to the NutritionisteModel class
+      final updatedModel = widget.nutritionistData!.copyWith(
+        healthGoals: _selectedObjectives,
+      );
+
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) =>
-              Profile8(nutritionistData: widget.nutritionistData),
+          builder: (context) => WeightScreen(nutritionistData: updatedModel),
         ),
       );
     } else {
@@ -152,7 +159,7 @@ class _Profile5State extends State<Profile5> {
 
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => Profile8(userData: widget.userData),
+          builder: (context) => WeightScreen(userData: widget.userData),
         ),
       );
     }

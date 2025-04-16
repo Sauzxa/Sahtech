@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:sahtech/core/auth/signupNutritionist.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
@@ -10,15 +11,16 @@ import 'package:sahtech/core/auth/signinUser.dart';
 import 'package:sahtech/core/auth/signupUser.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/presentation/widgets/custom_button.dart';
+import 'package:sahtech/presentation/nutritionist/nutritioniste_success.dart';
 import 'dart:math';
 
-class Profile8 extends StatefulWidget {
+class BirthdayScreen extends StatefulWidget {
   final UserModel? userData;
   final NutritionisteModel? nutritionistData;
   final int currentStep;
   final int totalSteps;
 
-  const Profile8({
+  const BirthdayScreen({
     Key? key,
     this.userData,
     this.nutritionistData,
@@ -29,10 +31,10 @@ class Profile8 extends StatefulWidget {
         super(key: key);
 
   @override
-  State<Profile8> createState() => _Profile8State();
+  State<BirthdayScreen> createState() => _BirthdayScreenState();
 }
 
-class _Profile8State extends State<Profile8> {
+class _BirthdayScreenState extends State<BirthdayScreen> {
   late TranslationService _translationService;
   bool _isLoading = false;
   late final String userType;
@@ -205,31 +207,63 @@ class _Profile8State extends State<Profile8> {
   }
 
   void _continueToNextScreen() async {
-    // Save DOB and allergies to appropriate model
-    if (userType == 'nutritionist') {
-      widget.nutritionistData!.allergyDay = _selectedDay;
-      widget.nutritionistData!.allergyMonth = _selectedMonth;
-      widget.nutritionistData!.allergyYear = _selectedYear;
-      if (_selectedAllergies.isNotEmpty) {
-        widget.nutritionistData!.allergies = _selectedAllergies;
+    setState(() => _isLoading = true);
+
+    try {
+      // Save DOB and allergies to appropriate model
+      if (userType == 'nutritionist') {
+        widget.nutritionistData!.allergyDay = _selectedDay;
+        widget.nutritionistData!.allergyMonth = _selectedMonth;
+        widget.nutritionistData!.allergyYear = _selectedYear;
+        if (_selectedAllergies.isNotEmpty) {
+          widget.nutritionistData!.allergies = _selectedAllergies;
+        }
+
+        // For nutritionist, navigate to success screen (since signupNutritionist is not implemented)
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SignupNutritionist(
+              nutritionistData: widget.nutritionistData!,
+            ),
+          ),
+        );
+      } else {
+        widget.userData!.allergyDay = _selectedDay;
+        widget.userData!.allergyMonth = _selectedMonth;
+        widget.userData!.allergyYear = _selectedYear;
+        if (_selectedAllergies.isNotEmpty) {
+          widget.userData!.allergies = _selectedAllergies;
+        }
+
+        // Navigate to user signup screen with all collected data
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SignupUser(
+              userData: widget.userData!,
+            ),
+          ),
+        );
       }
-    } else {
-      widget.userData!.allergyDay = _selectedDay;
-      widget.userData!.allergyMonth = _selectedMonth;
-      widget.userData!.allergyYear = _selectedYear;
-      if (_selectedAllergies.isNotEmpty) {
-        widget.userData!.allergies = _selectedAllergies;
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(_translations['success_message']!),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 1),
+      ));
+    } catch (e) {
+      // Show error message if navigation fails
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Error: ${e.toString()}'),
+        backgroundColor: Colors.red,
+      ));
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
-
-    // Show success message (could also be used to move to next screen)
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(_translations['success_message']!),
-      backgroundColor: Colors.green,
-    ));
-
-    // Navigate to home screen or next registration step
-    // For now, just showing success message
   }
 
   @override

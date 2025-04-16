@@ -100,7 +100,7 @@ class _GetstartedState extends State<Getstarted> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const Profile1(),
+                            builder: (context) => const ChoiceScreen(),
                           ),
                         );
                       },

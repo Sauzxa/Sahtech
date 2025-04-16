@@ -7,19 +7,20 @@ import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:sahtech/presentation/nutritionist/Attest_nutri_screnn.dart';
 
-class Nutritioniste2 extends StatefulWidget {
+class SexespecialiteNutriScreen extends StatefulWidget {
   final NutritionisteModel nutritionistData;
 
-  const Nutritioniste2({
+  const SexespecialiteNutriScreen({
     Key? key,
     required this.nutritionistData,
   }) : super(key: key);
 
   @override
-  State<Nutritioniste2> createState() => _Nutritioniste2State();
+  State<SexespecialiteNutriScreen> createState() =>
+      _SexespecialiteNutriScreenState();
 }
 
-class _Nutritioniste2State extends State<Nutritioniste2> {
+class _SexespecialiteNutriScreenState extends State<SexespecialiteNutriScreen> {
   late TranslationService _translationService;
   bool _isLoading = false;
   final _formKey = GlobalKey<FormState>();
@@ -42,7 +43,7 @@ class _Nutritioniste2State extends State<Nutritioniste2> {
   };
 
   // Gender options
-  final List<String> _genderOptions = ['Homme', 'Femme', 'Autre'];
+  final List<String> _genderOptions = ['Homme', 'Femme'];
 
   // Speciality options
   final List<String> _specialityOptions = [

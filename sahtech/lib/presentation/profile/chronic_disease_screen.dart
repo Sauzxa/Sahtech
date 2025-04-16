@@ -10,11 +10,11 @@ import 'package:sahtech/presentation/profile/chronic_diseases.dart';
 import 'package:sahtech/presentation/profile/physical_activity_question_screen.dart';
 import 'package:sahtech/presentation/widgets/custom_button.dart';
 
-class Profile2 extends StatefulWidget {
+class ChronicDiseaseScreen extends StatefulWidget {
   final UserModel? userData;
   final NutritionisteModel? nutritionistData;
 
-  const Profile2({
+  const ChronicDiseaseScreen({
     super.key,
     this.userData,
     this.nutritionistData,
@@ -22,10 +22,10 @@ class Profile2 extends StatefulWidget {
             'Either userData or nutritionistData must be provided');
 
   @override
-  State<Profile2> createState() => _Profile2State();
+  State<ChronicDiseaseScreen> createState() => _ChronicDiseaseScreenState();
 }
 
-class _Profile2State extends State<Profile2> {
+class _ChronicDiseaseScreenState extends State<ChronicDiseaseScreen> {
   bool? _hasChronicDisease;
   late TranslationService _translationService;
   bool _isLoading = false;
@@ -96,7 +96,45 @@ class _Profile2State extends State<Profile2> {
         final result = await Navigator.of(context).push(
           MaterialPageRoute(
               builder: (context) =>
-                  Profile3(nutritionistData: widget.nutritionistData)),
+                  ChronicDiseases(nutritionistData: widget.nutritionistData)),
+        );
+
+        if (result == 'conditions_selected') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(await _translationService
+                  .translate('Informations enregistrées avec succès!')),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(await _translationService
+                .translate('Informations enregistrées avec succès!')),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 1),
+          ),
+        );
+
+        Navigator.of(context).push(
+          MaterialPageRoute(
+              builder: (context) => PhysicalActivityQuestionScreen(
+                  nutritionistData: widget.nutritionistData)),
+        );
+      }
+    } else {
+      // Handle regular user flow
+      widget.userData!.hasChronicDisease = _hasChronicDisease;
+      widget.userData!.preferredLanguage =
+          _translationService.currentLanguageCode;
+
+      if (_hasChronicDisease == true) {
+        final result = await Navigator.of(context).push(
+          MaterialPageRoute(
+              builder: (context) => ChronicDiseases(userData: widget.userData)),
         );
 
         if (result == 'conditions_selected') {
@@ -122,44 +160,7 @@ class _Profile2State extends State<Profile2> {
         Navigator.of(context).push(
           MaterialPageRoute(
               builder: (context) =>
-                  Profile4(nutritionistData: widget.nutritionistData)),
-        );
-      }
-    } else {
-      // Handle regular user flow
-      widget.userData!.hasChronicDisease = _hasChronicDisease;
-      widget.userData!.preferredLanguage =
-          _translationService.currentLanguageCode;
-
-      if (_hasChronicDisease == true) {
-        final result = await Navigator.of(context).push(
-          MaterialPageRoute(
-              builder: (context) => Profile3(userData: widget.userData)),
-        );
-
-        if (result == 'conditions_selected') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(await _translationService
-                  .translate('Informations enregistrées avec succès!')),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 1),
-            ),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(await _translationService
-                .translate('Informations enregistrées avec succès!')),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 1),
-          ),
-        );
-
-        Navigator.of(context).push(
-          MaterialPageRoute(
-              builder: (context) => Profile4(userData: widget.userData)),
+                  PhysicalActivityQuestionScreen(userData: widget.userData)),
         );
       }
     }

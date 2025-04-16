@@ -153,13 +153,14 @@ class _AllergySelectionState extends State<AllergySelection> {
     if (userType == 'nutritionist') {
       Navigator.of(context).push(
         MaterialPageRoute(
-            builder: (context) =>
-                Profile4(nutritionistData: widget.nutritionistData)),
+            builder: (context) => PhysicalActivityQuestionScreen(
+                nutritionistData: widget.nutritionistData)),
       );
     } else {
       Navigator.of(context).push(
         MaterialPageRoute(
-            builder: (context) => Profile4(userData: widget.userData)),
+            builder: (context) =>
+                PhysicalActivityQuestionScreen(userData: widget.userData)),
       );
     }
   }

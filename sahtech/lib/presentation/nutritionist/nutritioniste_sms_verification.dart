@@ -238,51 +238,56 @@ class _NutritionisteSmsVerificationState
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 300),
+                            const SizedBox(height: 200),
 
                             // Submit button
-                            CustomButton(
-                              text: 'Envoyer',
-                              onPressed: () {
-                                // Get entered OTP
-                                String enteredOTP = '';
-                                for (var controller in _controllers) {
-                                  enteredOTP += controller.text;
-                                }
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 50.0),
+                              child: CustomButton(
+                                text: 'Envoyer',
+                                onPressed: () {
+                                  // Get entered OTP
+                                  String enteredOTP = '';
+                                  for (var controller in _controllers) {
+                                    enteredOTP += controller.text;
+                                  }
 
-                                // Check if OTP is complete (4 digits)
-                                if (enteredOTP.length == 4) {
-                                  // In a real app, you would verify the OTP with a backend service
-                                  // For now, we'll just proceed to the password screen
+                                  // Check if OTP is complete (4 digits)
+                                  if (enteredOTP.length == 4) {
+                                    // In a real app, you would verify the OTP with a backend service
+                                    // For now, we'll just proceed to the password screen
 
-                                  // OTP verification successful, use the existing nutritionist data model
-                                  // In a real app, you would validate the OTP with a backend
+                                    // OTP verification successful, use the existing nutritionist data model
+                                    // In a real app, you would validate the OTP with a backend
 
-                                  // Navigate to Profile2 screen to continue the user registration flow
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => Profile2(
-                                        nutritionistData:
-                                            widget.nutritionistData,
+                                    // Navigate to Profile2 screen to continue the user registration flow
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            ChronicDiseaseScreen(
+                                          nutritionistData:
+                                              widget.nutritionistData,
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                } else {
-                                  // Show error for incomplete OTP
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                          'Please enter the complete 4-digit code'),
-                                      backgroundColor: Colors.red,
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                }
-                              },
-                              isEnabled:
-                                  true, // Enable button regardless of OTP completion
+                                    );
+                                  } else {
+                                    // Show error for incomplete OTP
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Please enter the complete 4-digit code'),
+                                        backgroundColor: Colors.red,
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                },
+                                isEnabled:
+                                    true, // Enable button regardless of OTP completion
+                              ),
                             ),
+                            const SizedBox(height: 5)
                           ],
                         ),
                       ),

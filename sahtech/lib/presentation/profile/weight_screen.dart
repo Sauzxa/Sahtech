@@ -2,31 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
+import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
-import 'package:sahtech/presentation/profile/height_screnn.dart';
+import 'package:sahtech/presentation/profile/height_screen.dart';
 import 'package:sahtech/presentation/widgets/custom_button.dart';
 
-class Profile6 extends StatefulWidget {
-  final UserModel userData;
+class WeightScreen extends StatefulWidget {
+  final UserModel? userData;
+  final NutritionisteModel? nutritionistData;
   final int currentStep;
   final int totalSteps;
 
-  const Profile6({
+  const WeightScreen({
     Key? key,
-    required this.userData,
+    this.userData,
+    this.nutritionistData,
     this.currentStep = 2,
     this.totalSteps = 5,
-  }) : super(key: key);
+  })  : assert(userData != null || nutritionistData != null,
+            'Either userData or nutritionistData must be provided'),
+        super(key: key);
 
   @override
-  State<Profile6> createState() => _Profile6State();
+  State<WeightScreen> createState() => _WeightScreenState();
 }
 
-class _Profile6State extends State<Profile6> {
+class _WeightScreenState extends State<WeightScreen> {
   late TranslationService _translationService;
   bool _isLoading = false;
+  late final String userType;
 
   // Weight related variables
   double _weight = 70.0; // Default weight in kg
@@ -53,14 +59,22 @@ class _Profile6State extends State<Profile6> {
     _translationService =
         Provider.of<TranslationService>(context, listen: false);
     _translationService.addListener(_onLanguageChanged);
+    userType = widget.nutritionistData?.userType ??
+        widget.userData?.userType ??
+        'user';
     _loadTranslations();
 
-    // Initialize weight from user data if available
-    if (widget.userData.weight != null) {
-      _weight = widget.userData.weight!;
-    }
-    if (widget.userData.weightUnit != null) {
-      _weightUnit = widget.userData.weightUnit!;
+    // Initialize weight from model data based on user type
+    if (userType == 'nutritionist') {
+      // For nutritionist flow, we don't have direct weight property access
+      // Keep default values
+    } else {
+      if (widget.userData!.weight != null) {
+        _weight = widget.userData!.weight!;
+      }
+      if (widget.userData!.weightUnit != null) {
+        _weightUnit = widget.userData!.weightUnit!;
+      }
     }
   }
 
@@ -107,8 +121,12 @@ class _Profile6State extends State<Profile6> {
 
   // Handle language change
   void _handleLanguageChanged(String languageCode) {
-    // Update user model with the new language
-    widget.userData.preferredLanguage = languageCode;
+    // Update appropriate model with the new language
+    if (userType == 'nutritionist') {
+      widget.nutritionistData!.preferredLanguage = languageCode;
+    } else {
+      widget.userData!.preferredLanguage = languageCode;
+    }
 
     // Language change is handled by the listener (_onLanguageChanged)
   }
@@ -142,21 +160,38 @@ class _Profile6State extends State<Profile6> {
   }
 
   void _continueToNextScreen() {
-    // Store weight value in user's preferred unit
-    widget.userData.weight = _weight;
-    widget.userData.weightUnit = _weightUnit;
-
-    // Navigate to the height input screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Profile7(
-          userData: widget.userData,
-          currentStep: widget.currentStep + 1,
-          totalSteps: widget.totalSteps,
+    // Store weight value in the appropriate model
+    if (userType == 'nutritionist') {
+      // For nutritionist flow, we navigate to the next screen
+      // without updating the weight (as NutritionisteModel doesn't have direct weight properties)
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HeightScreen(
+            nutritionistData: widget.nutritionistData,
+            currentStep: widget.currentStep + 1,
+            totalSteps: widget.totalSteps,
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      // For regular user flow
+      // Apply null safety with the null assertion operator
+      widget.userData!.weight = _weight;
+      widget.userData!.weightUnit = _weightUnit;
+
+      // Navigate to the height input screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HeightScreen(
+            userData: widget.userData,
+            currentStep: widget.currentStep + 1,
+            totalSteps: widget.totalSteps,
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -330,7 +365,7 @@ class _Profile6State extends State<Profile6> {
                           // Weight display area with slider
                           Container(
                             width: double.infinity,
-                            height: 0.3.sh,
+                            height: 0.35.sh,
                             decoration: BoxDecoration(
                               color: const Color(0xFFEFF9E8),
                               borderRadius: BorderRadius.circular(15.r),
@@ -405,16 +440,20 @@ class _Profile6State extends State<Profile6> {
                                       ),
 
                                       // Scale ticks
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: List.generate(
-                                          41,
-                                          (index) => Container(
-                                            height:
-                                                index % 10 == 0 ? 12.h : 6.h,
-                                            width: 1.w,
-                                            color: Colors.grey[400],
+                                      Container(
+                                        width: 0.9
+                                            .sw, // Ensure the container doesn't overflow
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: List.generate(
+                                            41,
+                                            (index) => Container(
+                                              height:
+                                                  index % 10 == 0 ? 12.h : 6.h,
+                                              width: 1.w,
+                                              color: Colors.grey[400],
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -464,13 +503,15 @@ class _Profile6State extends State<Profile6> {
                           Spacer(),
 
                           // Next button
-                          Padding(
-                            padding: EdgeInsets.only(bottom: 32.h),
-                            child: CustomButton(
-                              text: _translations['next']!,
-                              onPressed: _continueToNextScreen,
-                              width: 1.sw - 32.w,
-                              height: 50.h,
+                          SafeArea(
+                            child: Padding(
+                              padding: EdgeInsets.only(bottom: 20.h),
+                              child: CustomButton(
+                                text: _translations['next']!,
+                                onPressed: _continueToNextScreen,
+                                width: 1.sw - 32.w,
+                                height: 50.h,
+                              ),
                             ),
                           ),
                         ],

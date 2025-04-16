@@ -42,12 +42,12 @@ class _SignupUserState extends State<SignupUser> {
   Map<String, String> _translations = {
     'signup_title': 'S\'inscrire',
     'signup_subtitle': 'Vuillez vous inscrire pour utiliser notre appli',
-    'nom_label': 'Nom Utilisateur',
-    'nom_hint': 'Entrer votre nom ou un pseudo nom',
-    'email_label': 'Email',
-    'email_hint': 'Entrer votre email',
+    'nom_label': 'Nom',
+    'nom_hint': 'Entrer votre nom',
     'prenom_label': 'Prenom',
     'prenom_hint': 'Entrer votre Prenom',
+    'email_label': 'Email',
+    'email_hint': 'Entrer votre email',
     'password_label': 'Mot de passe',
     'password_hint': 'Entrer votre mot de passe',
     'confirm_label': 'Confirmation mot de passe',
@@ -157,7 +157,7 @@ class _SignupUserState extends State<SignupUser> {
       });
       isValid = false;
     }
-
+    
     if (_prenomController.text.isEmpty) {
       setState(() {
         _prenomError = 'Veuillez entrer votre prénom';
@@ -291,10 +291,10 @@ class _SignupUserState extends State<SignupUser> {
                     bottom: false,
                     child: Column(
                       children: [
-                        // Top green area with 20% height
-                        SizedBox(height: 0.1.sh),
+                        // Top green area with 10% height
+                        SizedBox(height: 0.08.sh),
 
-                        // Bottom white container with curved top (80%)
+                        // Bottom white container with curved top (90%)
                         Expanded(
                           child: Container(
                             width: double.infinity,
@@ -333,12 +333,12 @@ class _SignupUserState extends State<SignupUser> {
                                       Center(
                                         child: Image.asset(
                                           'lib/assets/images/mainlogo.jpg',
-                                          height: 50.h,
+                                          height: 40.h, // Slightly smaller logo
                                           fit: BoxFit.contain,
                                         ),
                                       ),
 
-                                      SizedBox(height: 25.h),
+                                      SizedBox(height: 20.h), // Reduced spacing
 
                                       // Title
                                       Text(
@@ -361,9 +361,81 @@ class _SignupUserState extends State<SignupUser> {
                                         ),
                                       ),
 
-                                      SizedBox(height: 20.h),
+                                      SizedBox(height: 24.h), // Increased spacing after subtitle
 
-                                      // Username field
+                                      // Prenom field (First name)
+                                      Text(
+                                        _translations['prenom_label']!,
+                                        style: TextStyle(
+                                          fontSize: 16.sp,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+
+                                      SizedBox(height: 8.h), // Consistent spacing
+
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[200],
+                                          borderRadius:
+                                              BorderRadius.circular(30.r),
+                                          border: Border.all(
+                                            color: _prenomError != null
+                                                ? Colors.red
+                                                : Colors.transparent,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: TextFormField(
+                                          controller: _prenomController,
+                                          onChanged: (val) {
+                                            if (_prenomError != null) {
+                                              setState(() {
+                                                _prenomError = null;
+                                              });
+                                            }
+                                          },
+                                          decoration: InputDecoration(
+                                            hintText: _translations['prenom_hint'],
+                                            hintStyle: TextStyle(
+                                              color: Colors.grey[500],
+                                              fontSize: 14.sp,
+                                            ),
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                              horizontal: 20.w,
+                                              vertical: 12.h, // Slightly shorter input field
+                                            ),
+                                            border: InputBorder.none,
+                                            errorStyle: TextStyle(
+                                                height: 0, fontSize: 0),
+                                            errorBorder: InputBorder.none,
+                                            focusedErrorBorder:
+                                                InputBorder.none,
+                                          ),
+                                          validator: (_) => null,
+                                        ),
+                                      ),
+
+                                      // Prenom error message
+                                      if (_prenomError != null)
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                              top: 4.h, left: 16.w),
+                                          child: Text(
+                                            _prenomError!,
+                                            style: TextStyle(
+                                              color: Colors.red,
+                                              fontSize: 12.sp,
+                                            ),
+                                          ),
+                                        ),
+
+                                      SizedBox(
+                                          height: _prenomError != null ? 12.h : 20.h), // Increased spacing between fields
+
+                                      // Nom field (Last name)
                                       Text(
                                         _translations['nom_label']!,
                                         style: TextStyle(
@@ -373,7 +445,7 @@ class _SignupUserState extends State<SignupUser> {
                                         ),
                                       ),
 
-                                      SizedBox(height: 6.h),
+                                      SizedBox(height: 8.h), // Consistent spacing
 
                                       Container(
                                         decoration: BoxDecoration(
@@ -405,7 +477,7 @@ class _SignupUserState extends State<SignupUser> {
                                             contentPadding:
                                                 EdgeInsets.symmetric(
                                               horizontal: 20.w,
-                                              vertical: 14.h,
+                                              vertical: 12.h, // Slightly shorter input field
                                             ),
                                             border: InputBorder.none,
                                             errorStyle: TextStyle(
@@ -418,7 +490,7 @@ class _SignupUserState extends State<SignupUser> {
                                         ),
                                       ),
 
-                                      // Username error message
+                                      // Nom error message
                                       if (_nomError != null)
                                         Padding(
                                           padding: EdgeInsets.only(
@@ -433,8 +505,7 @@ class _SignupUserState extends State<SignupUser> {
                                         ),
 
                                       SizedBox(
-                                          height:
-                                              _nomError != null ? 8.h : 16.h),
+                                          height: _nomError != null ? 12.h : 20.h), // Increased spacing between fields
 
                                       // Email field
                                       Text(
@@ -446,7 +517,7 @@ class _SignupUserState extends State<SignupUser> {
                                         ),
                                       ),
 
-                                      SizedBox(height: 6.h),
+                                      SizedBox(height: 8.h), // Consistent spacing
 
                                       Container(
                                         decoration: BoxDecoration(
@@ -481,7 +552,7 @@ class _SignupUserState extends State<SignupUser> {
                                             contentPadding:
                                                 EdgeInsets.symmetric(
                                               horizontal: 20.w,
-                                              vertical: 14.h,
+                                              vertical: 12.h, // Slightly shorter input field
                                             ),
                                             border: InputBorder.none,
                                             errorStyle: TextStyle(
@@ -509,8 +580,7 @@ class _SignupUserState extends State<SignupUser> {
                                         ),
 
                                       SizedBox(
-                                          height:
-                                              _emailError != null ? 8.h : 16.h),
+                                          height: _emailError != null ? 12.h : 20.h), // Increased spacing between fields
 
                                       // Password field
                                       Text(
@@ -522,7 +592,7 @@ class _SignupUserState extends State<SignupUser> {
                                         ),
                                       ),
 
-                                      SizedBox(height: 6.h),
+                                      SizedBox(height: 8.h), // Consistent spacing
 
                                       Container(
                                         decoration: BoxDecoration(
@@ -556,7 +626,7 @@ class _SignupUserState extends State<SignupUser> {
                                             contentPadding:
                                                 EdgeInsets.symmetric(
                                               horizontal: 20.w,
-                                              vertical: 14.h,
+                                              vertical: 12.h, // Slightly shorter input field
                                             ),
                                             border: InputBorder.none,
                                             errorStyle: TextStyle(
@@ -597,9 +667,7 @@ class _SignupUserState extends State<SignupUser> {
                                         ),
 
                                       SizedBox(
-                                          height: _passwordError != null
-                                              ? 8.h
-                                              : 16.h),
+                                          height: _passwordError != null ? 12.h : 20.h), // Increased spacing between fields
 
                                       // Confirm Password field
                                       Text(
@@ -611,7 +679,7 @@ class _SignupUserState extends State<SignupUser> {
                                         ),
                                       ),
 
-                                      SizedBox(height: 6.h),
+                                      SizedBox(height: 8.h), // Consistent spacing
 
                                       Container(
                                         decoration: BoxDecoration(
@@ -646,7 +714,7 @@ class _SignupUserState extends State<SignupUser> {
                                             contentPadding:
                                                 EdgeInsets.symmetric(
                                               horizontal: 20.w,
-                                              vertical: 14.h,
+                                              vertical: 12.h, // Slightly shorter input field
                                             ),
                                             border: InputBorder.none,
                                             errorStyle: TextStyle(
@@ -687,9 +755,9 @@ class _SignupUserState extends State<SignupUser> {
                                         ),
 
                                       SizedBox(
-                                          height: _confirmPasswordError != null
-                                              ? 8.h
-                                              : 24.h),
+                                          height: _confirmPasswordError != null 
+                                            ? 16.h 
+                                            : 28.h), // More space before button
 
                                       // Sign up button using CustomButton
                                       CustomButton(

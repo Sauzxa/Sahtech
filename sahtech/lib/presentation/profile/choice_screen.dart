@@ -9,14 +9,15 @@ import 'package:provider/provider.dart';
 import 'package:sahtech/core/widgets/language_selector.dart';
 import 'package:sahtech/presentation/widgets/custom_button.dart';
 
-class Profile1 extends StatefulWidget {
-  const Profile1({super.key});
+class ChoiceScreen extends StatefulWidget {
+  const ChoiceScreen({super.key});
 
   @override
-  State<Profile1> createState() => _Profile1State();
+  State<ChoiceScreen> createState() => _ChoiceScreenState();
 }
 
-class _Profile1State extends State<Profile1> with WidgetsBindingObserver {
+class _ChoiceScreenState extends State<ChoiceScreen>
+    with WidgetsBindingObserver {
   String? selectedUserType;
   late TranslationService _translationService;
   bool _isLoading = true;
@@ -133,7 +134,7 @@ class _Profile1State extends State<Profile1> with WidgetsBindingObserver {
 
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => Profile2(userData: userData),
+          builder: (context) => ChronicDiseaseScreen(userData: userData),
         ),
       );
       return;
@@ -148,7 +149,7 @@ class _Profile1State extends State<Profile1> with WidgetsBindingObserver {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) =>
-              Nutritioniste2(nutritionistData: nutritionistData),
+              SexespecialiteNutriScreen(nutritionistData: nutritionistData),
         ),
       );
     }

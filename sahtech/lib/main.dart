@@ -96,7 +96,7 @@ class _MainState extends State<Main> {
               '/onboarding1': (context) => const OnboardingScreen1(),
               '/onboarding2': (context) => const OnboardingScreen2(),
               '/onboarding3': (context) => const OnboardingScreen3(),
-              '/profile1': (context) => const Profile1(),
+              '/profile1': (context) => const ChoiceScreen(),
             },
             // Handle navigation to home screen with user data
             onGenerateRoute: (settings) {
