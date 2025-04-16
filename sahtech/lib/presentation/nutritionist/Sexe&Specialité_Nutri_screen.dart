@@ -176,6 +176,14 @@ class _SexespecialiteNutriScreenState extends State<SexespecialiteNutriScreen> {
               backgroundColor: Colors.white,
               elevation: 0,
               automaticallyImplyLeading: false,
+              leading: IconButton(
+                icon: Icon(Icons.arrow_back_ios,
+                    color: AppColors.lightTeal, size: 20.sp),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                padding: EdgeInsets.only(left: 12.w),
+              ),
               actions: [
                 // Language selector button
                 LanguageSelectorButton(
