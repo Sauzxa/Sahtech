@@ -1,0 +1,3 @@
+[submodule "SahtechServer"]
+	path = SahtechServer
+	url = ./SahtechServer
