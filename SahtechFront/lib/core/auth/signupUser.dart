@@ -55,6 +55,7 @@ class _SignupUserState extends State<SignupUser> {
     'signup_button': 'S\'inscrire',
     'have_account': 'Vous avez déjà un compte?',
     'login': '',
+    'google_signup': 'S\'inscrire avec Google',
   };
 
   @override
@@ -157,7 +158,7 @@ class _SignupUserState extends State<SignupUser> {
       });
       isValid = false;
     }
-    
+
     if (_prenomController.text.isEmpty) {
       setState(() {
         _prenomError = 'Veuillez entrer votre prénom';
@@ -274,54 +275,53 @@ class _SignupUserState extends State<SignupUser> {
     return Scaffold(
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                // Base white background layer
-                Container(
-                  color: Colors.white,
-                ),
-                // Green overlay with opacity
-                Container(
-                  color: AppColors.lightTeal.withOpacity(0.5),
-                ),
-                // Main content
-                GestureDetector(
-                  onTap: () => FocusScope.of(context).unfocus(),
-                  child: SafeArea(
-                    bottom: false,
-                    child: Column(
-                      children: [
-                        // Top green area with 10% height
-                        SizedBox(height: 0.08.sh),
+          : GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: Container(
+                width: 1.sw,
+                height: 1.sh,
+                color: Colors.white,
+                child: Stack(
+                  children: [
+                    // Green overlay at the top area with opacity
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: 0.25.sh,
+                      child: Container(
+                        color: AppColors.lightTeal.withOpacity(0.5),
+                      ),
+                    ),
 
-                        // Bottom white container with curved top (90%)
-                        Expanded(
-                          child: Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(30.r),
-                                topRight: Radius.circular(30.r),
+                    // Main content
+                    SafeArea(
+                      child: Column(
+                        children: [
+                          // Top spacer to push the white container down
+                          SizedBox(height: 0.05.sh),
+
+                          // White container with curved top (main content)
+                          Expanded(
+                            child: Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(30.r),
+                                  topRight: Radius.circular(30.r),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 10,
+                                    spreadRadius: 0,
+                                    offset: Offset(0, -5),
+                                  ),
+                                ],
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 10,
-                                  spreadRadius: 0,
-                                  offset: Offset(0, -5),
-                                ),
-                              ],
-                            ),
-                            child: SingleChildScrollView(
-                              physics: ClampingScrollPhysics(),
                               child: Padding(
-                                padding: EdgeInsets.only(
-                                  left: 24.w,
-                                  right: 24.w,
-                                  top: 20.h,
-                                  bottom: 30.h,
-                                ),
+                                padding: EdgeInsets.symmetric(horizontal: 24.w),
                                 child: Form(
                                   key: _formKey,
                                   autovalidateMode: AutovalidateMode.disabled,
@@ -330,17 +330,18 @@ class _SignupUserState extends State<SignupUser> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       // Logo centered
+                                      SizedBox(height: 20.h),
                                       Center(
                                         child: Image.asset(
                                           'lib/assets/images/mainlogo.jpg',
-                                          height: 40.h, // Slightly smaller logo
+                                          height: 40.h,
                                           fit: BoxFit.contain,
                                         ),
                                       ),
 
-                                      SizedBox(height: 20.h), // Reduced spacing
+                                      SizedBox(height: 12.h),
 
-                                      // Title
+                                      // Title & Subtitle
                                       Text(
                                         _translations['signup_title']!,
                                         style: TextStyle(
@@ -349,10 +350,7 @@ class _SignupUserState extends State<SignupUser> {
                                           color: Colors.black87,
                                         ),
                                       ),
-
                                       SizedBox(height: 6.h),
-
-                                      // Subtitle
                                       Text(
                                         _translations['signup_subtitle']!,
                                         style: TextStyle(
@@ -361,412 +359,204 @@ class _SignupUserState extends State<SignupUser> {
                                         ),
                                       ),
 
-                                      SizedBox(height: 24.h), // Increased spacing after subtitle
+                                      // Spacer for dynamic spacing
+                                      Spacer(flex: 1),
 
-                                      // Prenom field (First name)
-                                      Text(
-                                        _translations['prenom_label']!,
-                                        style: TextStyle(
-                                          fontSize: 16.sp,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-
-                                      SizedBox(height: 8.h), // Consistent spacing
-
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[200],
-                                          borderRadius:
-                                              BorderRadius.circular(30.r),
-                                          border: Border.all(
-                                            color: _prenomError != null
-                                                ? Colors.red
-                                                : Colors.transparent,
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: TextFormField(
-                                          controller: _prenomController,
-                                          onChanged: (val) {
-                                            if (_prenomError != null) {
-                                              setState(() {
-                                                _prenomError = null;
-                                              });
-                                            }
-                                          },
-                                          decoration: InputDecoration(
-                                            hintText: _translations['prenom_hint'],
-                                            hintStyle: TextStyle(
-                                              color: Colors.grey[500],
-                                              fontSize: 14.sp,
-                                            ),
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                              horizontal: 20.w,
-                                              vertical: 12.h, // Slightly shorter input field
-                                            ),
-                                            border: InputBorder.none,
-                                            errorStyle: TextStyle(
-                                                height: 0, fontSize: 0),
-                                            errorBorder: InputBorder.none,
-                                            focusedErrorBorder:
-                                                InputBorder.none,
-                                          ),
-                                          validator: (_) => null,
-                                        ),
-                                      ),
-
-                                      // Prenom error message
-                                      if (_prenomError != null)
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                              top: 4.h, left: 16.w),
-                                          child: Text(
-                                            _prenomError!,
+                                      // Form fields - each wrapped in a smaller column
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          // Prenom field (First name)
+                                          Text(
+                                            _translations['prenom_label']!,
                                             style: TextStyle(
-                                              color: Colors.red,
-                                              fontSize: 12.sp,
+                                              fontSize: 16.sp,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.black87,
                                             ),
                                           ),
-                                        ),
+                                          SizedBox(height: 6.h),
+                                          _buildFormField(
+                                            controller: _prenomController,
+                                            hintText:
+                                                _translations['prenom_hint']!,
+                                            errorText: _prenomError,
+                                            onChanged: (val) {
+                                              if (_prenomError != null) {
+                                                setState(() {
+                                                  _prenomError = null;
+                                                });
+                                              }
+                                            },
+                                          ),
+                                          if (_prenomError != null)
+                                            _buildErrorText(_prenomError!),
+                                        ],
+                                      ),
 
-                                      SizedBox(
-                                          height: _prenomError != null ? 12.h : 20.h), // Increased spacing between fields
+                                      SizedBox(height: 8.h),
 
                                       // Nom field (Last name)
-                                      Text(
-                                        _translations['nom_label']!,
-                                        style: TextStyle(
-                                          fontSize: 16.sp,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-
-                                      SizedBox(height: 8.h), // Consistent spacing
-
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[200],
-                                          borderRadius:
-                                              BorderRadius.circular(30.r),
-                                          border: Border.all(
-                                            color: _nomError != null
-                                                ? Colors.red
-                                                : Colors.transparent,
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: TextFormField(
-                                          controller: _nomController,
-                                          onChanged: (val) {
-                                            if (_nomError != null) {
-                                              setState(() {
-                                                _nomError = null;
-                                              });
-                                            }
-                                          },
-                                          decoration: InputDecoration(
-                                            hintText: _translations['nom_hint'],
-                                            hintStyle: TextStyle(
-                                              color: Colors.grey[500],
-                                              fontSize: 14.sp,
-                                            ),
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                              horizontal: 20.w,
-                                              vertical: 12.h, // Slightly shorter input field
-                                            ),
-                                            border: InputBorder.none,
-                                            errorStyle: TextStyle(
-                                                height: 0, fontSize: 0),
-                                            errorBorder: InputBorder.none,
-                                            focusedErrorBorder:
-                                                InputBorder.none,
-                                          ),
-                                          validator: (_) => null,
-                                        ),
-                                      ),
-
-                                      // Nom error message
-                                      if (_nomError != null)
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                              top: 4.h, left: 16.w),
-                                          child: Text(
-                                            _nomError!,
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _translations['nom_label']!,
                                             style: TextStyle(
-                                              color: Colors.red,
-                                              fontSize: 12.sp,
+                                              fontSize: 16.sp,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.black87,
                                             ),
                                           ),
-                                        ),
+                                          SizedBox(height: 6.h),
+                                          _buildFormField(
+                                            controller: _nomController,
+                                            hintText:
+                                                _translations['nom_hint']!,
+                                            errorText: _nomError,
+                                            onChanged: (val) {
+                                              if (_nomError != null) {
+                                                setState(() {
+                                                  _nomError = null;
+                                                });
+                                              }
+                                            },
+                                          ),
+                                          if (_nomError != null)
+                                            _buildErrorText(_nomError!),
+                                        ],
+                                      ),
 
-                                      SizedBox(
-                                          height: _nomError != null ? 12.h : 20.h), // Increased spacing between fields
+                                      SizedBox(height: 8.h),
 
                                       // Email field
-                                      Text(
-                                        _translations['email_label']!,
-                                        style: TextStyle(
-                                          fontSize: 16.sp,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-
-                                      SizedBox(height: 8.h), // Consistent spacing
-
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[200],
-                                          borderRadius:
-                                              BorderRadius.circular(30.r),
-                                          border: Border.all(
-                                            color: _emailError != null
-                                                ? Colors.red
-                                                : Colors.transparent,
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: TextFormField(
-                                          controller: _emailController,
-                                          keyboardType:
-                                              TextInputType.emailAddress,
-                                          onChanged: (val) {
-                                            if (_emailError != null) {
-                                              setState(() {
-                                                _emailError = null;
-                                              });
-                                            }
-                                          },
-                                          decoration: InputDecoration(
-                                            hintText:
-                                                _translations['email_hint'],
-                                            hintStyle: TextStyle(
-                                              color: Colors.grey[500],
-                                              fontSize: 14.sp,
-                                            ),
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                              horizontal: 20.w,
-                                              vertical: 12.h, // Slightly shorter input field
-                                            ),
-                                            border: InputBorder.none,
-                                            errorStyle: TextStyle(
-                                                height: 0, fontSize: 0),
-                                            errorBorder: InputBorder.none,
-                                            focusedErrorBorder:
-                                                InputBorder.none,
-                                          ),
-                                          validator: (_) => null,
-                                        ),
-                                      ),
-
-                                      // Email error message
-                                      if (_emailError != null)
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                              top: 4.h, left: 16.w),
-                                          child: Text(
-                                            _emailError!,
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _translations['email_label']!,
                                             style: TextStyle(
-                                              color: Colors.red,
-                                              fontSize: 12.sp,
+                                              fontSize: 16.sp,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.black87,
                                             ),
                                           ),
-                                        ),
+                                          SizedBox(height: 6.h),
+                                          _buildFormField(
+                                            controller: _emailController,
+                                            hintText:
+                                                _translations['email_hint']!,
+                                            errorText: _emailError,
+                                            keyboardType:
+                                                TextInputType.emailAddress,
+                                            onChanged: (val) {
+                                              if (_emailError != null) {
+                                                setState(() {
+                                                  _emailError = null;
+                                                });
+                                              }
+                                            },
+                                          ),
+                                          if (_emailError != null)
+                                            _buildErrorText(_emailError!),
+                                        ],
+                                      ),
 
-                                      SizedBox(
-                                          height: _emailError != null ? 12.h : 20.h), // Increased spacing between fields
+                                      SizedBox(height: 8.h),
 
                                       // Password field
-                                      Text(
-                                        _translations['password_label']!,
-                                        style: TextStyle(
-                                          fontSize: 16.sp,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-
-                                      SizedBox(height: 8.h), // Consistent spacing
-
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[200],
-                                          borderRadius:
-                                              BorderRadius.circular(30.r),
-                                          border: Border.all(
-                                            color: _passwordError != null
-                                                ? Colors.red
-                                                : Colors.transparent,
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: TextFormField(
-                                          controller: _passwordController,
-                                          obscureText: _obscurePassword,
-                                          onChanged: (val) {
-                                            if (_passwordError != null) {
-                                              setState(() {
-                                                _passwordError = null;
-                                              });
-                                            }
-                                          },
-                                          decoration: InputDecoration(
-                                            hintText:
-                                                _translations['password_hint'],
-                                            hintStyle: TextStyle(
-                                              color: Colors.grey[500],
-                                              fontSize: 14.sp,
-                                            ),
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                              horizontal: 20.w,
-                                              vertical: 12.h, // Slightly shorter input field
-                                            ),
-                                            border: InputBorder.none,
-                                            errorStyle: TextStyle(
-                                                height: 0, fontSize: 0),
-                                            errorBorder: InputBorder.none,
-                                            focusedErrorBorder:
-                                                InputBorder.none,
-                                            suffixIcon: IconButton(
-                                              icon: Icon(
-                                                _obscurePassword
-                                                    ? Icons.visibility_off
-                                                    : Icons.visibility,
-                                                color: Colors.grey[600],
-                                                size: 18.w,
-                                              ),
-                                              onPressed:
-                                                  _togglePasswordVisibility,
-                                              padding: EdgeInsets.zero,
-                                              constraints: BoxConstraints(),
-                                            ),
-                                          ),
-                                          validator: (_) => null,
-                                        ),
-                                      ),
-
-                                      // Password error message
-                                      if (_passwordError != null)
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                              top: 4.h, left: 16.w),
-                                          child: Text(
-                                            _passwordError!,
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _translations['password_label']!,
                                             style: TextStyle(
-                                              color: Colors.red,
-                                              fontSize: 12.sp,
+                                              fontSize: 16.sp,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.black87,
                                             ),
                                           ),
-                                        ),
+                                          SizedBox(height: 6.h),
+                                          _buildPasswordField(
+                                            controller: _passwordController,
+                                            hintText:
+                                                _translations['password_hint']!,
+                                            errorText: _passwordError,
+                                            obscureText: _obscurePassword,
+                                            toggleVisibility:
+                                                _togglePasswordVisibility,
+                                            onChanged: (val) {
+                                              if (_passwordError != null) {
+                                                setState(() {
+                                                  _passwordError = null;
+                                                });
+                                              }
+                                            },
+                                          ),
+                                          if (_passwordError != null)
+                                            _buildErrorText(_passwordError!),
+                                        ],
+                                      ),
 
-                                      SizedBox(
-                                          height: _passwordError != null ? 12.h : 20.h), // Increased spacing between fields
+                                      SizedBox(height: 8.h),
 
                                       // Confirm Password field
-                                      Text(
-                                        _translations['confirm_label']!,
-                                        style: TextStyle(
-                                          fontSize: 16.sp,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-
-                                      SizedBox(height: 8.h), // Consistent spacing
-
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[200],
-                                          borderRadius:
-                                              BorderRadius.circular(30.r),
-                                          border: Border.all(
-                                            color: _confirmPasswordError != null
-                                                ? Colors.red
-                                                : Colors.transparent,
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: TextFormField(
-                                          controller:
-                                              _confirmPasswordController,
-                                          obscureText: _obscureConfirmPassword,
-                                          onChanged: (val) {
-                                            if (_confirmPasswordError != null) {
-                                              setState(() {
-                                                _confirmPasswordError = null;
-                                              });
-                                            }
-                                          },
-                                          decoration: InputDecoration(
-                                            hintText:
-                                                _translations['confirm_hint'],
-                                            hintStyle: TextStyle(
-                                              color: Colors.grey[500],
-                                              fontSize: 14.sp,
-                                            ),
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                              horizontal: 20.w,
-                                              vertical: 12.h, // Slightly shorter input field
-                                            ),
-                                            border: InputBorder.none,
-                                            errorStyle: TextStyle(
-                                                height: 0, fontSize: 0),
-                                            errorBorder: InputBorder.none,
-                                            focusedErrorBorder:
-                                                InputBorder.none,
-                                            suffixIcon: IconButton(
-                                              icon: Icon(
-                                                _obscureConfirmPassword
-                                                    ? Icons.visibility_off
-                                                    : Icons.visibility,
-                                                color: Colors.grey[600],
-                                                size: 18.w,
-                                              ),
-                                              onPressed:
-                                                  _toggleConfirmPasswordVisibility,
-                                              padding: EdgeInsets.zero,
-                                              constraints: BoxConstraints(),
-                                            ),
-                                          ),
-                                          validator: (_) => null,
-                                        ),
-                                      ),
-
-                                      // Confirm Password error message
-                                      if (_confirmPasswordError != null)
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                              top: 4.h, left: 16.w),
-                                          child: Text(
-                                            _confirmPasswordError!,
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _translations['confirm_label']!,
                                             style: TextStyle(
-                                              color: Colors.red,
-                                              fontSize: 12.sp,
+                                              fontSize: 16.sp,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.black87,
                                             ),
                                           ),
-                                        ),
+                                          SizedBox(height: 6.h),
+                                          _buildPasswordField(
+                                            controller:
+                                                _confirmPasswordController,
+                                            hintText:
+                                                _translations['confirm_hint']!,
+                                            errorText: _confirmPasswordError,
+                                            obscureText:
+                                                _obscureConfirmPassword,
+                                            toggleVisibility:
+                                                _toggleConfirmPasswordVisibility,
+                                            onChanged: (val) {
+                                              if (_confirmPasswordError !=
+                                                  null) {
+                                                setState(() {
+                                                  _confirmPasswordError = null;
+                                                });
+                                              }
+                                            },
+                                          ),
+                                          if (_confirmPasswordError != null)
+                                            _buildErrorText(
+                                                _confirmPasswordError!),
+                                        ],
+                                      ),
 
-                                      SizedBox(
-                                          height: _confirmPasswordError != null 
-                                            ? 16.h 
-                                            : 28.h), // More space before button
+                                      // Spacer to push buttons to bottom
+                                      Spacer(flex: 1),
 
-                                      // Sign up button using CustomButton
+                                      // Sign up button
                                       CustomButton(
                                         text: _translations['signup_button']!,
                                         isLoading: _isSubmitting,
                                         onPressed: () {
-                                          // Dismiss keyboard first to avoid event issues
                                           FocusScope.of(context).unfocus();
-                                          // Small delay to ensure keyboard is fully dismissed
                                           Future.delayed(
                                               Duration(milliseconds: 100), () {
                                             _handleSignup();
@@ -774,22 +564,193 @@ class _SignupUserState extends State<SignupUser> {
                                         },
                                       ),
 
-                                      SizedBox(height: 20.h),
+                                      SizedBox(height: 16.h),
 
-                                      // Login link
+                                      // Sign up with Google button
+                                      Container(
+                                        width: double.infinity,
+                                        height: 48.h,
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            // Google sign-up logic will be implemented here
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                    'Google sign-up will be implemented'),
+                                                duration:
+                                                    const Duration(seconds: 2),
+                                              ),
+                                            );
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.white,
+                                            foregroundColor: Colors.black87,
+                                            elevation: 1,
+                                            shadowColor: Colors.black38,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(30.r),
+                                              side: BorderSide(
+                                                color: Colors.grey.shade300,
+                                                width: 1,
+                                              ),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              // Google logo
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(4.r),
+                                                child: Image.asset(
+                                                  'lib/assets/images/google.jpg',
+                                                  height: 24.h,
+                                                  width: 24.h,
+                                                ),
+                                              ),
+                                              SizedBox(width: 12.w),
+                                              // Sign up with Google text
+                                              Text(
+                                                _translations['google_signup']!,
+                                                style: TextStyle(
+                                                  fontSize: 16.sp,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+
+                                      // Bottom padding
+                                      SizedBox(height: 24.h),
                                     ],
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
+    );
+  }
+
+  // Reusable widget for form fields
+  Widget _buildFormField({
+    required TextEditingController controller,
+    required String hintText,
+    required String? errorText,
+    required Function(String) onChanged,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Container(
+      height: 42.h,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(30.r),
+        border: Border.all(
+          color: errorText != null ? Colors.red : Colors.transparent,
+          width: 1.5,
+        ),
+      ),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        onChanged: onChanged,
+        style: TextStyle(fontSize: 14.sp),
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: TextStyle(
+            color: Colors.grey[500],
+            fontSize: 14.sp,
+          ),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 20.w,
+            vertical: 10.h,
+          ),
+          border: InputBorder.none,
+          errorStyle: TextStyle(height: 0, fontSize: 0),
+          errorBorder: InputBorder.none,
+          focusedErrorBorder: InputBorder.none,
+        ),
+        validator: (_) => null,
+      ),
+    );
+  }
+
+  // Reusable widget for password fields
+  Widget _buildPasswordField({
+    required TextEditingController controller,
+    required String hintText,
+    required String? errorText,
+    required bool obscureText,
+    required VoidCallback toggleVisibility,
+    required Function(String) onChanged,
+  }) {
+    return Container(
+      height: 42.h,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(30.r),
+        border: Border.all(
+          color: errorText != null ? Colors.red : Colors.transparent,
+          width: 1.5,
+        ),
+      ),
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscureText,
+        onChanged: onChanged,
+        style: TextStyle(fontSize: 14.sp),
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: TextStyle(
+            color: Colors.grey[500],
+            fontSize: 14.sp,
+          ),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 20.w,
+            vertical: 10.h,
+          ),
+          border: InputBorder.none,
+          errorStyle: TextStyle(height: 0, fontSize: 0),
+          errorBorder: InputBorder.none,
+          focusedErrorBorder: InputBorder.none,
+          suffixIcon: IconButton(
+            icon: Icon(
+              obscureText ? Icons.visibility_off : Icons.visibility,
+              color: Colors.grey[600],
+              size: 18.w,
+            ),
+            onPressed: toggleVisibility,
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints(),
+          ),
+        ),
+        validator: (_) => null,
+      ),
+    );
+  }
+
+  // Reusable widget for error messages
+  Widget _buildErrorText(String errorText) {
+    return Padding(
+      padding: EdgeInsets.only(top: 4.h, left: 16.w),
+      child: Text(
+        errorText,
+        style: TextStyle(
+          color: Colors.red,
+          fontSize: 12.sp,
+        ),
+      ),
     );
   }
 }
