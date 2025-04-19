@@ -8,6 +8,7 @@ import 'package:sahtech/core/services/mock_api_service.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 import 'package:sahtech/presentation/scan/camera_access_screen.dart';
+import 'package:sahtech/presentation/profile/UserProfileSettings.dart';
 
 class HomeScreen extends StatefulWidget {
   final UserModel userData;
@@ -669,7 +670,20 @@ class _HomeScreenState extends State<HomeScreen> {
     final isSelected = _currentIndex == index;
 
     return InkWell(
-      onTap: () => setState(() => _currentIndex = index),
+      onTap: () {
+        if (index == 4) {
+          // Profile tab
+          // Navigate to profile settings
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UserProfileSettings(user: widget.userData),
+            ),
+          );
+        } else {
+          setState(() => _currentIndex = index);
+        }
+      },
       borderRadius: BorderRadius.circular(12.r),
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 12.w),

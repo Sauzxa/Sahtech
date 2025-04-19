@@ -41,7 +41,7 @@ class _SignupUserState extends State<SignupUser> {
   // Translations
   Map<String, String> _translations = {
     'signup_title': 'S\'inscrire',
-    'signup_subtitle': 'Vuillez vous inscrire pour utiliser notre appli',
+    'signup_subtitle': 'Veuillez vous inscrire pour utiliser notre appli',
     'nom_label': 'Nom',
     'nom_hint': 'Entrer votre nom',
     'prenom_label': 'Prenom',

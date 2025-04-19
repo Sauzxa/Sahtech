@@ -5,7 +5,8 @@ import 'package:sahtech/core/services/storage_service.dart';
 
 class AuthService {
   // Spring Boot API endpoint
-  static const String apiBaseUrl = 'http://localhost:8080';
+  static const String apiBaseUrl =
+      'http://192.168.1.69:8080'; // Explicit IP address for testing
 
   final StorageService _storageService = StorageService();
 
@@ -169,8 +170,48 @@ class AuthService {
   }
 
   // Logout method
-  Future<void> logout() async {
-    await _storageService.clearAuthData();
+  Future<bool> logout() async {
+    try {
+      final String? token = await _storageService.getToken();
+
+      if (token == null) {
+        print('No token to logout');
+        await _storageService.clearAuthData();
+        return true;
+      }
+
+      // Call server-side logout
+      final response = await http.post(
+        Uri.parse('$apiBaseUrl/API/Sahtech/auth/logout'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'token': token,
+        }),
+      );
+
+      // DEBUG: Print response
+      print('Logout response status: ${response.statusCode}');
+      print('Logout response body: ${response.body}');
+
+      // Regardless of server response, clear local storage
+      await _storageService.clearAuthData();
+
+      // Check if server logout was successful
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        return responseData['success'] ?? true;
+      }
+
+      return true; // Still return true as local logout succeeded
+    } catch (e) {
+      print('Error during logout: $e');
+      // Still clear local data even if server call fails
+      await _storageService.clearAuthData();
+      return true;
+    }
   }
 
   // Check if user is authenticated
