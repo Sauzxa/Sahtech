@@ -140,10 +140,14 @@ class UserModel {
   // For authentication only - used when registering a user
   // This map includes the password but shouldn't be used for general data operations
   Map<String, dynamic> toAuthMap() {
-    final Map<String, dynamic> authMap = toMap();
-    if (_tempPassword != null) {
-      authMap['password'] = _tempPassword;
-    }
-    return authMap;
+    return {
+      'nom': name?.split(' ').last ?? '',
+      'prenom': name?.split(' ').first ?? '',
+      'email': email,
+      'password': _tempPassword,
+      'telephone': phoneNumber != null ? int.tryParse(phoneNumber!) ?? 0 : 0,
+      'userType':
+          userType.toUpperCase() == 'NUTRITIONIST' ? 'NUTRITIONIST' : 'USER'
+    };
   }
 }
