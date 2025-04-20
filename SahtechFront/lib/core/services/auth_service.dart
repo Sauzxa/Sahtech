@@ -300,6 +300,7 @@ class AuthService {
   Future<bool> logout() async {
     try {
       final String? token = await _storageService.getToken();
+      final String? userId = await _storageService.getUserId();
 
       if (token == null) {
         print('No token to logout');
@@ -309,6 +310,11 @@ class AuthService {
 
       // Call server-side logout with timeout
       try {
+        // Create a proper LogoutRequest body as required by the backend
+        final logoutRequestBody = {'token': token, 'userId': userId};
+
+        print('Sending logout request: ${json.encode(logoutRequestBody)}');
+
         final response = await http
             .post(
               Uri.parse('$apiBaseUrl/API/Sahtech/auth/logout'),
@@ -316,9 +322,7 @@ class AuthService {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer $token',
               },
-              body: json.encode({
-                'token': token,
-              }),
+              body: json.encode(logoutRequestBody),
             )
             .timeout(
                 const Duration(seconds: 10)); // Add timeout directly to request

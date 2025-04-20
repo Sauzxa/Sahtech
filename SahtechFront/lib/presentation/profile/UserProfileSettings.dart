@@ -91,47 +91,55 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
     final isRTL = translationService.currentLanguageCode == 'ar';
 
     return Scaffold(
-      backgroundColor:
-          const Color(0xFFE5F0E2), // Light green background from the design
+      backgroundColor: const Color(0xFFE5F0E2), // Light green background
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(
-              horizontal: 16.w, vertical: 12.h), // Added vertical padding
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: 16.h), // Increased for better vertical centering
+              SizedBox(height: 24.h),
+
               // Profile Title
               Center(
                 child: Text(
                   'Mon Profile',
                   style: TextStyle(
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w600,
                     color: Colors.black,
                   ),
                 ),
               ),
-              SizedBox(height: 20.h),
+              SizedBox(height: 24.h),
 
               // User Profile Card
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(16.w),
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
                     // Profile Image
                     CircleAvatar(
-                      radius: 25.r,
+                      radius: 24.r,
                       backgroundImage: widget.user.profileImageUrl != null
                           ? NetworkImage(widget.user.profileImageUrl!)
                           : null,
+                      backgroundColor: Colors.grey.shade200,
                       child: widget.user.profileImageUrl == null
-                          ? Icon(Icons.person, size: 30.r)
+                          ? Icon(Icons.person,
+                              size: 28.r, color: Colors.grey.shade400)
                           : null,
                     ),
                     SizedBox(width: 16.w),
@@ -144,7 +152,8 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                             widget.user.name ?? 'Arafatilla 01',
                             style: TextStyle(
                               fontSize: 16.sp,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
                             ),
                           ),
                           SizedBox(height: 4.h),
@@ -152,29 +161,41 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                             'Numero de compte: ${widget.user.phoneNumber ?? '029883614373'}',
                             style: TextStyle(
                               fontSize: 12.sp,
-                              color: Colors.grey,
+                              color: Colors.grey.shade600,
                             ),
                           ),
                         ],
                       ),
                     ),
                     // Edit Button
-                    IconButton(
-                      icon: Icon(Icons.edit, size: 20.r),
-                      onPressed: _navigateToEditProfile,
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.grey.shade100,
+                      ),
+                      child: IconButton(
+                        icon: Icon(Icons.edit_outlined,
+                            size: 18.r, color: Colors.black54),
+                        onPressed: _navigateToEditProfile,
+                        constraints: BoxConstraints.tightFor(
+                          width: 36.r,
+                          height: 36.r,
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
                     ),
                   ],
                 ),
               ),
 
-              SizedBox(height: 30.h),
+              SizedBox(height: 24.h),
 
               // Other Parameters Section
               Text(
                 'Autres Parametres',
                 style: TextStyle(
                   fontSize: 18.sp,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
                   color: Colors.black,
                 ),
               ),
@@ -186,6 +207,13 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
@@ -195,12 +223,15 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                           horizontal: 16.w, vertical: 12.h),
                       child: Row(
                         children: [
-                          Icon(Icons.dark_mode, color: Colors.black),
+                          Icon(Icons.dark_mode_outlined,
+                              size: 20.r, color: Colors.black87),
                           SizedBox(width: 16.w),
                           Text(
                             'Mode d\'affichage',
                             style: TextStyle(
                               fontSize: 14.sp,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
                             ),
                           ),
                           Spacer(),
@@ -212,21 +243,26 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                               });
                             },
                             activeColor: AppColors.lightTeal,
+                            activeTrackColor:
+                                AppColors.lightTeal.withOpacity(0.4),
                           ),
                         ],
                       ),
                     ),
-                    Divider(height: 1),
+                    Divider(
+                        height: 1, thickness: 0.5, color: Colors.grey.shade200),
 
                     // Change Language
                     _buildSettingItem(
-                      icon: Icons.language,
+                      icon: Icons.language_outlined,
                       title: 'Changer la langue',
                       onTap: () {
                         // Show language selection dialog
                         _showLanguageSelectionDialog();
                       },
                     ),
+                    Divider(
+                        height: 1, thickness: 0.5, color: Colors.grey.shade200),
 
                     // About Us
                     _buildSettingItem(
@@ -247,9 +283,16 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: _buildSettingItem(
-                  icon: Icons.lock,
+                  icon: Icons.lock_outline,
                   title: 'changer mot de passe',
                   onTap: () {
                     // Navigate to change password
@@ -264,9 +307,16 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: _buildSettingItem(
-                  icon: Icons.build_outlined,
+                  icon: Icons.support_agent_outlined,
                   title: 'Support',
                   onTap: () {
                     _launchUrl('https://sahtech-website.vercel.app/');
@@ -281,11 +331,19 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: _buildSettingItem(
                   icon: Icons.logout,
                   title: 'Se deconnecter',
                   textColor: Colors.red,
+                  iconColor: Colors.red,
                   onTap: () async {
                     // Show confirmation dialog
                     showLogoutConfirmationDialog();
@@ -300,6 +358,7 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
       ),
       // Bottom navigation bar consistent with HomeScreen
       bottomNavigationBar: Container(
+        height: 70.h,
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [
@@ -313,7 +372,7 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+            padding: EdgeInsets.symmetric(horizontal: 8.w),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -355,21 +414,21 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
             borderRadius: BorderRadius.circular(20.r),
           ),
           child: Container(
-            padding: EdgeInsets.all(20.w),
+            padding: EdgeInsets.all(24.w),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(height: 10.h),
                 Container(
-                  width: 60.w,
-                  height: 60.h,
+                  width: 60.r,
+                  height: 60.r,
                   decoration: BoxDecoration(
                     color: AppColors.lightTeal.withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.logout,
-                    size: 30.sp,
+                    size: 28.r,
                     color: AppColors.lightTeal,
                   ),
                 ),
@@ -390,7 +449,7 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                     color: Colors.grey,
                   ),
                 ),
-                SizedBox(height: 20.h),
+                SizedBox(height: 24.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -412,6 +471,7 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                           style: TextStyle(
                             color: AppColors.lightTeal,
                             fontSize: 14.sp,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
@@ -434,8 +494,11 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                           showDialog(
                             context: context,
                             barrierDismissible: false,
-                            builder: (context) =>
-                                Center(child: CircularProgressIndicator()),
+                            builder: (context) => Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.lightTeal,
+                              ),
+                            ),
                           );
 
                           try {
@@ -501,6 +564,7 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 14.sp,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
@@ -531,7 +595,7 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
             Icon(
               isSelected ? activeIcon : icon,
               color: isSelected ? AppColors.lightTeal : Colors.grey,
-              size: 24.sp,
+              size: 24.r,
             ),
             SizedBox(height: 4.h),
             Text(
@@ -566,7 +630,7 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
           child: Icon(
             Icons.qr_code_scanner,
             color: Colors.white,
-            size: 26.sp,
+            size: 26.r,
           ),
         ),
       ),
@@ -577,25 +641,27 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
     required IconData icon,
     required String title,
     Color? textColor,
+    Color? iconColor,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
         child: Row(
           children: [
-            Icon(icon, color: Colors.black),
+            Icon(icon, color: iconColor ?? Colors.black87, size: 22.r),
             SizedBox(width: 16.w),
             Text(
               title,
               style: TextStyle(
                 fontSize: 14.sp,
-                color: textColor ?? Colors.black,
+                fontWeight: FontWeight.w500,
+                color: textColor ?? Colors.black87,
               ),
             ),
             Spacer(),
-            Icon(Icons.chevron_right, color: Colors.grey),
+            Icon(Icons.chevron_right, color: Colors.grey, size: 20.r),
           ],
         ),
       ),
