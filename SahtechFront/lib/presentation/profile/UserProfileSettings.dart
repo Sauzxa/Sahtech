@@ -5,6 +5,11 @@ import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/presentation/home/home_screen.dart';
 import 'package:sahtech/presentation/scan/camera_access_screen.dart';
 import 'package:sahtech/core/services/auth_service.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:sahtech/presentation/profile/EditUserData.dart';
+import 'package:sahtech/core/widgets/language_selector.dart';
+import 'package:provider/provider.dart';
+import 'package:sahtech/core/services/translation_service.dart';
 
 class UserProfileSettings extends StatefulWidget {
   final UserModel user;
@@ -52,18 +57,50 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
     }
   }
 
+  Future<void> _launchUrl(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not launch $url'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _navigateToEditProfile() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditUserData(user: widget.user),
+      ),
+    );
+
+    // If returned with updated user data, refresh the UI
+    if (result != null && result is UserModel) {
+      setState(() {
+        // Update user data with the returned model
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final translationService = Provider.of<TranslationService>(context);
+    final isRTL = translationService.currentLanguageCode == 'ar';
+
     return Scaffold(
       backgroundColor:
           const Color(0xFFE5F0E2), // Light green background from the design
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          padding: EdgeInsets.symmetric(
+              horizontal: 16.w, vertical: 12.h), // Added vertical padding
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: 20.h),
+              SizedBox(height: 16.h), // Increased for better vertical centering
               // Profile Title
               Center(
                 child: Text(
@@ -124,9 +161,7 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                     // Edit Button
                     IconButton(
                       icon: Icon(Icons.edit, size: 20.r),
-                      onPressed: () {
-                        // Edit profile functionality
-                      },
+                      onPressed: _navigateToEditProfile,
                     ),
                   ],
                 ),
@@ -188,7 +223,8 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                       icon: Icons.language,
                       title: 'Changer la langue',
                       onTap: () {
-                        // Navigate to language settings
+                        // Show language selection dialog
+                        _showLanguageSelectionDialog();
                       },
                     ),
 
@@ -197,7 +233,7 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                       icon: Icons.info_outline,
                       title: 'Qui somme nous',
                       onTap: () {
-                        // Navigate to about us
+                        _launchUrl('https://sahtech-website.vercel.app/');
                       },
                     ),
                   ],
@@ -233,7 +269,7 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                   icon: Icons.build_outlined,
                   title: 'Support',
                   onTap: () {
-                    // Navigate to support
+                    _launchUrl('https://sahtech-website.vercel.app/');
                   },
                 ),
               ),
@@ -252,63 +288,7 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                   textColor: Colors.red,
                   onTap: () async {
                     // Show confirmation dialog
-                    final bool confirmed = await showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: Text('Confirmation'),
-                            content: Text(
-                                'Êtes-vous sûr de vouloir vous déconnecter ?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.of(context).pop(false),
-                                child: Text('Annuler'),
-                              ),
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.of(context).pop(true),
-                                child: Text('Déconnecter',
-                                    style: TextStyle(color: Colors.red)),
-                              ),
-                            ],
-                          ),
-                        ) ??
-                        false;
-
-                    if (confirmed) {
-                      // Show loading indicator
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (context) =>
-                            Center(child: CircularProgressIndicator()),
-                      );
-
-                      // Perform logout
-                      final authService = AuthService();
-                      final success = await authService.logout();
-
-                      // Close loading indicator
-                      Navigator.pop(context);
-
-                      if (success) {
-                        // Navigate to login screen
-                        Navigator.pushNamedAndRemoveUntil(
-                          context,
-                          '/login',
-                          (route) => false,
-                        );
-                      } else {
-                        // Show error message
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                                'Erreur lors de la déconnexion. Veuillez réessayer.'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    }
+                    showLogoutConfirmationDialog();
                   },
                 ),
               ),
@@ -349,6 +329,189 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showLanguageSelectionDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return LanguageSelectorDialog(
+          onLanguageChanged: (languageCode) {
+            // Update UI after language change
+            setState(() {});
+          },
+        );
+      },
+    );
+  }
+
+  void showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          child: Container(
+            padding: EdgeInsets.all(20.w),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(height: 10.h),
+                Container(
+                  width: 60.w,
+                  height: 60.h,
+                  decoration: BoxDecoration(
+                    color: AppColors.lightTeal.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.logout,
+                    size: 30.sp,
+                    color: AppColors.lightTeal,
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                Text(
+                  'Vous allez vous déconnecter ?',
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 10.h),
+                Text(
+                  'Vous pouvez toujours vous reconnecter à tout moment',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: Colors.grey,
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Cancel button
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: AppColors.lightTeal),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25.r),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Text(
+                          'Annuler',
+                          style: TextStyle(
+                            color: AppColors.lightTeal,
+                            fontSize: 14.sp,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 15.w),
+                    // Logout button
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.lightTeal,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25.r),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 12.h),
+                        ),
+                        onPressed: () async {
+                          Navigator.of(context).pop();
+
+                          // Show loading indicator
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) =>
+                                Center(child: CircularProgressIndicator()),
+                          );
+
+                          try {
+                            // Perform logout with timeout
+                            final authService = AuthService();
+                            bool success = false;
+
+                            // Add a timeout to the logout request
+                            success = await authService.logout().timeout(
+                              const Duration(seconds: 5),
+                              onTimeout: () {
+                                print('Logout request timed out');
+                                // Still clear local data on timeout
+                                return true;
+                              },
+                            );
+
+                            // Close loading indicator
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                            }
+
+                            if (success) {
+                              // Navigate to login screen
+                              if (context.mounted) {
+                                Navigator.pushNamedAndRemoveUntil(
+                                  context,
+                                  '/login',
+                                  (route) => false,
+                                );
+                              }
+                            } else {
+                              if (context.mounted) {
+                                // Show error message
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                        'Erreur lors de la déconnexion. Veuillez réessayer.'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            }
+                          } catch (e) {
+                            print('Error during logout: $e');
+                            // Close loading indicator
+                            if (context.mounted) {
+                              Navigator.pop(context);
+
+                              // Show error message
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text('Erreur lors de la déconnexion: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        child: Text(
+                          'Deconnecter',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.sp,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

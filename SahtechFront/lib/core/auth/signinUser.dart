@@ -8,6 +8,7 @@ import 'package:sahtech/core/auth/signupUser.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/widgets/custom_button.dart';
+import 'package:sahtech/presentation/home/home_screen.dart'; // Import HomeScreen directly
 
 class SigninUser extends StatefulWidget {
   final UserModel userData;
@@ -30,6 +31,7 @@ class _SigninUserState extends State<SigninUser> {
   // Add error state variables
   String? _emailError;
   String? _passwordError;
+  String? _generalError;
 
   // Translations
   Map<String, String> _translations = {
@@ -108,10 +110,11 @@ class _SigninUserState extends State<SigninUser> {
   }
 
   Future<void> _handleLoginWithEmail() async {
-    // Clear previous errors
+    // Reset all errors
     setState(() {
       _emailError = null;
       _passwordError = null;
+      _generalError = null;
     });
 
     // Validate manually
@@ -146,82 +149,161 @@ class _SigninUserState extends State<SigninUser> {
 
     // Save email to user data
     widget.userData.email = _emailController.text.trim();
+    widget.userData.tempPassword =
+        _passwordController.text; // Save for login process only
 
     setState(() => _isSubmitting = true);
 
     try {
-      // Use the AuthService to log in the user with MongoDB
+      // Use the AuthService to log in the user
       final AuthService authService = AuthService();
+
+      // Show logging for debugging
+      print('Attempting login with email: ${_emailController.text}');
+      print('User type: ${widget.userData.userType}');
+
       final loginResult = await authService.loginUser(
-          _emailController.text.trim(), _passwordController.text);
+        _emailController.text.trim(),
+        _passwordController.text,
+        userType: widget.userData.userType.toUpperCase(),
+      );
+
+      // Clear the password for security
+      widget.userData.clearPassword();
 
       if (loginResult['success']) {
+        print('Login successful');
+
         // If login successful, fetch the complete user data
-        if (loginResult['data'] != null &&
-            loginResult['data']['userId'] != null) {
-          final userId = loginResult['data']['userId'];
-          final userData = await authService.getUserData(userId);
+        String? userId = null;
+        if (loginResult['data'] != null) {
+          userId = loginResult['data']['userId'] ?? loginResult['data']['id'];
+        }
+
+        if (userId != null) {
+          print('User ID from login response: $userId');
+          widget.userData.userId = userId;
+
+          print('Fetching complete user data...');
+          int maxRetries = 3;
+          UserModel? userData;
+
+          // Try multiple times to fetch user data with exponential backoff
+          for (int i = 0; i < maxRetries; i++) {
+            try {
+              userData = await authService.getUserData(userId);
+              if (userData != null) {
+                break; // Success, exit the retry loop
+              } else {
+                print(
+                    'Attempt ${i + 1}: Failed to get user data (null response)');
+              }
+            } catch (e) {
+              print('Attempt ${i + 1}: Error fetching user data: $e');
+            }
+
+            // Wait before retrying, with increasing delay (exponential backoff)
+            if (i < maxRetries - 1) {
+              await Future.delayed(Duration(seconds: (i + 1) * 2));
+            }
+          }
 
           if (userData != null) {
-            // Update the user model with data from MongoDB
-            widget.userData.name = userData.name;
-            widget.userData.email = userData.email;
-            widget.userData.phoneNumber = userData.phoneNumber;
-            widget.userData.profileImageUrl = userData.profileImageUrl;
-            widget.userData.userId = userData.userId;
-            widget.userData.hasChronicDisease = userData.hasChronicDisease;
-            widget.userData.chronicConditions = userData.chronicConditions;
-            widget.userData.preferredLanguage = userData.preferredLanguage;
-            widget.userData.doesExercise = userData.doesExercise;
-            widget.userData.activityLevel = userData.activityLevel;
-            widget.userData.physicalActivities = userData.physicalActivities;
-            widget.userData.dailyActivities = userData.dailyActivities;
-            widget.userData.healthGoals = userData.healthGoals;
-            widget.userData.hasAllergies = userData.hasAllergies;
-            widget.userData.allergies = userData.allergies;
-            widget.userData.allergyYear = userData.allergyYear;
-            widget.userData.allergyMonth = userData.allergyMonth;
-            widget.userData.allergyDay = userData.allergyDay;
-            widget.userData.weight = userData.weight;
-            widget.userData.weightUnit = userData.weightUnit;
-            widget.userData.height = userData.height;
-            widget.userData.heightUnit = userData.heightUnit;
+            print('Retrieved user data successfully.');
+            // Update the user model with all data from MongoDB
+            widget.userData.name = userData.name ?? widget.userData.name;
+            widget.userData.email = userData.email ?? widget.userData.email;
+            widget.userData.phoneNumber =
+                userData.phoneNumber ?? widget.userData.phoneNumber;
+            widget.userData.profileImageUrl =
+                userData.profileImageUrl ?? widget.userData.profileImageUrl;
+            widget.userData.hasChronicDisease =
+                userData.hasChronicDisease ?? widget.userData.hasChronicDisease;
+            widget.userData.chronicConditions =
+                userData.chronicConditions.isNotEmpty
+                    ? userData.chronicConditions
+                    : widget.userData.chronicConditions;
+            widget.userData.preferredLanguage =
+                userData.preferredLanguage ?? widget.userData.preferredLanguage;
+            widget.userData.doesExercise =
+                userData.doesExercise ?? widget.userData.doesExercise;
+            widget.userData.activityLevel =
+                userData.activityLevel ?? widget.userData.activityLevel;
+            widget.userData.physicalActivities =
+                userData.physicalActivities.isNotEmpty
+                    ? userData.physicalActivities
+                    : widget.userData.physicalActivities;
+            widget.userData.dailyActivities =
+                userData.dailyActivities.isNotEmpty
+                    ? userData.dailyActivities
+                    : widget.userData.dailyActivities;
+            widget.userData.healthGoals = userData.healthGoals.isNotEmpty
+                ? userData.healthGoals
+                : widget.userData.healthGoals;
+            widget.userData.hasAllergies =
+                userData.hasAllergies ?? widget.userData.hasAllergies;
+            widget.userData.allergies = userData.allergies.isNotEmpty
+                ? userData.allergies
+                : widget.userData.allergies;
+            widget.userData.allergyYear =
+                userData.allergyYear ?? widget.userData.allergyYear;
+            widget.userData.allergyMonth =
+                userData.allergyMonth ?? widget.userData.allergyMonth;
+            widget.userData.allergyDay =
+                userData.allergyDay ?? widget.userData.allergyDay;
+            widget.userData.weight = userData.weight ?? widget.userData.weight;
+            widget.userData.weightUnit =
+                userData.weightUnit ?? widget.userData.weightUnit;
+            widget.userData.height = userData.height ?? widget.userData.height;
+            widget.userData.heightUnit =
+                userData.heightUnit ?? widget.userData.heightUnit;
+          } else {
+            print('Failed to retrieve user data after multiple attempts');
+            // Continue with just the basic user data we have
           }
         }
 
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Connexion réussie!'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-
-        // Navigate to the home screen after authentication
-        // For example: Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeScreen()));
+        // Navigate to home screen with user data, even if we couldn't fetch complete profile
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HomeScreen(userData: widget.userData),
+            ),
+          );
+        }
       } else {
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: ${loginResult['message']}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        // Login failed
+        if (mounted) {
+          setState(() {
+            _isSubmitting = false;
+            _generalError = loginResult['message'] ?? 'Login failed';
+          });
+
+          // Show error snackbar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_generalError ?? 'Login failed'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erreur: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    } finally {
+      print('Exception during login: $e');
       if (mounted) {
-        setState(() => _isSubmitting = false);
+        setState(() {
+          _isSubmitting = false;
+          _generalError = 'An error occurred: $e';
+        });
+
+        // Show error snackbar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('An error occurred: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -573,6 +655,31 @@ class _SigninUserState extends State<SigninUser> {
                                             style: TextStyle(
                                               color: Colors.red,
                                               fontSize: 12.sp,
+                                            ),
+                                          ),
+                                        ),
+
+                                      // General error message
+                                      if (_generalError != null)
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                              top: 8.h, left: 16.w),
+                                          child: Container(
+                                            width: double.infinity,
+                                            padding: EdgeInsets.all(8.w),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red.shade50,
+                                              borderRadius:
+                                                  BorderRadius.circular(8.r),
+                                              border: Border.all(
+                                                  color: Colors.red.shade200),
+                                            ),
+                                            child: Text(
+                                              _generalError!,
+                                              style: TextStyle(
+                                                color: Colors.red.shade800,
+                                                fontSize: 12.sp,
+                                              ),
                                             ),
                                           ),
                                         ),

@@ -185,6 +185,83 @@ class _HomeScreenState extends State<HomeScreen> {
     // TODO: Implement ad link opening
   }
 
+  // Build the app header with greeting and profile photo
+  Widget _buildHeader() {
+    // Format user name for greeting
+    String userName = "Utilisateur";
+    if (widget.userData.name != null && widget.userData.name!.isNotEmpty) {
+      // Try to extract first name for greeting
+      final nameParts = widget.userData.name!.split(' ');
+      if (nameParts.isNotEmpty) {
+        userName = nameParts.first;
+      } else {
+        userName = widget.userData.name!;
+      }
+    } else if (widget.userData.email != null &&
+        widget.userData.email!.isNotEmpty) {
+      // Use email as fallback
+      final emailName = widget.userData.email!.split('@').first;
+      userName = emailName;
+    }
+
+    // Log the user data for debugging
+    print(
+        'HomeScreen user data: ${widget.userData.userId}, ${widget.userData.name}, ${widget.userData.email}');
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Greeting text
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Salut $userName 👋",
+                style: TextStyle(
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              SizedBox(height: 4.h),
+              Text(
+                "Comment allez-vous aujourd'hui?",
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          // Profile image or placeholder
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      UserProfileSettings(user: widget.userData),
+                ),
+              );
+            },
+            child: CircleAvatar(
+              radius: 24.r,
+              backgroundColor: Colors.grey[200],
+              backgroundImage: widget.userData.profileImageUrl != null
+                  ? NetworkImage(widget.userData.profileImageUrl!)
+                  : null,
+              child: widget.userData.profileImageUrl == null
+                  ? Icon(Icons.person, size: 30.r, color: Colors.grey[600])
+                  : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -220,37 +297,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
 
                       // Welcome message - single profile pic with bigger text
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 16.w, vertical: 8.h),
-                        child: Row(
-                          children: [
-                            // Profile picture - dynamic from user data
-                            CircleAvatar(
-                              radius: 20.r,
-                              backgroundColor: Colors.grey[300],
-                              backgroundImage:
-                                  widget.userData.profileImageUrl != null
-                                      ? NetworkImage(
-                                          widget.userData.profileImageUrl!)
-                                      : null,
-                              child: widget.userData.profileImageUrl == null
-                                  ? Icon(Icons.person,
-                                      color: Colors.grey[600], size: 24.sp)
-                                  : null,
-                            ),
-                            SizedBox(width: 10.w),
-                            Text(
-                              'Salut ${widget.userData.name ?? "Utilisateur"}!',
-                              style: TextStyle(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      _buildHeader(),
                       SizedBox(height: 28.h),
 
                       // Scanner card - UPDATED TO MATCH DESIGN EXACTLY

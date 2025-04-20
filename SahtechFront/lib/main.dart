@@ -10,6 +10,7 @@ import 'package:sahtech/presentation/profile/getstarted.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/presentation/home/home_screen.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
+import 'package:sahtech/core/auth/SigninUser.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -97,6 +98,8 @@ class _MainState extends State<Main> {
               '/onboarding2': (context) => const OnboardingScreen2(),
               '/onboarding3': (context) => const OnboardingScreen3(),
               '/profile1': (context) => const ChoiceScreen(),
+              '/login': (context) =>
+                  SigninUser(userData: UserModel(userType: 'USER')),
             },
             // Handle navigation to home screen with user data
             onGenerateRoute: (settings) {

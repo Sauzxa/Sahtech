@@ -1,5 +1,5 @@
 class UserModel {
-  final String userType; // 'user' or 'nutritionist'
+  String userType; // 'user' or 'nutritionist' - removed final
   String? name;
   String? email;
   String? phoneNumber;
@@ -83,56 +83,91 @@ class UserModel {
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
       userType: map['userType'] ?? 'user',
-      name: map['name'],
+      name: (map['prenom'] != null && map['nom'] != null)
+          ? '${map['prenom']} ${map['nom']}'
+          : map['name'],
       email: map['email'],
-      phoneNumber: map['phoneNumber'],
+      phoneNumber: map['numTelephone']?.toString() ?? map['phoneNumber'],
       profileImageUrl: map['profileImageUrl'],
-      userId: map['_id']?.toString(), // MongoDB document ID
+      userId: map['id']?.toString() ??
+          map['_id']?.toString(), // Support both MongoDB ID formats
       hasChronicDisease: map['hasChronicDisease'],
-      chronicConditions: List<String>.from(map['chronicConditions'] ?? []),
+      // Handle both array formats and single value format for backward compatibility
+      chronicConditions: map['maladies'] != null
+          ? List<String>.from(map['maladies'])
+          : (map['chronicConditions'] != null
+              ? List<String>.from(map['chronicConditions'])
+              : []),
       preferredLanguage: map['preferredLanguage'],
       doesExercise: map['doesExercise'],
       activityLevel: map['activityLevel'],
-      physicalActivities: List<String>.from(map['physicalActivities'] ?? []),
-      dailyActivities: List<String>.from(map['dailyActivities'] ?? []),
-      healthGoals: List<String>.from(map['healthGoals'] ?? []),
+      physicalActivities: map['physicalActivities'] != null
+          ? List<String>.from(map['physicalActivities'])
+          : [],
+      dailyActivities: map['dailyActivities'] != null
+          ? List<String>.from(map['dailyActivities'])
+          : [],
+      healthGoals: map['objectives'] != null
+          ? List<String>.from(map['objectives'])
+          : (map['healthGoals'] != null
+              ? List<String>.from(map['healthGoals'])
+              : []),
       hasAllergies: map['hasAllergies'],
-      allergies: List<String>.from(map['allergies'] ?? []),
+      allergies:
+          map['allergies'] != null ? List<String>.from(map['allergies']) : [],
       allergyYear: map['allergyYear'],
       allergyMonth: map['allergyMonth'],
       allergyDay: map['allergyDay'],
-      weight: map['weight']?.toDouble(),
+      weight: map['poids']?.toDouble() ?? map['weight']?.toDouble(),
       weightUnit: map['weightUnit'],
-      height: map['height']?.toDouble(),
+      height: map['taille']?.toDouble() ?? map['height']?.toDouble(),
       heightUnit: map['heightUnit'],
     );
   }
 
   // Convert user data to a map - NEVER include password in this map
   Map<String, dynamic> toMap() {
+    // Split name into first and last name for backend
+    String firstName = '';
+    String lastName = '';
+    if (name != null && name!.isNotEmpty) {
+      List<String> nameParts = name!.split(' ');
+      firstName = nameParts.first;
+      lastName = nameParts.length > 1 ? nameParts.last : '';
+    }
+
     return {
       'userType': userType,
-      'name': name,
+      'name': name, // Keep for frontend compatibility
+      'prenom': firstName, // Add for backend compatibility
+      'nom': lastName, // Add for backend compatibility
       'email': email,
-      'phoneNumber': phoneNumber,
+      'phoneNumber': phoneNumber, // Keep for frontend compatibility
+      'numTelephone': phoneNumber != null
+          ? int.tryParse(phoneNumber!)
+          : null, // Add for backend
       'profileImageUrl': profileImageUrl,
       // We don't include the userId here as MongoDB will manage that
       'hasChronicDisease': hasChronicDisease,
-      'chronicConditions': chronicConditions,
+      'chronicConditions': chronicConditions, // Keep for frontend compatibility
+      'maladies': chronicConditions, // Add for backend compatibility
       'preferredLanguage': preferredLanguage,
       'doesExercise': doesExercise,
       'activityLevel': activityLevel,
       'physicalActivities': physicalActivities,
       'dailyActivities': dailyActivities,
-      'healthGoals': healthGoals,
+      'healthGoals': healthGoals, // Keep for frontend compatibility
+      'objectives': healthGoals, // Add for backend compatibility
       'hasAllergies': hasAllergies,
       'allergies': allergies,
       'allergyYear': allergyYear,
       'allergyMonth': allergyMonth,
       'allergyDay': allergyDay,
-      'weight': weight,
+      'weight': weight, // Keep for frontend compatibility
+      'poids': weight, // Add for backend compatibility
       'weightUnit': weightUnit,
-      'height': height,
+      'height': height, // Keep for frontend compatibility
+      'taille': height, // Add for backend compatibility
       'heightUnit': heightUnit,
     };
   }
