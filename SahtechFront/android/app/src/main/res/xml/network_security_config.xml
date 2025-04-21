@@ -1,9 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <base-config cleartextTrafficPermitted="false" />
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- Allow cleartext traffic to specific domains -->
     <domain-config cleartextTrafficPermitted="true">
+        <!-- Local development servers -->
         <domain includeSubdomains="true">192.168.1.69</domain>
         <domain includeSubdomains="true">localhost</domain>
         <domain includeSubdomains="true">10.0.2.2</domain>
+        
+        <!-- Add your actual backend server domain if any -->
+        <!-- <domain includeSubdomains="true">api.sahtech.com</domain> -->
+        
+        <!-- For development testing on any IP in local network -->
+        <domain includeSubdomains="true">192.168.1.0/24</domain>
     </domain-config>
 </network-security-config> 

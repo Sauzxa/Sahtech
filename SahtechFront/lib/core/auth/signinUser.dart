@@ -36,13 +36,13 @@ class _SigninUserState extends State<SigninUser> {
   // Translations
   Map<String, String> _translations = {
     'login_title': 'Se connecter',
-    'login_subtitle': 'Veuillez vouss connecter pour utiliser notre appli',
+    'login_subtitle': 'Veuillez vous connecter pour utiliser notre app',
     'email_label': 'Email',
     'email_hint': 'Entrez votre adresse e-mail',
     'password_label': 'Mot de passe',
     'password_hint': 'Entrez votre mot de passe',
     'password_forgot': 'Mot de passe oublié?',
-    'button_next': 'Se connecter',
+    'button_next': 'se connecter',
     'signup_with': 'Se connecter avec',
     'no_account': 'Vous n\'avez pas un compte?',
     'signup': 'S\'authentifier',
@@ -402,68 +402,77 @@ class _SigninUserState extends State<SigninUser> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final topSectionHeight = screenHeight * 0.25;
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
     return Scaffold(
-      backgroundColor: Color(0xFF9FE870),
-      resizeToAvoidBottomInset: false, // Prevent resizing when keyboard appears
+      resizeToAvoidBottomInset: false,
       body: _isLoading
           ? Center(child: CircularProgressIndicator(color: Color(0xFF9FE870)))
-          : SafeArea(
-              child: Column(
-                children: [
-                  // Top Section with Green Background - height reduced when keyboard is visible
-                  AnimatedContainer(
-                    duration: Duration(milliseconds: 200),
-                    height: bottomInset > 0
-                        ? topSectionHeight * 0.5
-                        : topSectionHeight,
-                    width: double.infinity,
-                    color: Color(0xFF9FE870),
-                    child: Center(
-                      child: AnimatedOpacity(
-                        opacity: bottomInset > 0 ? 0.0 : 1.0,
-                        duration: Duration(milliseconds: 200),
-                        child: Image.asset(
-                          'lib/assets/images/mainlogo.jpg',
-                          height: topSectionHeight * 0.3,
-                        ),
+          : GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: Container(
+                width: 1.sw,
+                height: 1.sh,
+                color: Colors.white,
+                child: Stack(
+                  children: [
+                    // Green overlay at the top area with opacity
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: 0.30.sh,
+                      child: Container(
+                        color: AppColors.lightTeal.withOpacity(0.5),
                       ),
                     ),
-                  ),
 
-                  // Main Form Container with rounded corners
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(50.r),
-                          topRight: Radius.circular(50.r),
-                        ),
-                      ),
-                      width: double.infinity,
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 30.w, vertical: 25.h),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Title and subtitle
-                              AnimatedContainer(
-                                duration: Duration(milliseconds: 200),
-                                height: bottomInset > 0 ? 0 : null,
-                                child: Opacity(
-                                  opacity: bottomInset > 0 ? 0.0 : 1.0,
+                    // Main content
+                    SafeArea(
+                      child: Column(
+                        children: [
+                          // Top spacer and logo in green area
+                          SizedBox(height: 0.05.sh),
+
+                          // Logo in green area
+                          Center(
+                            child: Image.asset(
+                              'lib/assets/images/mainlogo.jpg',
+                              height: 50.h,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+
+                          // Spacer between logo and container
+                          SizedBox(height: 0.07.sh),
+
+                          // Main white container with form content
+                          Expanded(
+                            child: Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(40.r),
+                                  topRight: Radius.circular(40.r),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 10,
+                                    spreadRadius: 0,
+                                    offset: Offset(0, -5),
+                                  ),
+                                ],
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 30.w, vertical: 25.h),
+                                child: Form(
+                                  key: _formKey,
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
                                     children: [
+                                      // Title & Subtitle
                                       Text(
                                         _translations['login_title']!,
                                         style: TextStyle(
@@ -480,20 +489,9 @@ class _SigninUserState extends State<SigninUser> {
                                           color: Colors.grey,
                                         ),
                                       ),
-                                      SizedBox(height: 20.h),
-                                    ],
-                                  ),
-                                ),
-                              ),
 
-                              // Form fields wrapped in Expanded with SingleChildScrollView
-                              Expanded(
-                                child: SingleChildScrollView(
-                                  physics: BouncingScrollPhysics(),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
+                                      SizedBox(height: 30.h),
+
                                       // Email label
                                       Text(
                                         _translations['email_label']!,
@@ -511,7 +509,11 @@ class _SigninUserState extends State<SigninUser> {
                                         decoration: BoxDecoration(
                                           color: Color(0xFFF5F5F5),
                                           borderRadius:
-                                              BorderRadius.circular(12.r),
+                                              BorderRadius.circular(30.r),
+                                          border: Border.all(
+                                            color: Colors.grey.shade300,
+                                            width: 1,
+                                          ),
                                         ),
                                         child: TextFormField(
                                           controller: _emailController,
@@ -537,7 +539,20 @@ class _SigninUserState extends State<SigninUser> {
                                               vertical: 14.h,
                                             ),
                                             border: InputBorder.none,
-                                            errorStyle: TextStyle(height: 0),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(30.r),
+                                              borderSide: BorderSide(
+                                                  color: Colors.transparent),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(30.r),
+                                              borderSide: BorderSide(
+                                                  color: AppColors.lightTeal
+                                                      .withOpacity(0.5),
+                                                  width: 1.5),
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -555,7 +570,7 @@ class _SigninUserState extends State<SigninUser> {
                                           ),
                                         ),
 
-                                      SizedBox(height: 15.h),
+                                      SizedBox(height: 20.h),
 
                                       // Password Label
                                       Text(
@@ -574,7 +589,11 @@ class _SigninUserState extends State<SigninUser> {
                                         decoration: BoxDecoration(
                                           color: Color(0xFFF5F5F5),
                                           borderRadius:
-                                              BorderRadius.circular(12.r),
+                                              BorderRadius.circular(30.r),
+                                          border: Border.all(
+                                            color: Colors.grey.shade300,
+                                            width: 1,
+                                          ),
                                         ),
                                         child: TextFormField(
                                           controller: _passwordController,
@@ -599,7 +618,31 @@ class _SigninUserState extends State<SigninUser> {
                                               vertical: 14.h,
                                             ),
                                             border: InputBorder.none,
-                                            errorStyle: TextStyle(height: 0),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(30.r),
+                                              borderSide: BorderSide(
+                                                  color: Colors.transparent),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(30.r),
+                                              borderSide: BorderSide(
+                                                  color: AppColors.lightTeal
+                                                      .withOpacity(0.5),
+                                                  width: 1.5),
+                                            ),
+                                            suffixIcon: IconButton(
+                                              icon: Icon(
+                                                _obscurePassword
+                                                    ? Icons.visibility_off
+                                                    : Icons.visibility,
+                                                color: Colors.grey.shade500,
+                                                size: 20,
+                                              ),
+                                              onPressed:
+                                                  _togglePasswordVisibility,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -636,7 +679,7 @@ class _SigninUserState extends State<SigninUser> {
                                           ),
                                         ),
 
-                                      SizedBox(height: 20.h),
+                                      SizedBox(height: 30.h),
 
                                       // Button - Light green pill button
                                       SizedBox(
@@ -687,128 +730,122 @@ class _SigninUserState extends State<SigninUser> {
                                       ),
 
                                       SizedBox(height: 20.h),
-                                    ],
-                                  ),
-                                ),
-                              ),
 
-                              // Bottom section with divider and Google sign-in - conditionally hidden when keyboard is visible
-                              if (bottomInset ==
-                                  0) // Only show when keyboard is hidden
-                                Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    // Divider with text
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Divider(
-                                            color: Colors.grey.shade300,
-                                            thickness: 1,
+                                      // Divider with text
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Divider(
+                                              color: Colors.grey.shade300,
+                                              thickness: 1,
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 10.w),
+                                            child: Text(
+                                              _translations['signup_with']!,
+                                              style: TextStyle(
+                                                fontSize: 14.sp,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Divider(
+                                              color: Colors.grey.shade300,
+                                              thickness: 1,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+
+                                      SizedBox(height: 20.h),
+
+                                      // Google button
+                                      InkWell(
+                                        onTap: _handleGoogleSignIn,
+                                        child: Container(
+                                          width: double.infinity,
+                                          height: 50.h,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(30.r),
+                                            border: Border.all(
+                                              color: Colors.grey.shade300,
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Image.asset(
+                                                'lib/assets/images/google.jpg',
+                                                height: 24.h,
+                                                width: 24.h,
+                                              ),
+                                              SizedBox(width: 8.w),
+                                              Text(
+                                                _translations['google_signup']!,
+                                                style: TextStyle(
+                                                  fontSize: 16.sp,
+                                                  color: Colors.black87,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                        Padding(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 10.w),
-                                          child: Text(
-                                            _translations['signup_with']!,
+                                      ),
+
+                                      Spacer(),
+
+                                      // Register link
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            _translations['no_account']!,
                                             style: TextStyle(
                                               fontSize: 14.sp,
                                               color: Colors.grey,
                                             ),
                                           ),
-                                        ),
-                                        Expanded(
-                                          child: Divider(
-                                            color: Colors.grey.shade300,
-                                            thickness: 1,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-
-                                    SizedBox(height: 20.h),
-
-                                    // Google button
-                                    InkWell(
-                                      onTap: _handleGoogleSignIn,
-                                      child: Container(
-                                        width: double.infinity,
-                                        height: 48.h,
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius:
-                                              BorderRadius.circular(30.r),
-                                          border: Border.all(
-                                            color: Colors.grey.shade300,
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Image.asset(
-                                              'lib/assets/images/google.jpg',
-                                              height: 24.h,
-                                              width: 24.h,
+                                          TextButton(
+                                            onPressed: _navigateToSignup,
+                                            style: TextButton.styleFrom(
+                                              minimumSize: Size(10, 10),
+                                              padding:
+                                                  EdgeInsets.only(left: 4.w),
+                                              tapTargetSize:
+                                                  MaterialTapTargetSize
+                                                      .shrinkWrap,
                                             ),
-                                            SizedBox(width: 8.w),
-                                            Text(
-                                              _translations['google_signup']!,
+                                            child: Text(
+                                              _translations['signup']!,
                                               style: TextStyle(
-                                                fontSize: 16.sp,
-                                                color: Colors.black87,
-                                                fontWeight: FontWeight.w500,
+                                                fontSize: 14.sp,
+                                                color: Color(0xFF9FE870),
+                                                fontWeight: FontWeight.w600,
                                               ),
                                             ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-
-                                    SizedBox(height: 16.h),
-
-                                    // Register link
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          _translations['no_account']!,
-                                          style: TextStyle(
-                                            fontSize: 14.sp,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                        TextButton(
-                                          onPressed: _navigateToSignup,
-                                          style: TextButton.styleFrom(
-                                            minimumSize: Size(10, 10),
-                                            padding: EdgeInsets.only(left: 4.w),
-                                            tapTargetSize: MaterialTapTargetSize
-                                                .shrinkWrap,
-                                          ),
-                                          child: Text(
-                                            _translations['signup']!,
-                                            style: TextStyle(
-                                              fontSize: 14.sp,
-                                              color: Color(0xFF9FE870),
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                            ],
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
     );
