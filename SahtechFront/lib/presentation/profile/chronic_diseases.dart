@@ -156,7 +156,13 @@ class _ChronicDiseasesState extends State<ChronicDiseases> {
 
     // Update the appropriate model based on user type
     if (userType == 'nutritionist') {
-      widget.nutritionistData!.chronicConditions = _selectedDiseases;
+      // Always assign the chronic conditions list
+      widget.nutritionistData!.chronicConditions =
+          List<String>.from(_selectedDiseases);
+      // Debug log
+      print("Setting chronic conditions for nutritionist: $_selectedDiseases");
+      print(
+          "Nutritionist model after assignment: ${widget.nutritionistData!.chronicConditions}");
 
       // Check if nutritionist has selected 'Allergie'
       if (_diseases['Allergie'] == true) {
@@ -177,8 +183,12 @@ class _ChronicDiseasesState extends State<ChronicDiseases> {
         );
       }
     } else {
-      // Handle regular user flow
-      widget.userData!.chronicConditions = _selectedDiseases;
+      // Handle regular user flow - Always assign the chronic conditions list
+      widget.userData!.chronicConditions = List<String>.from(_selectedDiseases);
+      // Debug log
+      print("Setting chronic conditions for user: $_selectedDiseases");
+      print(
+          "User model after assignment: ${widget.userData!.chronicConditions}");
 
       // Check if user has selected 'Allergie'
       if (_diseases['Allergie'] == true) {

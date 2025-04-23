@@ -1,9 +1,11 @@
+import 'dart:convert';
+
 class UserModel {
   String userType; // 'user' or 'nutritionist' - removed final
   String? name;
   String? email;
   String? phoneNumber;
-  String? profileImageUrl;
+  String? photoUrl;
   String? userId; // MongoDB document ID
 
   // We don't store the actual password in the model for security reasons
@@ -12,23 +14,16 @@ class UserModel {
 
   bool? hasChronicDisease;
   List<String> chronicConditions = [];
-  String? preferredLanguage;
+  String? preferredLanguage; // Language preference for the user
   bool? doesExercise; // true = Yes, false = No
-  String? activityLevel; // sedentary, light, moderate, or active
-  List<String> physicalActivities =
-      []; // List of selected physical activities for users who exercise
-  List<String> dailyActivities =
-      []; // List of daily physical activities for users who don't exercise
   List<String> healthGoals = []; // User's health goals/objectives
   bool? hasAllergies; // Whether the user has any allergies
   List<String> allergies = []; // List of user's allergies
-  String? allergyYear; // Year when allergies were first noticed
-  String? allergyMonth; // Month when allergies were first noticed
-  String? allergyDay; // Day when allergies were first noticed
   double? weight; // User's weight in kg
   String? weightUnit; // 'kg' or 'lb'
   double? height; // User's height in cm
   String? heightUnit; // 'cm' or 'inches'
+  String? dateOfBirth; // User's date of birth
 
   // Add more fields as needed for your application
 
@@ -37,31 +32,24 @@ class UserModel {
     this.name,
     this.email,
     this.phoneNumber,
-    this.profileImageUrl,
+    this.photoUrl,
     this.userId,
     String? tempPassword,
     this.hasChronicDisease,
     List<String>? chronicConditions,
     this.preferredLanguage,
     this.doesExercise,
-    this.activityLevel,
-    List<String>? physicalActivities,
-    List<String>? dailyActivities,
     List<String>? healthGoals,
     this.hasAllergies,
     List<String>? allergies,
-    this.allergyYear,
-    this.allergyMonth,
-    this.allergyDay,
     this.weight,
     this.weightUnit,
     this.height,
     this.heightUnit,
+    this.dateOfBirth,
   }) {
     this._tempPassword = tempPassword;
     this.chronicConditions = chronicConditions ?? [];
-    this.physicalActivities = physicalActivities ?? [];
-    this.dailyActivities = dailyActivities ?? [];
     this.healthGoals = healthGoals ?? [];
     this.allergies = allergies ?? [];
   }
@@ -81,6 +69,18 @@ class UserModel {
 
   // Factory method to create a user from a map
   factory UserModel.fromMap(Map<String, dynamic> map) {
+    // Extract profile image URL with debugging
+    String? photoUrl;
+    if (map['photoUrl'] != null) {
+      photoUrl = map['photoUrl'];
+      print('Found photoUrl in map: $photoUrl');
+    } else if (map['photoUrl'] != null) {
+      photoUrl = map['photoUrl'];
+      print('Found photoUrl in map: $photoUrl');
+    } else {
+      print('No profile image URL found in data from server');
+    }
+
     return UserModel(
       userType: map['userType'] ?? 'user',
       name: (map['prenom'] != null && map['nom'] != null)
@@ -88,7 +88,7 @@ class UserModel {
           : map['name'],
       email: map['email'],
       phoneNumber: map['numTelephone']?.toString() ?? map['phoneNumber'],
-      profileImageUrl: map['profileImageUrl'],
+      photoUrl: photoUrl,
       userId: map['id']?.toString() ??
           map['_id']?.toString(), // Support both MongoDB ID formats
       hasChronicDisease: map['hasChronicDisease'],
@@ -100,13 +100,6 @@ class UserModel {
               : []),
       preferredLanguage: map['preferredLanguage'],
       doesExercise: map['doesExercise'],
-      activityLevel: map['activityLevel'],
-      physicalActivities: map['physicalActivities'] != null
-          ? List<String>.from(map['physicalActivities'])
-          : [],
-      dailyActivities: map['dailyActivities'] != null
-          ? List<String>.from(map['dailyActivities'])
-          : [],
       healthGoals: map['objectives'] != null
           ? List<String>.from(map['objectives'])
           : (map['healthGoals'] != null
@@ -115,13 +108,11 @@ class UserModel {
       hasAllergies: map['hasAllergies'],
       allergies:
           map['allergies'] != null ? List<String>.from(map['allergies']) : [],
-      allergyYear: map['allergyYear'],
-      allergyMonth: map['allergyMonth'],
-      allergyDay: map['allergyDay'],
       weight: map['poids']?.toDouble() ?? map['weight']?.toDouble(),
       weightUnit: map['weightUnit'],
       height: map['taille']?.toDouble() ?? map['height']?.toDouble(),
       heightUnit: map['heightUnit'],
+      dateOfBirth: map['dateDeNaissance'],
     );
   }
 
@@ -136,53 +127,103 @@ class UserModel {
       lastName = nameParts.length > 1 ? nameParts.last : '';
     }
 
-    return {
+    // Create a map with all data correctly mapped to backend field names
+    final Map<String, dynamic> userData = {
+      // Required user identity fields
       'userType': userType,
       'name': name, // Keep for frontend compatibility
-      'prenom': firstName, // Add for backend compatibility
-      'nom': lastName, // Add for backend compatibility
+      'prenom': firstName, // Backend field
+      'nom': lastName, // Backend field
       'email': email,
       'phoneNumber': phoneNumber, // Keep for frontend compatibility
       'numTelephone': phoneNumber != null
-          ? int.tryParse(phoneNumber!)
-          : null, // Add for backend
-      'profileImageUrl': profileImageUrl,
-      // We don't include the userId here as MongoDB will manage that
-      'hasChronicDisease': hasChronicDisease,
-      'chronicConditions': chronicConditions, // Keep for frontend compatibility
-      'maladies': chronicConditions, // Add for backend compatibility
-      'preferredLanguage': preferredLanguage,
-      'doesExercise': doesExercise,
-      'activityLevel': activityLevel,
-      'physicalActivities': physicalActivities,
-      'dailyActivities': dailyActivities,
-      'healthGoals': healthGoals, // Keep for frontend compatibility
-      'objectives': healthGoals, // Add for backend compatibility
-      'hasAllergies': hasAllergies,
+          ? int.tryParse(phoneNumber!) ?? 0
+          : 0, // Backend field (as integer)
+
+      // IMPORTANT: Map profileImageUrl to photoUrl for MongoDB
+      'photoUrl': photoUrl, // This is the key field for MongoDB
+
+      // Health condition fields
+      'hasChronicDisease': hasChronicDisease ?? false, // Ensure not null
+      'chronicConditions': chronicConditions, // Frontend field
+      'maladies': chronicConditions, // Backend field
+
+      // Allergy fields
+      'hasAllergies': hasAllergies ?? false, // Ensure not null
       'allergies': allergies,
-      'allergyYear': allergyYear,
-      'allergyMonth': allergyMonth,
-      'allergyDay': allergyDay,
-      'weight': weight, // Keep for frontend compatibility
-      'poids': weight, // Add for backend compatibility
+
+      // Language and activity fields
+      'preferredLanguage': preferredLanguage,
+      'doesExercise': doesExercise ?? false, // Ensure not null
+
+      // Goals
+      'healthGoals': healthGoals, // Frontend field
+      'objectives': healthGoals, // Backend field
+
+      // Physical measurements
+      'weight': weight, // Frontend field
+      'poids': weight, // Backend field
       'weightUnit': weightUnit,
-      'height': height, // Keep for frontend compatibility
-      'taille': height, // Add for backend compatibility
+      'height': height, // Frontend field
+      'taille': height, // Backend field
       'heightUnit': heightUnit,
+
+      // Handle birthday - convert to appropriate format if needed
+      'dateDeNaissance': dateOfBirth,
     };
+
+    // Remove any null values to avoid validation errors on the backend
+    userData.removeWhere((key, value) => value == null);
+
+    return userData;
   }
 
   // For authentication only - used when registering a user
   // This map includes the password but shouldn't be used for general data operations
   Map<String, dynamic> toAuthMap() {
-    return {
+    // Create a comprehensive map with all user data for registration
+    final Map<String, dynamic> authData = {
+      // Basic authentication fields
       'nom': name?.split(' ').last ?? '',
       'prenom': name?.split(' ').first ?? '',
       'email': email,
       'password': _tempPassword,
       'telephone': phoneNumber != null ? int.tryParse(phoneNumber!) ?? 0 : 0,
+      'numTelephone': phoneNumber != null ? int.tryParse(phoneNumber!) ?? 0 : 0,
       'userType':
-          userType.toUpperCase() == 'NUTRITIONIST' ? 'NUTRITIONIST' : 'USER'
+          userType.toUpperCase() == 'NUTRITIONIST' ? 'NUTRITIONIST' : 'USER',
+
+      // Include photoUrl with empty string as default to ensure it's included in the request
+      'photoUrl': photoUrl ?? "",
+
+      // Include date of birth if available
+      'dateDeNaissance': dateOfBirth,
+
+      // Health-related data
+      'hasChronicDisease': hasChronicDisease ?? false,
+      'maladies': chronicConditions,
+      'hasAllergies': hasAllergies ?? false,
+      'allergies': allergies,
+
+      // Language preference
+      'preferredLanguage': preferredLanguage,
+
+      // Physical attributes
+      'taille': height,
+      'poids': weight,
+
+      // Activity information
+      'doesExercise': doesExercise ?? false,
+
+      // Goals and objectives
+      'objectives': healthGoals,
     };
+
+    // Remove any null values that might cause validation issues on the backend
+    authData.removeWhere((key, value) => value == null);
+
+    print('Prepared registration data: ${json.encode(authData)}');
+
+    return authData;
   }
 }

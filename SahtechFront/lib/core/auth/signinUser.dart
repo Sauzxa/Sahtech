@@ -215,8 +215,8 @@ class _SigninUserState extends State<SigninUser> {
             widget.userData.email = userData.email ?? widget.userData.email;
             widget.userData.phoneNumber =
                 userData.phoneNumber ?? widget.userData.phoneNumber;
-            widget.userData.profileImageUrl =
-                userData.profileImageUrl ?? widget.userData.profileImageUrl;
+            widget.userData.photoUrl =
+                userData.photoUrl ?? widget.userData.photoUrl;
             widget.userData.hasChronicDisease =
                 userData.hasChronicDisease ?? widget.userData.hasChronicDisease;
             widget.userData.chronicConditions =
@@ -227,16 +227,6 @@ class _SigninUserState extends State<SigninUser> {
                 userData.preferredLanguage ?? widget.userData.preferredLanguage;
             widget.userData.doesExercise =
                 userData.doesExercise ?? widget.userData.doesExercise;
-            widget.userData.activityLevel =
-                userData.activityLevel ?? widget.userData.activityLevel;
-            widget.userData.physicalActivities =
-                userData.physicalActivities.isNotEmpty
-                    ? userData.physicalActivities
-                    : widget.userData.physicalActivities;
-            widget.userData.dailyActivities =
-                userData.dailyActivities.isNotEmpty
-                    ? userData.dailyActivities
-                    : widget.userData.dailyActivities;
             widget.userData.healthGoals = userData.healthGoals.isNotEmpty
                 ? userData.healthGoals
                 : widget.userData.healthGoals;
@@ -245,12 +235,6 @@ class _SigninUserState extends State<SigninUser> {
             widget.userData.allergies = userData.allergies.isNotEmpty
                 ? userData.allergies
                 : widget.userData.allergies;
-            widget.userData.allergyYear =
-                userData.allergyYear ?? widget.userData.allergyYear;
-            widget.userData.allergyMonth =
-                userData.allergyMonth ?? widget.userData.allergyMonth;
-            widget.userData.allergyDay =
-                userData.allergyDay ?? widget.userData.allergyDay;
             widget.userData.weight = userData.weight ?? widget.userData.weight;
             widget.userData.weightUnit =
                 userData.weightUnit ?? widget.userData.weightUnit;

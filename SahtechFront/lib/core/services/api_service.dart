@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -104,6 +105,65 @@ class ApiService {
       return true;
     } else {
       throw Exception('Failed to delete data: ${response.statusCode}');
+    }
+  }
+
+  /// Upload file using multipart request
+  Future<dynamic> uploadFile(String endpoint, String filePath,
+      {String fileField = 'file'}) async {
+    final token = await _getToken();
+
+    if (token == null) {
+      throw Exception('Authentication token is missing');
+    }
+
+    print('------- UPLOADING FILE -------');
+    print('Endpoint: $_baseUrl/$endpoint');
+    print('File path: $filePath');
+    print('File exists: ${await File(filePath).exists()}');
+    print('File size: ${await File(filePath).length()} bytes');
+
+    // Create multipart request
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$_baseUrl/$endpoint'),
+    );
+
+    // Add authorization header
+    request.headers['Authorization'] = 'Bearer $token';
+    print('Authorization header added');
+
+    // Add file to request
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        fileField,
+        filePath,
+      ),
+    );
+    print('File added to request');
+
+    try {
+      // Send request
+      print('Sending request...');
+      final streamedResponse = await request.send();
+      print('Response status code: ${streamedResponse.statusCode}');
+      final response = await http.Response.fromStream(streamedResponse);
+      print('Response body: ${response.body}');
+
+      // Check response
+      if (response.statusCode == 200) {
+        final decodedResponse = json.decode(response.body);
+        print('Decoded response: $decodedResponse');
+        return decodedResponse;
+      } else {
+        print('ERROR: Upload failed with status ${response.statusCode}');
+        print('Error body: ${response.body}');
+        throw Exception(
+            'Failed to upload file: ${response.statusCode}, ${response.body}');
+      }
+    } catch (e) {
+      print('EXCEPTION during upload: $e');
+      throw Exception('Error uploading file: $e');
     }
   }
 }

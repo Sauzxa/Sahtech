@@ -16,21 +16,80 @@ class AuthService {
       // Prepare the user data for registration
       final Map<String, dynamic> userData = user.toAuthMap();
 
-      // DEBUG: Print request payload
+      // Enhanced DEBUG logging - Show complete user data details
+      print('--- REGISTRATION DATA DETAILS ---');
+      print('Name: ${user.name}');
+      print('Email: ${user.email}');
+      print('User Type: ${user.userType}');
+      print('Has Chronic Disease: ${user.hasChronicDisease}');
+      print('Chronic Conditions: ${user.chronicConditions}');
+      print('Has Allergies: ${user.hasAllergies}');
+      print('Allergies: ${user.allergies}');
+      print('Does Exercise: ${user.doesExercise}');
+      print('Health Goals: ${user.healthGoals}');
+      print('Height: ${user.height}, Weight: ${user.weight}');
+      print('Date of Birth: ${user.dateOfBirth}');
+      print('PhotoUrl: ${user.photoUrl}');
+      print('--- END REGISTRATION DATA DETAILS ---');
+
+      // Check explicitly if photoUrl is in the userData map
+      print('Is photoUrl in userData map? ${userData.containsKey("photoUrl")}');
+      print('photoUrl value in userData: ${userData["photoUrl"]}');
+
+      // Force add photoUrl directly to ensure it's in the request
+      userData['photoUrl'] = user.photoUrl ?? "";
+      print(
+          'After force adding - Is photoUrl in userData map? ${userData.containsKey('photoUrl')}');
+      print('photoUrl value: "${userData['photoUrl']}"');
+
+      // DEBUG: Print request payload as JSON
       print('Sending registration data: ${json.encode(userData)}');
+
+      // Extra debug: Print request keys in sorted order
+      List<String> keys = userData.keys.toList();
+      keys.sort();
+      print('Registration data keys (sorted): $keys');
+
+      // Try to get any existing token (if user is already logged in)
+      final String? existingToken = await _storageService.getToken();
+
+      // Create request headers
+      final Map<String, String> headers = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add authorization header if token exists
+      if (existingToken != null && existingToken.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $existingToken';
+      }
+
+      // Log the full URL for debugging
+      final registerUrl = '$apiBaseUrl/API/Sahtech/auth/register';
+      print('Sending registration request to: $registerUrl');
+      print('With headers: $headers');
 
       // Make API call to Spring Boot backend
       final response = await http.post(
-        Uri.parse('$apiBaseUrl/API/Sahtech/auth/register'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        Uri.parse(registerUrl),
+        headers: headers,
         body: json.encode(userData),
       );
 
       // DEBUG: Print response
       print('Registration response status: ${response.statusCode}');
       print('Registration response body: ${response.body}');
+
+      // Enhanced error logging
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        print('Registration failed with status: ${response.statusCode}');
+        print('Response headers: ${response.headers}');
+        try {
+          final errorData = json.decode(response.body);
+          print('Decoded error response: $errorData');
+        } catch (e) {
+          print('Could not decode error response: ${response.body}');
+        }
+      }
 
       // Check response
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -259,9 +318,21 @@ class AuthService {
             user.userType = userType;
           }
 
+          // Debug photoUrl
+          print(
+              'User data contains photoUrl: ${userData.containsKey('photoUrl')}');
+          if (userData.containsKey('photoUrl')) {
+            print('photoUrl from API: ${userData['photoUrl']}');
+            // Make sure the photoUrl is set if photoUrl is available
+            if (user.photoUrl == null && userData['photoUrl'] != null) {
+              user.photoUrl = userData['photoUrl'];
+              print('Set photoUrl from photoUrl: ${user.photoUrl}');
+            }
+          }
+
           // Log the user data for debugging
           print(
-              'User model created: ${user.name} (${user.email}), ID: ${user.userId}, Type: ${user.userType}');
+              'User model created: ${user.name} (${user.email}), ID: ${user.userId}, Type: ${user.userType}, Profile Image: ${user.photoUrl}');
 
           return user;
         } catch (e) {

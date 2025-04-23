@@ -115,31 +115,13 @@ class _BirthdayScreenState extends State<BirthdayScreen> {
         'user';
     _loadTranslations();
 
-    // Initialize from model data if available
+    // Initialize allergies from model data if available
     if (userType == 'nutritionist') {
-      if (widget.nutritionistData?.allergyYear != null) {
-        _selectedYear = widget.nutritionistData!.allergyYear!;
-      }
-      if (widget.nutritionistData?.allergyMonth != null) {
-        _selectedMonth = widget.nutritionistData!.allergyMonth!;
-      }
-      if (widget.nutritionistData?.allergyDay != null) {
-        _selectedDay = widget.nutritionistData!.allergyDay!;
-      }
       if (widget.nutritionistData?.allergies != null &&
           widget.nutritionistData!.allergies!.isNotEmpty) {
         _selectedAllergies.addAll(widget.nutritionistData!.allergies!);
       }
     } else {
-      if (widget.userData?.allergyYear != null) {
-        _selectedYear = widget.userData!.allergyYear!;
-      }
-      if (widget.userData?.allergyMonth != null) {
-        _selectedMonth = widget.userData!.allergyMonth!;
-      }
-      if (widget.userData?.allergyDay != null) {
-        _selectedDay = widget.userData!.allergyDay!;
-      }
       if (widget.userData?.allergies.isNotEmpty ?? false) {
         _selectedAllergies.addAll(widget.userData!.allergies);
       }
@@ -210,16 +192,14 @@ class _BirthdayScreenState extends State<BirthdayScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Save DOB and allergies to appropriate model
+      // Save allergies to appropriate model
       if (userType == 'nutritionist') {
-        widget.nutritionistData!.allergyDay = _selectedDay;
-        widget.nutritionistData!.allergyMonth = _selectedMonth;
-        widget.nutritionistData!.allergyYear = _selectedYear;
-        if (_selectedAllergies.isNotEmpty) {
-          widget.nutritionistData!.allergies = _selectedAllergies;
-        }
+        // Always assign allergies regardless if empty
+        widget.nutritionistData!.allergies = _selectedAllergies;
+        // Debug log
+        print("Setting allergies for nutritionist: $_selectedAllergies");
 
-        // For nutritionist, navigate to success screen (since signupNutritionist is not implemented)
+        // For nutritionist, navigate to signup screen
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -229,12 +209,64 @@ class _BirthdayScreenState extends State<BirthdayScreen> {
           ),
         );
       } else {
-        widget.userData!.allergyDay = _selectedDay;
-        widget.userData!.allergyMonth = _selectedMonth;
-        widget.userData!.allergyYear = _selectedYear;
-        if (_selectedAllergies.isNotEmpty) {
-          widget.userData!.allergies = _selectedAllergies;
+        // Always assign allergies regardless if empty
+        widget.userData!.allergies = _selectedAllergies;
+        // Set hasAllergies based on selection
+        widget.userData!.hasAllergies = _selectedAllergies.isNotEmpty;
+        // Debug log
+        print("Setting allergies for user: $_selectedAllergies");
+        print(
+            "User model after assignment - allergies: ${widget.userData!.allergies}");
+        print(
+            "User model after assignment - hasAllergies: ${widget.userData!.hasAllergies}");
+
+        // Format date of birth in YYYY-MM-DD format
+        String day = _selectedDay.padLeft(2, '0');
+        String month;
+        // Convert month name to number
+        switch (_selectedMonth) {
+          case 'Jan':
+            month = '01';
+            break;
+          case 'Fev':
+            month = '02';
+            break;
+          case 'Mar':
+            month = '03';
+            break;
+          case 'Avr':
+            month = '04';
+            break;
+          case 'Mai':
+            month = '05';
+            break;
+          case 'Juin':
+            month = '06';
+            break;
+          case 'Juil':
+            month = '07';
+            break;
+          case 'Aout':
+            month = '08';
+            break;
+          case 'Sep':
+            month = '09';
+            break;
+          case 'Oct':
+            month = '10';
+            break;
+          case 'Nov':
+            month = '11';
+            break;
+          case 'Dec':
+            month = '12';
+            break;
+          default:
+            month = '01';
         }
+        String year = _selectedYear;
+        widget.userData!.dateOfBirth = "$year-$month-$day";
+        print("Setting date of birth: ${widget.userData!.dateOfBirth}");
 
         // Navigate to user signup screen with all collected data
         Navigator.push(

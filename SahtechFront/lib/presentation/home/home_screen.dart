@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'dart:async';
 import 'package:sahtech/presentation/scan/camera_access_screen.dart';
 import 'package:sahtech/presentation/profile/UserProfileSettings.dart';
+import 'package:sahtech/core/services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final UserModel userData;
@@ -41,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _fetchLatestUserData();
     _loadData();
 
     // Set up periodic refresh every 5 minutes
@@ -54,6 +56,51 @@ class _HomeScreenState extends State<HomeScreen> {
     // Cancel the timer when the screen is disposed
     _refreshTimer?.cancel();
     super.dispose();
+  }
+
+  // Fetch the latest user data from MongoDB
+  Future<void> _fetchLatestUserData() async {
+    try {
+      final AuthService authService = AuthService();
+
+      // Get user ID from current user data
+      final String? userId = widget.userData.userId;
+
+      if (userId == null) {
+        print("Cannot fetch user data: User ID is null");
+        return;
+      }
+
+      print("HomeScreen: Fetching latest user data for ID: $userId");
+
+      // Call the getUserData method to get fresh data from MongoDB
+      final UserModel? updatedUser = await authService.getUserData(userId);
+
+      if (updatedUser != null && mounted) {
+        setState(() {
+          // Update individual properties instead of the entire model
+          widget.userData.name = updatedUser.name;
+          widget.userData.email = updatedUser.email;
+          widget.userData.photoUrl = updatedUser.photoUrl;
+          widget.userData.chronicConditions = updatedUser.chronicConditions;
+          widget.userData.hasChronicDisease = updatedUser.hasChronicDisease;
+          widget.userData.allergies = updatedUser.allergies;
+          widget.userData.hasAllergies = updatedUser.hasAllergies;
+          widget.userData.healthGoals = updatedUser.healthGoals;
+          widget.userData.height = updatedUser.height;
+          widget.userData.weight = updatedUser.weight;
+
+          print("HomeScreen: User data refreshed: ${widget.userData.name}");
+          print(
+              "HomeScreen: Chronic conditions: ${widget.userData.chronicConditions}");
+        });
+      } else {
+        print(
+            "HomeScreen: Failed to fetch updated user data or component unmounted");
+      }
+    } catch (e) {
+      print("HomeScreen: Error fetching updated user data: $e");
+    }
   }
 
   // Load all necessary data for the home screen
@@ -237,24 +284,79 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           // Profile image or placeholder
           GestureDetector(
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              final updatedUser = await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) =>
                       UserProfileSettings(user: widget.userData),
                 ),
               );
+
+              // If returned with updated user data, refresh the UI
+              if (updatedUser != null && updatedUser is UserModel) {
+                setState(() {
+                  // Update individual properties instead of the entire model
+                  widget.userData.name = updatedUser.name;
+                  widget.userData.email = updatedUser.email;
+                  widget.userData.photoUrl = updatedUser.photoUrl;
+                  widget.userData.chronicConditions =
+                      updatedUser.chronicConditions;
+                  widget.userData.hasChronicDisease =
+                      updatedUser.hasChronicDisease;
+                  widget.userData.allergies = updatedUser.allergies;
+                  widget.userData.hasAllergies = updatedUser.hasAllergies;
+                  widget.userData.healthGoals = updatedUser.healthGoals;
+                  widget.userData.height = updatedUser.height;
+                  widget.userData.weight = updatedUser.weight;
+                });
+
+                // Reload data to ensure everything is up to date
+                _loadData();
+              }
             },
             child: CircleAvatar(
               radius: 24.r,
               backgroundColor: Colors.grey[200],
-              backgroundImage: widget.userData.profileImageUrl != null
-                  ? NetworkImage(widget.userData.profileImageUrl!)
-                  : null,
-              child: widget.userData.profileImageUrl == null
-                  ? Icon(Icons.person, size: 30.r, color: Colors.grey[600])
-                  : null,
+              backgroundImage: null,
+              child: widget.userData.photoUrl != null
+                  ? Container(
+                      width: 48.r,
+                      height: 48.r,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24.r),
+                        child: Image.network(
+                          widget.userData.photoUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            print('Error loading profile image: $error');
+                            return Icon(
+                              Icons.person,
+                              size: 30.r,
+                              color: Colors.grey[600],
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.lightTeal,
+                                value: loadingProgress.expectedTotalBytes !=
+                                        null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    )
+                  : Icon(
+                      Icons.person,
+                      size: 30.r,
+                      color: Colors.grey[600],
+                    ),
             ),
           ),
         ],
@@ -717,16 +819,19 @@ class _HomeScreenState extends State<HomeScreen> {
     final isSelected = _currentIndex == index;
 
     return InkWell(
-      onTap: () {
+      onTap: () async {
         if (index == 4) {
           // Profile tab
           // Navigate to profile settings
-          Navigator.push(
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => UserProfileSettings(user: widget.userData),
             ),
           );
+
+          // When returning from profile, refresh data in case it was updated
+          _fetchLatestUserData();
         } else {
           setState(() => _currentIndex = index);
         }

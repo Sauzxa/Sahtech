@@ -213,6 +213,27 @@ class _SignupUserState extends State<SignupUser> {
     // Set password temporarily for registration
     widget.userData.tempPassword = _passwordController.text;
 
+    // Pre-submission data verification - Log the user data to verify all is correctly set
+    print('\n========== PRE-SUBMISSION USER DATA CHECK ==========');
+    print('User Type: ${widget.userData.userType}');
+    print('Name: ${widget.userData.name}');
+    print('Email: ${widget.userData.email}');
+    print('Has Chronic Disease: ${widget.userData.hasChronicDisease}');
+    print(
+        'Chronic Conditions: ${widget.userData.chronicConditions.length} conditions');
+    print('  -> ${widget.userData.chronicConditions.join(', ')}');
+    print('Has Allergies: ${widget.userData.hasAllergies}');
+    print('Allergies: ${widget.userData.allergies.length} allergies');
+    print('  -> ${widget.userData.allergies.join(', ')}');
+    print('Does Exercise: ${widget.userData.doesExercise}');
+    print('Health Goals: ${widget.userData.healthGoals.length} goals');
+    print('  -> ${widget.userData.healthGoals.join(', ')}');
+    print('Preferred Language: ${widget.userData.preferredLanguage}');
+    print(
+        'Height: ${widget.userData.height}, Weight: ${widget.userData.weight}');
+    print('Date of Birth: ${widget.userData.dateOfBirth}');
+    print('=====================================================\n');
+
     setState(() => _isSubmitting = true);
 
     try {
