@@ -271,7 +271,7 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  widget.user.name ?? 'Arafatilla_01',
+                                  widget.user.name ?? 'UserName',
                                   style: TextStyle(
                                     fontSize: 16.sp,
                                     fontWeight: FontWeight.w600,
@@ -280,7 +280,7 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                                 ),
                                 SizedBox(height: 4.h),
                                 Text(
-                                  'Numero de compte: ${widget.user.phoneNumber ?? '029883614373'}',
+                                  'Numero de compte: ${widget.user.userId ?? '029883614373'}',
                                   style: TextStyle(
                                     fontSize: 12.sp,
                                     color: Colors.grey.shade600,

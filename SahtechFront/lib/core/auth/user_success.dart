@@ -48,10 +48,15 @@ class _UserSuccessState extends State<UserSuccess> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: Image.asset(
-          'lib/assets/images/mainlogo.jpg',
-          height: kToolbarHeight * 0.6,
-          fit: BoxFit.contain,
+        toolbarHeight: kToolbarHeight + 10.h,
+        automaticallyImplyLeading: false,
+        title: Padding(
+          padding: EdgeInsets.only(top: 30.h),
+          child: Image.asset(
+            'lib/assets/images/mainlogo.jpg',
+            height: kToolbarHeight * 0.7,
+            fit: BoxFit.contain,
+          ),
         ),
         centerTitle: true,
       ),
