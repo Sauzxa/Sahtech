@@ -4,7 +4,7 @@ import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
-import 'package:sahtech/core/widgets/language_selector.dart';
+import 'package:sahtech/core/CustomWidgets/language_selector.dart';
 import 'package:sahtech/presentation/nutritionist/Attest_nutri_screnn.dart';
 
 class SexespecialiteNutriScreen extends StatefulWidget {

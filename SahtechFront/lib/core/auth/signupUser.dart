@@ -6,7 +6,7 @@ import 'package:sahtech/core/services/translation_service.dart';
 import 'package:sahtech/core/services/auth_service.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:sahtech/core/widgets/custom_button.dart';
+import 'package:sahtech/core/CustomWidgets/custom_button.dart';
 import 'package:sahtech/core/auth/user_success.dart';
 
 class SignupUser extends StatefulWidget {

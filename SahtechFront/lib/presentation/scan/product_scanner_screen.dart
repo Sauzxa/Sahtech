@@ -8,6 +8,7 @@ import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/services/mock_api_service.dart';
 import 'package:sahtech/core/utils/models/product_model.dart';
 import 'package:sahtech/presentation/scan/product_recommendation_screen.dart';
+import 'package:sahtech/core/services/storage_service.dart';
 
 class ProductScannerScreen extends StatefulWidget {
   const ProductScannerScreen({Key? key}) : super(key: key);
@@ -19,6 +20,7 @@ class ProductScannerScreen extends StatefulWidget {
 class _ProductScannerScreenState extends State<ProductScannerScreen>
     with SingleTickerProviderStateMixin {
   final MockApiService _apiService = MockApiService();
+  final StorageService _storageService = StorageService();
   final TextEditingController _barcodeController = TextEditingController();
 
   bool _isFlashOn = false;
@@ -27,6 +29,7 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
   bool _isQrMode = false;
   String? _lastScannedBarcode;
   ProductModel? _scannedProduct;
+  String? _currentUserId;
 
   late MobileScannerController _scannerController;
 
@@ -53,6 +56,15 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
       parent: _animationController,
       curve: Curves.easeInOut,
     );
+
+    // Get the current user ID
+    _getUserId();
+  }
+
+  // Get the current user ID from storage
+  Future<void> _getUserId() async {
+    _currentUserId = await _storageService.getUserId();
+    print('Current user ID: $_currentUserId');
   }
 
   @override
@@ -191,8 +203,11 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
       // Haptic feedback
       HapticFeedback.mediumImpact();
 
-      // Call API to get product info
-      final product = await _apiService.scanProduct(barcode);
+      // Call API to get product info with user ID
+      final product = await _apiService.scanProduct(
+        barcode,
+        userId: _currentUserId,
+      );
 
       if (mounted) {
         setState(() {
@@ -200,20 +215,34 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
           _isProcessingBarcode = false;
         });
 
-        // Show small preview card with the product
-        _showProductPreview(product!);
+        // Show product info
+        if (product != null) {
+          _showProductPreview(product);
+        } else {
+          // Handle case where product is not found
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Produit non trouvé pour le code: $barcode'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              margin: EdgeInsets.all(16.w),
+            ),
+          );
+          // Reset scanner
+          setState(() {
+            _isScanning = true;
+            _lastScannedBarcode = null;
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isProcessingBarcode = false;
-          _isScanning = true;
-          _lastScannedBarcode = null; // Reset to allow rescanning
-        });
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de la recherche du produit: $e'),
+            content: Text('Erreur: $e'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -222,6 +251,13 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
             margin: EdgeInsets.all(16.w),
           ),
         );
+
+        // Reset scanner
+        setState(() {
+          _isProcessingBarcode = false;
+          _isScanning = true;
+          _lastScannedBarcode = null;
+        });
       }
     }
   }

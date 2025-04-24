@@ -6,7 +6,7 @@ import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
-import 'package:sahtech/core/widgets/language_selector.dart';
+import 'package:sahtech/core/CustomWidgets/language_selector.dart';
 import 'package:sahtech/core/auth/signinUser.dart';
 import 'package:sahtech/core/auth/signupUser.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';

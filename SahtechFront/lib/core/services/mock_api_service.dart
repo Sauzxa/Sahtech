@@ -29,6 +29,9 @@ class MockApiService {
   final List<AdModel> _ads = _getMockAds();
   final List<ProductModel> _products = _getMockProducts();
 
+  // Map to store user-specific products
+  final Map<String, List<ProductModel>> _userProductsMap = {};
+
   // Helper method to simulate network delay
   Future<void> _simulateNetworkDelay() async {
     final delay = _minDelay + _random.nextInt(_maxDelay - _minDelay);
@@ -103,26 +106,92 @@ class MockApiService {
     await _simulateNetworkDelay();
     _maybeThrowError();
 
-    // Simulate fetching products for user (for now just returns all products)
-    return List.from(_products);
+    // For new users or null/empty userIds, return an empty list
+    if (userId.isEmpty || userId == 'new_user') {
+      return [];
+    }
+
+    // For testing purposes: if the userId contains "empty", return empty list
+    if (userId.contains("empty")) {
+      return [];
+    }
+
+    // Check if user has scanned products in the user-specific map
+    if (_userProductsMap.containsKey(userId)) {
+      print(
+          'Found ${_userProductsMap[userId]!.length} products for user $userId');
+      return List.from(_userProductsMap[userId]!);
+    }
+
+    // Only return mock products for testing with specific userId patterns
+    // This simulates that only certain users have scanned products
+    if (userId == 'test_user' ||
+        userId == 'existing_user' ||
+        userId.contains('test')) {
+      return List.from(_getExistingUserMockProducts());
+    }
+
+    // By default, return an empty list for all other users
+    // This ensures new users start with zero products
+    return [];
   }
 
   /// Scan a product by barcode
-  Future<ProductModel?> scanProduct(String barcode) async {
+  Future<ProductModel?> scanProduct(String barcode, {String? userId}) async {
     await _simulateNetworkDelay();
     _maybeThrowError();
 
-    // Try to find product with matching barcode
+    // If no userId is provided, we can't associate the product with a user
+    if (userId == null || userId.isEmpty) {
+      print(
+          'Warning: Scanning product without a userId. Product count won\'t be updated.');
+    }
+
+    // Check if the product already exists
+    ProductModel? existingProduct;
     try {
-      return _products.firstWhere(
+      // First check global products
+      existingProduct = _products.firstWhere(
         (product) => product.barcode == barcode,
       );
     } catch (e) {
-      // If not found, generate a new random product
+      // Product not found in global products
+      existingProduct = null;
+    }
+
+    // If we have a userId, check user-specific products
+    if (userId != null && userId.isNotEmpty) {
+      // Make sure the user has a products list
+      _userProductsMap.putIfAbsent(userId, () => []);
+
+      // Check if the user already has this product
+      try {
+        existingProduct = _userProductsMap[userId]!.firstWhere(
+          (product) => product.barcode == barcode,
+        );
+      } catch (e) {
+        // User doesn't have this product yet
+      }
+    }
+
+    // If the product doesn't exist anywhere, create a new one
+    if (existingProduct == null) {
       final newProduct = _generateRandomProduct(barcode);
+
+      // Add to global products for consistency
       _products.add(newProduct);
+
+      // If we have a userId, add to user-specific products
+      if (userId != null && userId.isNotEmpty) {
+        _userProductsMap[userId]!.add(newProduct);
+        print(
+            'Added new product to user $userId\'s products. New count: ${_userProductsMap[userId]!.length}');
+      }
+
       return newProduct;
     }
+
+    return existingProduct;
   }
 
   // Helper method to generate a random product
@@ -217,8 +286,14 @@ class MockApiService {
     ];
   }
 
-  // Mock products for testing
+  // Modified to return an empty list for new users by default
   static List<ProductModel> _getMockProducts() {
+    // Return an empty list by default
+    return [];
+  }
+
+  // Product list for existing users only
+  static List<ProductModel> _getExistingUserMockProducts() {
     return [
       ProductModel(
         id: '1',

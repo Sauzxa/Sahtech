@@ -10,6 +10,7 @@ import 'dart:async';
 import 'package:sahtech/presentation/scan/camera_access_screen.dart';
 import 'package:sahtech/presentation/profile/UserProfileSettings.dart';
 import 'package:sahtech/core/services/auth_service.dart';
+import 'package:sahtech/core/CustomWidgets/nutritionist_card.dart';
 
 class HomeScreen extends StatefulWidget {
   final UserModel userData;
@@ -116,10 +117,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Get scanned products count
       int productCount = 0;
-      if (widget.userData.userId != null) {
+
+      // Debug check for userId
+      print('DEBUG: User ID for products check: ${widget.userData.userId}');
+
+      if (widget.userData.userId != null &&
+          widget.userData.userId!.isNotEmpty) {
+        // Only try to get products if we have a valid userId
         final products =
             await _apiService.getUserProducts(widget.userData.userId!);
         productCount = products.length;
+
+        // Debug print the products count
+        print('DEBUG: Products loaded for user: $productCount');
+      } else {
+        print('DEBUG: No userId or empty userId - no products loaded');
       }
 
       if (mounted) {
@@ -189,7 +201,11 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(
         builder: (context) => const CameraAccessScreen(),
       ),
-    );
+    ).then((_) {
+      // Refresh product count when returning from scanner
+      print('Returned from scan screen, refreshing data...');
+      _loadData();
+    });
   }
 
   // Call nutritionist
@@ -318,8 +334,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: CircleAvatar(
               radius: 24.r,
               backgroundColor: Colors.grey[200],
-              backgroundImage: null,
-              child: widget.userData.photoUrl != null
+              child: widget.userData.photoUrl != null &&
+                      widget.userData.photoUrl!.isNotEmpty
                   ? Container(
                       width: 48.r,
                       height: 48.r,
@@ -514,203 +530,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                 itemCount: _nutritionists.length,
                                 itemBuilder: (context, index) {
                                   final nutritionist = _nutritionists[index];
-                                  return Container(
-                                    width: 260.w,
-                                    margin: EdgeInsets.only(right: 12.w),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      border: Border.all(
-                                          color: Colors.grey.shade200,
-                                          width: 1),
-                                      borderRadius: BorderRadius.circular(16.r),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.grey.withOpacity(0.25),
-                                          spreadRadius: 0,
-                                          blurRadius: 8,
-                                          offset: Offset(0, 3),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        // Doctor image - with margins
-                                        Padding(
-                                          padding: EdgeInsets.all(6.w),
-                                          child: ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(12.r),
-                                            child: Image.network(
-                                              nutritionist.profileImageUrl,
-                                              width: 80.w,
-                                              height: 98
-                                                  .h, // Slightly reduced height
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
-                                        ),
-
-                                        // Doctor info
-                                        Expanded(
-                                          child: Padding(
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 8.w,
-                                                vertical: 8
-                                                    .h), // Reduced vertical padding
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                // Rating
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.end,
-                                                  children: [
-                                                    Icon(
-                                                      Icons.star,
-                                                      color: Colors.amber,
-                                                      size:
-                                                          14.sp, // Smaller icon
-                                                    ),
-                                                    SizedBox(
-                                                        width: 2
-                                                            .w), // Reduced spacing
-                                                    Text(
-                                                      nutritionist.rating
-                                                          .toString(),
-                                                      style: TextStyle(
-                                                        color: Colors.black87,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        fontSize: 12
-                                                            .sp, // Smaller text
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-
-                                                // Name
-                                                Text(
-                                                  nutritionist.name,
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14.sp,
-                                                    color: Colors.black87,
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-
-                                                // Specialization
-                                                Text(
-                                                  nutritionist.specialization,
-                                                  style: TextStyle(
-                                                    fontSize: 12.sp,
-                                                    color: Colors.grey[700],
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-
-                                                // Location with icon
-                                                Row(
-                                                  children: [
-                                                    Icon(
-                                                      Icons.location_on,
-                                                      color: Colors.red[400],
-                                                      size:
-                                                          12.sp, // Smaller icon
-                                                    ),
-                                                    SizedBox(
-                                                        width: 2
-                                                            .w), // Reduced spacing
-                                                    Expanded(
-                                                      child: Text(
-                                                        nutritionist.location,
-                                                        style: TextStyle(
-                                                          fontSize: 11
-                                                              .sp, // Smaller text
-                                                          color:
-                                                              Colors.grey[600],
-                                                        ),
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-
-                                                Spacer(),
-
-                                                // Buttons moved to the right side
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.end,
-                                                  children: [
-                                                    // Call button
-                                                    InkWell(
-                                                      onTap: () =>
-                                                          _callNutritionist(
-                                                              nutritionist),
-                                                      child: Container(
-                                                        padding: EdgeInsets.all(
-                                                            5.w), // Reduced padding
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color:
-                                                              Color(0x7D9FE870),
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      8.r),
-                                                        ),
-                                                        child: Icon(
-                                                          Icons.phone,
-                                                          color: Colors.black,
-                                                          size: 14
-                                                              .sp, // Smaller icon
-                                                        ),
-                                                      ),
-                                                    ),
-
-                                                    SizedBox(width: 8.w),
-
-                                                    // Arrow button
-                                                    InkWell(
-                                                      onTap: () =>
-                                                          _navigateToNutritionistDetails(
-                                                              nutritionist),
-                                                      child: Container(
-                                                        padding: EdgeInsets.all(
-                                                            5.w), // Reduced padding
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color:
-                                                              Color(0x7D9FE870),
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                                      8.r),
-                                                        ),
-                                                        child: Icon(
-                                                          Icons.arrow_forward,
-                                                          color: Colors.black,
-                                                          size: 14
-                                                              .sp, // Smaller icon
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                  return NutritionistCard(
+                                    nutritionist: nutritionist,
+                                    onCallTap: () =>
+                                        _callNutritionist(nutritionist),
+                                    onDetailsTap: () =>
+                                        _navigateToNutritionistDetails(
+                                            nutritionist),
                                   );
                                 },
                               ),

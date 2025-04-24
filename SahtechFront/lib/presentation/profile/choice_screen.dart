@@ -6,7 +6,7 @@ import 'package:sahtech/presentation/profile/chronic_disease_screen.dart';
 import 'package:sahtech/presentation/nutritionist/Sexe&Specialit%C3%A9_Nutri_screen.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
-import 'package:sahtech/core/widgets/language_selector.dart';
+import 'package:sahtech/core/CustomWidgets/language_selector.dart';
 import 'package:sahtech/presentation/widgets/custom_button.dart';
 
 class ChoiceScreen extends StatefulWidget {

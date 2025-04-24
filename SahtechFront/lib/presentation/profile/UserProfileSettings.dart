@@ -7,7 +7,7 @@ import 'package:sahtech/presentation/scan/camera_access_screen.dart';
 import 'package:sahtech/core/services/auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sahtech/presentation/profile/EditUserData.dart';
-import 'package:sahtech/core/widgets/language_selector.dart';
+import 'package:sahtech/core/CustomWidgets/language_selector.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 
@@ -245,10 +245,12 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                                     // Add a cache-busting parameter to force refresh when needed
                                     widget.user.photoUrl! +
                                         '?t=${DateTime.now().millisecondsSinceEpoch}',
-                                    // Add a callback to handle image loading errors
                                   )
                                 : null,
-                            onBackgroundImageError: widget.user.photoUrl != null
+                            // Only provide error handler when backgroundImage is not null
+                            onBackgroundImageError: widget.user.photoUrl !=
+                                        null &&
+                                    widget.user.photoUrl!.isNotEmpty
                                 ? (exception, stackTrace) {
                                     print(
                                         'Error loading profile image: $exception');

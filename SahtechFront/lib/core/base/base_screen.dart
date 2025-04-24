@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/services/translation_service.dart';
-import 'package:sahtech/core/widgets/language_selector.dart';
+import 'package:sahtech/core/CustomWidgets/language_selector.dart';
 
 /// A base screen mixin that provides translation capabilities for any screen
 mixin TranslationMixin<T extends StatefulWidget> on State<T> {
