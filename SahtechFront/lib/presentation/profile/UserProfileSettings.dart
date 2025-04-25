@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/theme/colors.dart';
+import 'package:sahtech/core/utils/models/nutritionist_model.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/presentation/home/home_screen.dart';
 import 'package:sahtech/presentation/scan/camera_access_screen.dart';
@@ -10,6 +11,7 @@ import 'package:sahtech/presentation/profile/EditUserData.dart';
 import 'package:sahtech/core/CustomWidgets/language_selector.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/services/translation_service.dart';
+import 'package:sahtech/presentation/home/ContactNutri.dart';
 
 class UserProfileSettings extends StatefulWidget {
   final UserModel user;
@@ -49,6 +51,14 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
         // Refresh user data when returning from scan
         _fetchLatestUserData();
       });
+    } else if (index == 3) {
+      // Navigate to Contacts
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ContactNutri(userData: widget.user),
+        ),
+      );
     } else {
       // For other screens that may not be implemented yet
       ScaffoldMessenger.of(context).showSnackBar(

@@ -11,6 +11,7 @@ import 'package:sahtech/presentation/scan/camera_access_screen.dart';
 import 'package:sahtech/presentation/profile/UserProfileSettings.dart';
 import 'package:sahtech/core/services/auth_service.dart';
 import 'package:sahtech/core/CustomWidgets/nutritionist_card.dart';
+import 'package:sahtech/presentation/home/ContactNutri.dart';
 
 class HomeScreen extends StatefulWidget {
   final UserModel userData;
@@ -658,6 +659,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // When returning from profile, refresh data in case it was updated
           _fetchLatestUserData();
+        } else if (index == 3) {
+          // Contacts tab
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ContactNutri(userData: widget.userData),
+            ),
+          );
         } else {
           setState(() => _currentIndex = index);
         }
