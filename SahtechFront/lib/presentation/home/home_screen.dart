@@ -44,8 +44,16 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchLatestUserData();
-    _loadData();
+
+    // Add more detailed logging for debugging
+    print('HomeScreen initState - User ID: ${widget.userData.userId}');
+    print('HomeScreen initState - User name: ${widget.userData.name}');
+
+    // First fetch latest user data from the server
+    _fetchLatestUserData().then((_) {
+      // After user data is fetched, then load other data (products, nutritionists, etc.)
+      _loadData();
+    });
 
     // Set up periodic refresh every 5 minutes
     _refreshTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
@@ -68,8 +76,8 @@ class _HomeScreenState extends State<HomeScreen> {
       // Get user ID from current user data
       final String? userId = widget.userData.userId;
 
-      if (userId == null) {
-        print("Cannot fetch user data: User ID is null");
+      if (userId == null || userId.isEmpty) {
+        print("Cannot fetch user data: User ID is null or empty");
         return;
       }
 
@@ -79,8 +87,9 @@ class _HomeScreenState extends State<HomeScreen> {
       final UserModel? updatedUser = await authService.getUserData(userId);
 
       if (updatedUser != null && mounted) {
+        print("HomeScreen: Received updated user data from server");
         setState(() {
-          // Update individual properties instead of the entire model
+          // Update all relevant properties from the server response
           widget.userData.name = updatedUser.name;
           widget.userData.email = updatedUser.email;
           widget.userData.photoUrl = updatedUser.photoUrl;
@@ -91,8 +100,13 @@ class _HomeScreenState extends State<HomeScreen> {
           widget.userData.healthGoals = updatedUser.healthGoals;
           widget.userData.height = updatedUser.height;
           widget.userData.weight = updatedUser.weight;
+          widget.userData.heightUnit = updatedUser.heightUnit;
+          widget.userData.weightUnit = updatedUser.weightUnit;
+          widget.userData.dateOfBirth = updatedUser.dateOfBirth;
+          widget.userData.preferredLanguage = updatedUser.preferredLanguage;
 
           print("HomeScreen: User data refreshed: ${widget.userData.name}");
+          print("HomeScreen: User email: ${widget.userData.email}");
           print(
               "HomeScreen: Chronic conditions: ${widget.userData.chronicConditions}");
         });
@@ -116,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // Load ads from mock API
       final ads = await _apiService.getActiveAds();
 
-      // Get scanned products count
+      // Get scanned products count - with enhanced error handling
       int productCount = 0;
 
       // Debug check for userId
@@ -124,13 +138,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (widget.userData.userId != null &&
           widget.userData.userId!.isNotEmpty) {
-        // Only try to get products if we have a valid userId
-        final products =
-            await _apiService.getUserProducts(widget.userData.userId!);
-        productCount = products.length;
+        try {
+          // Only try to get products if we have a valid userId
+          final products =
+              await _apiService.getUserProducts(widget.userData.userId!);
+          productCount = products.length;
 
-        // Debug print the products count
-        print('DEBUG: Products loaded for user: $productCount');
+          // Debug print the products count
+          print('DEBUG: Products loaded for user: $productCount');
+        } catch (productError) {
+          print('Error loading user products: $productError');
+          // Continue with 0 products rather than failing the whole screen
+        }
       } else {
         print('DEBUG: No userId or empty userId - no products loaded');
       }

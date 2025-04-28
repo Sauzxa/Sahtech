@@ -59,7 +59,7 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> {
             Expanded(
               child: Center(
                 child: Image.asset(
-                  'lib/assets/images/onbor1.jpg',
+                  'lib/assets/images/onbor3.jpg',
                   width: 300.w,
                   height: 300.h,
                   fit: BoxFit.contain,

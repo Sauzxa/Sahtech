@@ -5,6 +5,7 @@ class StorageService {
   static const String _userIdKey = 'user_id';
   static const String _userTypeKey = 'user_type';
   static const String _isLoggedInKey = 'is_logged_in';
+  static const String _hasLoggedOutKey = 'has_logged_out';
 
   // Save authentication information
   Future<void> saveAuthInfo({
@@ -43,6 +44,12 @@ class StorageService {
     return prefs.getBool(_isLoggedInKey) ?? false;
   }
 
+  // Check if user has previously logged out
+  Future<bool> hasLoggedOut() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_hasLoggedOutKey) ?? false;
+  }
+
   // Clear all stored authentication data (for logout)
   Future<void> clearAuthData() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -50,5 +57,12 @@ class StorageService {
     await prefs.remove(_userIdKey);
     await prefs.remove(_userTypeKey);
     await prefs.setBool(_isLoggedInKey, false);
+    await prefs.setBool(_hasLoggedOutKey, true);
+  }
+
+  // Reset app state completely (for debugging or app reset)
+  Future<void> resetAppState() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
   }
 }

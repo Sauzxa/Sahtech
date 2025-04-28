@@ -61,7 +61,7 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> {
             Expanded(
               child: Center(
                 child: Image.asset(
-                  'lib/assets/images/onbor3.jpg',
+                  'lib/assets/images/onbor1.jpg',
                   width: 300.w,
                   height: 300.h,
                   fit: BoxFit.contain,

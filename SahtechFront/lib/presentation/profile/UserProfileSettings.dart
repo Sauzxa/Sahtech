@@ -12,6 +12,7 @@ import 'package:sahtech/core/CustomWidgets/language_selector.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:sahtech/presentation/home/ContactNutri.dart';
+import 'package:sahtech/core/auth/SigninUser.dart';
 
 class UserProfileSettings extends StatefulWidget {
   final UserModel user;
@@ -704,12 +705,21 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
       }
 
       if (success) {
-        // Navigate to login screen
+        // Navigate to login screen with a fade transition and remove all previous routes
         if (context.mounted) {
-          Navigator.pushNamedAndRemoveUntil(
+          Navigator.pushAndRemoveUntil(
             context,
-            '/login',
-            (route) => false,
+            PageRouteBuilder(
+              pageBuilder: (context, animation1, animation2) =>
+                  SigninUser(userData: UserModel(userType: 'USER')),
+              transitionDuration: const Duration(milliseconds: 300),
+              reverseTransitionDuration: Duration.zero,
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+            ),
+            (route) => false, // Remove all routes from the stack
           );
         }
       } else {

@@ -63,9 +63,10 @@ class _ChronicDiseaseScreenState extends State<ChronicDiseaseScreen> {
     String currentPreferredLanguage = '';
 
     if (userType == 'nutritionist') {
-      currentPreferredLanguage = widget.nutritionistData!.preferredLanguage;
+      currentPreferredLanguage =
+          widget.nutritionistData?.preferredLanguage ?? '';
     } else {
-      currentPreferredLanguage = widget.userData!.preferredLanguage!;
+      currentPreferredLanguage = widget.userData?.preferredLanguage ?? '';
     }
 
     if (currentPreferredLanguage != _translationService.currentLanguageCode) {
