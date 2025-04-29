@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:sahtech/core/auth/ChangePassword.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/nutritionist_model.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
@@ -13,7 +14,6 @@ import 'package:provider/provider.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:sahtech/presentation/home/ContactNutri.dart';
 import 'package:sahtech/core/auth/SigninUser.dart';
-import 'package:sahtech/core/auth/CheckEmail.dart';
 
 class UserProfileSettings extends StatefulWidget {
   final UserModel user;
@@ -447,7 +447,7 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const CheckEmail(),
+                              builder: (context) => const ChangePassword(),
                             ),
                           );
                         },
