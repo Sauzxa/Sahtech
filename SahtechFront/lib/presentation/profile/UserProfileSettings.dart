@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:sahtech/presentation/home/ContactNutri.dart';
 import 'package:sahtech/core/auth/SigninUser.dart';
+import 'package:sahtech/core/auth/CheckEmail.dart';
 
 class UserProfileSettings extends StatefulWidget {
   final UserModel user;
@@ -443,6 +444,12 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
                         title: 'changer mot de passe',
                         onTap: () {
                           // Navigate to change password
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CheckEmail(),
+                            ),
+                          );
                         },
                       ),
                     ),
