@@ -192,11 +192,13 @@ class AuthService {
           };
         }
 
-        // Store JWT token and user info
+        // Store JWT token and user info, including email and password for refresh
         await _storageService.saveAuthInfo(
           token: token,
           userId: userId,
           userType: responseUserType,
+          email: email,
+          password: password,
         );
 
         return {
