@@ -13,7 +13,11 @@ class ApiService {
   ApiService._internal();
 
   // API base URL
-  final String _baseUrl = 'http://192.168.1.69:8080/API/Sahtech';
+  // this is the main endpoint url its should be var depends on the ip
+  //var = 192.168.85.26 exmple hada
+  // final String _baseUrl = 'http://192.168.1.69:8080/API/Sahtech';
+  final String _baseUrl =
+      'http://192.168.1.69:8080/API/Sahtech'; // hada li yatbadal
 
   /// Get auth token from shared preferences
   Future<String?> _getToken() async {
