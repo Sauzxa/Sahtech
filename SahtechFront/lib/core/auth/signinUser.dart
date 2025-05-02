@@ -387,11 +387,12 @@ class _SigninUserState extends State<SigninUser> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: Color(0xFF9FE870)))
+          ? const Center(child: CircularProgressIndicator())
           : GestureDetector(
-              onTap: () => FocusScope.of(context).unfocus(),
+              onTap: () => FocusScope.of(context)
+                  .unfocus(), // Dismiss keyboard on tap outside
               child: Container(
                 width: 1.sw,
                 height: 1.sh,
@@ -447,313 +448,54 @@ class _SigninUserState extends State<SigninUser> {
                                   ),
                                 ],
                               ),
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 30.w, vertical: 25.h),
-                                child: Form(
-                                  key: _formKey,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Title & Subtitle
-                                      Text(
-                                        _translations['login_title']!,
-                                        style: TextStyle(
-                                          fontSize: 24.sp,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                      SizedBox(height: 8.h),
-                                      Text(
-                                        _translations['login_subtitle']!,
-                                        style: TextStyle(
-                                          fontSize: 14.sp,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-
-                                      SizedBox(height: 30.h),
-
-                                      // Email label
-                                      Text(
-                                        _translations['email_label']!,
-                                        style: TextStyle(
-                                          fontSize: 16.sp,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-
-                                      SizedBox(height: 8.h),
-
-                                      // Email field
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: Color(0xFFF5F5F5),
-                                          borderRadius:
-                                              BorderRadius.circular(30.r),
-                                          border: Border.all(
-                                            color: Colors.grey.shade300,
-                                            width: 1,
+                              child: SingleChildScrollView(
+                                physics: BouncingScrollPhysics(),
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 30.w, vertical: 25.h),
+                                  child: Form(
+                                    key: _formKey,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        // Title & Subtitle
+                                        Text(
+                                          _translations['login_title']!,
+                                          style: TextStyle(
+                                            fontSize: 24.sp,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black,
                                           ),
                                         ),
-                                        child: TextFormField(
-                                          controller: _emailController,
-                                          keyboardType:
-                                              TextInputType.emailAddress,
-                                          onChanged: (val) {
-                                            if (_emailError != null) {
-                                              setState(() {
-                                                _emailError = null;
-                                              });
-                                            }
-                                          },
-                                          decoration: InputDecoration(
-                                            hintText:
-                                                _translations['email_hint'],
-                                            hintStyle: TextStyle(
-                                              color: Colors.grey.shade400,
-                                              fontSize: 14.sp,
-                                            ),
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                              horizontal: 16.w,
-                                              vertical: 14.h,
-                                            ),
-                                            border: InputBorder.none,
-                                            enabledBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(30.r),
-                                              borderSide: BorderSide(
-                                                  color: Colors.transparent),
-                                            ),
-                                            focusedBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(30.r),
-                                              borderSide: BorderSide(
-                                                  color: AppColors.lightTeal
-                                                      .withOpacity(0.5),
-                                                  width: 1.5),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-
-                                      if (_emailError != null)
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                              top: 4.h, left: 8.w),
-                                          child: Text(
-                                            _emailError!,
-                                            style: TextStyle(
-                                              color: Colors.red,
-                                              fontSize: 12.sp,
-                                            ),
+                                        SizedBox(height: 8.h),
+                                        Text(
+                                          _translations['login_subtitle']!,
+                                          style: TextStyle(
+                                            fontSize: 14.sp,
+                                            color: Colors.grey,
                                           ),
                                         ),
 
-                                      SizedBox(height: 20.h),
+                                        SizedBox(height: 30.h),
 
-                                      // Password Label
-                                      Text(
-                                        _translations['password_label']!,
-                                        style: TextStyle(
-                                          fontSize: 16.sp,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-
-                                      SizedBox(height: 8.h),
-
-                                      // Password field
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: Color(0xFFF5F5F5),
-                                          borderRadius:
-                                              BorderRadius.circular(30.r),
-                                          border: Border.all(
-                                            color: Colors.grey.shade300,
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: TextFormField(
-                                          controller: _passwordController,
-                                          obscureText: _obscurePassword,
-                                          onChanged: (val) {
-                                            if (_passwordError != null) {
-                                              setState(() {
-                                                _passwordError = null;
-                                              });
-                                            }
-                                          },
-                                          decoration: InputDecoration(
-                                            hintText:
-                                                _translations['password_hint'],
-                                            hintStyle: TextStyle(
-                                              color: Colors.grey.shade400,
-                                              fontSize: 14.sp,
-                                            ),
-                                            contentPadding:
-                                                EdgeInsets.symmetric(
-                                              horizontal: 16.w,
-                                              vertical: 14.h,
-                                            ),
-                                            border: InputBorder.none,
-                                            enabledBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(30.r),
-                                              borderSide: BorderSide(
-                                                  color: Colors.transparent),
-                                            ),
-                                            focusedBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(30.r),
-                                              borderSide: BorderSide(
-                                                  color: AppColors.lightTeal
-                                                      .withOpacity(0.5),
-                                                  width: 1.5),
-                                            ),
-                                            suffixIcon: IconButton(
-                                              icon: Icon(
-                                                _obscurePassword
-                                                    ? Icons.visibility_off
-                                                    : Icons.visibility,
-                                                color: Colors.grey.shade500,
-                                                size: 20,
-                                              ),
-                                              onPressed:
-                                                  _togglePasswordVisibility,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-
-                                      // Forgot password link (right-aligned)
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: GestureDetector(
-                                          onTap: _handleForgotPassword,
-                                          child: Padding(
-                                            padding: EdgeInsets.only(
-                                                top: 8.h, right: 8.w),
-                                            child: Text(
-                                              _translations['password_forgot']!,
-                                              style: TextStyle(
-                                                fontSize: 12.sp,
-                                                color: Color(0xFF9FE870),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-
-                                      if (_passwordError != null)
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                              top: 4.h, left: 8.w),
-                                          child: Text(
-                                            _passwordError!,
-                                            style: TextStyle(
-                                              color: Colors.red,
-                                              fontSize: 12.sp,
-                                            ),
+                                        // Email label
+                                        Text(
+                                          _translations['email_label']!,
+                                          style: TextStyle(
+                                            fontSize: 16.sp,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black87,
                                           ),
                                         ),
 
-                                      SizedBox(height: 30.h),
+                                        SizedBox(height: 8.h),
 
-                                      // Button - Light green pill button
-                                      SizedBox(
-                                        width: double.infinity,
-                                        height: 48.h,
-                                        child: ElevatedButton(
-                                          onPressed: _isSubmitting
-                                              ? null
-                                              : () {
-                                                  FocusScope.of(context)
-                                                      .unfocus();
-                                                  Future.delayed(
-                                                      Duration(
-                                                          milliseconds: 100),
-                                                      () {
-                                                    _handleLoginWithEmail();
-                                                  });
-                                                },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Color(0xFF9FE870),
-                                            foregroundColor: Colors.black,
-                                            padding: EdgeInsets.symmetric(
-                                                vertical: 12.h),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(30.r),
-                                            ),
-                                            elevation: 0,
-                                          ),
-                                          child: _isSubmitting
-                                              ? SizedBox(
-                                                  height: 20.h,
-                                                  width: 20.h,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    color: Colors.black54,
-                                                    strokeWidth: 2,
-                                                  ),
-                                                )
-                                              : Text(
-                                                  _translations['button_next']!,
-                                                  style: TextStyle(
-                                                    fontSize: 16.sp,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                ),
-                                        ),
-                                      ),
-
-                                      SizedBox(height: 20.h),
-
-                                      // Divider with text
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Divider(
-                                              color: Colors.grey.shade300,
-                                              thickness: 1,
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 10.w),
-                                            child: Text(
-                                              _translations['signup_with']!,
-                                              style: TextStyle(
-                                                fontSize: 14.sp,
-                                                color: Colors.grey,
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            child: Divider(
-                                              color: Colors.grey.shade300,
-                                              thickness: 1,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-
-                                      SizedBox(height: 20.h),
-
-                                      // Google button
-                                      InkWell(
-                                        onTap: _handleGoogleSignIn,
-                                        child: Container(
-                                          width: double.infinity,
-                                          height: 50.h,
+                                        // Email field
+                                        Container(
                                           decoration: BoxDecoration(
-                                            color: Colors.white,
+                                            color: Color(0xFFF5F5F5),
                                             borderRadius:
                                                 BorderRadius.circular(30.r),
                                             border: Border.all(
@@ -761,65 +503,335 @@ class _SigninUserState extends State<SigninUser> {
                                               width: 1,
                                             ),
                                           ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Image.asset(
-                                                'lib/assets/images/google.jpg',
-                                                height: 24.h,
-                                                width: 24.h,
+                                          child: TextFormField(
+                                            controller: _emailController,
+                                            keyboardType:
+                                                TextInputType.emailAddress,
+                                            onChanged: (val) {
+                                              if (_emailError != null) {
+                                                setState(() {
+                                                  _emailError = null;
+                                                });
+                                              }
+                                            },
+                                            decoration: InputDecoration(
+                                              hintText:
+                                                  _translations['email_hint'],
+                                              hintStyle: TextStyle(
+                                                color: Colors.grey.shade400,
+                                                fontSize: 14.sp,
                                               ),
-                                              SizedBox(width: 8.w),
-                                              Text(
-                                                _translations['google_signup']!,
-                                                style: TextStyle(
-                                                  fontSize: 16.sp,
-                                                  color: Colors.black87,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
+                                              contentPadding:
+                                                  EdgeInsets.symmetric(
+                                                horizontal: 16.w,
+                                                vertical: 14.h,
                                               ),
-                                            ],
+                                              border: InputBorder.none,
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(30.r),
+                                                borderSide: BorderSide(
+                                                    color: Colors.transparent),
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(30.r),
+                                                borderSide: BorderSide(
+                                                    color: AppColors.lightTeal
+                                                        .withOpacity(0.5),
+                                                    width: 1.5),
+                                              ),
+                                            ),
                                           ),
                                         ),
-                                      ),
 
-                                      Spacer(),
-
-                                      // Register link
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            _translations['no_account']!,
-                                            style: TextStyle(
-                                              fontSize: 14.sp,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                          TextButton(
-                                            onPressed: _navigateToSignup,
-                                            style: TextButton.styleFrom(
-                                              minimumSize: Size(10, 10),
-                                              padding:
-                                                  EdgeInsets.only(left: 4.w),
-                                              tapTargetSize:
-                                                  MaterialTapTargetSize
-                                                      .shrinkWrap,
-                                            ),
+                                        if (_emailError != null)
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                                top: 4.h, left: 8.w),
                                             child: Text(
-                                              _translations['signup']!,
+                                              _emailError!,
                                               style: TextStyle(
-                                                fontSize: 14.sp,
-                                                color: Color(0xFF9FE870),
-                                                fontWeight: FontWeight.w600,
+                                                color: Colors.red,
+                                                fontSize: 12.sp,
                                               ),
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                    ],
+
+                                        SizedBox(height: 20.h),
+
+                                        // Password Label
+                                        Text(
+                                          _translations['password_label']!,
+                                          style: TextStyle(
+                                            fontSize: 16.sp,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+
+                                        SizedBox(height: 8.h),
+
+                                        // Password field
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: Color(0xFFF5F5F5),
+                                            borderRadius:
+                                                BorderRadius.circular(30.r),
+                                            border: Border.all(
+                                              color: Colors.grey.shade300,
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: TextFormField(
+                                            controller: _passwordController,
+                                            obscureText: _obscurePassword,
+                                            onChanged: (val) {
+                                              if (_passwordError != null) {
+                                                setState(() {
+                                                  _passwordError = null;
+                                                });
+                                              }
+                                            },
+                                            decoration: InputDecoration(
+                                              hintText: _translations[
+                                                  'password_hint'],
+                                              hintStyle: TextStyle(
+                                                color: Colors.grey.shade400,
+                                                fontSize: 14.sp,
+                                              ),
+                                              contentPadding:
+                                                  EdgeInsets.symmetric(
+                                                horizontal: 16.w,
+                                                vertical: 14.h,
+                                              ),
+                                              border: InputBorder.none,
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(30.r),
+                                                borderSide: BorderSide(
+                                                    color: Colors.transparent),
+                                              ),
+                                              focusedBorder: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(30.r),
+                                                borderSide: BorderSide(
+                                                    color: AppColors.lightTeal
+                                                        .withOpacity(0.5),
+                                                    width: 1.5),
+                                              ),
+                                              suffixIcon: IconButton(
+                                                icon: Icon(
+                                                  _obscurePassword
+                                                      ? Icons.visibility_off
+                                                      : Icons.visibility,
+                                                  color: Colors.grey.shade500,
+                                                  size: 20,
+                                                ),
+                                                onPressed:
+                                                    _togglePasswordVisibility,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        // Forgot password link (right-aligned)
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: GestureDetector(
+                                            onTap: _handleForgotPassword,
+                                            child: Padding(
+                                              padding: EdgeInsets.only(
+                                                  top: 8.h, right: 8.w),
+                                              child: Text(
+                                                _translations[
+                                                    'password_forgot']!,
+                                                style: TextStyle(
+                                                  fontSize: 12.sp,
+                                                  color: Color(0xFF9FE870),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        if (_passwordError != null)
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                                top: 4.h, left: 8.w),
+                                            child: Text(
+                                              _passwordError!,
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                                fontSize: 12.sp,
+                                              ),
+                                            ),
+                                          ),
+
+                                        SizedBox(height: 30.h),
+
+                                        // Button - Light green pill button
+                                        SizedBox(
+                                          width: double.infinity,
+                                          height: 48.h,
+                                          child: ElevatedButton(
+                                            onPressed: _isSubmitting
+                                                ? null
+                                                : () {
+                                                    FocusScope.of(context)
+                                                        .unfocus();
+                                                    Future.delayed(
+                                                        Duration(
+                                                            milliseconds: 100),
+                                                        () {
+                                                      _handleLoginWithEmail();
+                                                    });
+                                                  },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  Color(0xFF9FE870),
+                                              foregroundColor: Colors.black,
+                                              padding: EdgeInsets.symmetric(
+                                                  vertical: 12.h),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(30.r),
+                                              ),
+                                              elevation: 0,
+                                            ),
+                                            child: _isSubmitting
+                                                ? SizedBox(
+                                                    height: 20.h,
+                                                    width: 20.h,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      color: Colors.black54,
+                                                      strokeWidth: 2,
+                                                    ),
+                                                  )
+                                                : Text(
+                                                    _translations[
+                                                        'button_next']!,
+                                                    style: TextStyle(
+                                                      fontSize: 16.sp,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
+
+                                        SizedBox(height: 20.h),
+
+                                        // Divider with text
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Divider(
+                                                color: Colors.grey.shade300,
+                                                thickness: 1,
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 10.w),
+                                              child: Text(
+                                                _translations['signup_with']!,
+                                                style: TextStyle(
+                                                  fontSize: 14.sp,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Divider(
+                                                color: Colors.grey.shade300,
+                                                thickness: 1,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+
+                                        SizedBox(height: 20.h),
+
+                                        // Google button
+                                        InkWell(
+                                          onTap: _handleGoogleSignIn,
+                                          child: Container(
+                                            width: double.infinity,
+                                            height: 50.h,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(30.r),
+                                              border: Border.all(
+                                                color: Colors.grey.shade300,
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Image.asset(
+                                                  'lib/assets/images/google.jpg',
+                                                  height: 24.h,
+                                                  width: 24.h,
+                                                ),
+                                                SizedBox(width: 8.w),
+                                                Text(
+                                                  _translations[
+                                                      'google_signup']!,
+                                                  style: TextStyle(
+                                                    fontSize: 16.sp,
+                                                    color: Colors.black87,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+
+                                        SizedBox(height: 40.h),
+
+                                        // Register link
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              _translations['no_account']!,
+                                              style: TextStyle(
+                                                fontSize: 14.sp,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            TextButton(
+                                              onPressed: _navigateToSignup,
+                                              style: TextButton.styleFrom(
+                                                minimumSize: Size(10, 10),
+                                                padding:
+                                                    EdgeInsets.only(left: 4.w),
+                                                tapTargetSize:
+                                                    MaterialTapTargetSize
+                                                        .shrinkWrap,
+                                              ),
+                                              child: Text(
+                                                _translations['signup']!,
+                                                style: TextStyle(
+                                                  fontSize: 14.sp,
+                                                  color: Color(0xFF9FE870),
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        // Add bottom padding
+                                        SizedBox(height: 20.h),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
