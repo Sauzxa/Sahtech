@@ -20,6 +20,8 @@ class NutritionistCard extends StatelessWidget {
     return Container(
       width: 260.w,
       margin: EdgeInsets.only(right: 12.w),
+      padding: EdgeInsets.only(
+          bottom: 11), // Added 11px padding at the bottom to prevent overflow
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade200, width: 1),
@@ -34,6 +36,8 @@ class NutritionistCard extends StatelessWidget {
         ],
       ),
       child: Row(
+        crossAxisAlignment:
+            CrossAxisAlignment.start, // Align to top to prevent stretching
         children: [
           // Doctor image with margins
           Padding(
@@ -64,11 +68,15 @@ class NutritionistCard extends StatelessWidget {
           // Doctor info
           Expanded(
             child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 8.w,
-                vertical: 8.h,
+              padding: EdgeInsets.only(
+                left: 8.w,
+                right: 8.w,
+                top: 8.h,
+                bottom:
+                    0, // Removed additional bottom padding since we're using fixed padding on container
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min, // Use minimum size needed
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Rating
@@ -138,7 +146,7 @@ class NutritionistCard extends StatelessWidget {
                     ],
                   ),
 
-                  Spacer(),
+                  SizedBox(height: 8.h), // Fixed spacing instead of Spacer
 
                   // Buttons moved to the right side
                   Row(

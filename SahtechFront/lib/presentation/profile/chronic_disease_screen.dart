@@ -69,8 +69,13 @@ class _ChronicDiseaseScreenState extends State<ChronicDiseaseScreen> {
       currentPreferredLanguage = widget.userData?.preferredLanguage ?? '';
     }
 
-    if (currentPreferredLanguage != _translationService.currentLanguageCode) {
-      Navigator.pop(context, 'language_changed');
+    if (currentPreferredLanguage != _translationService.currentLanguageCode &&
+        mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.pop(context, 'language_changed');
+        }
+      });
     }
     super.dispose();
   }

@@ -519,34 +519,44 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       // Nutritionists section
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        padding: EdgeInsets.symmetric(
+                            horizontal:
+                                MediaQuery.of(context).size.width * 0.03),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Consulter des nutritionnistes',
-                              style: TextStyle(
-                                fontSize: 20.sp,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                            Expanded(
+                              flex: 3, // Takes 3/4 of the available space
+                              child: Text(
+                                'Consulter des nutritionnistes',
+                                style: TextStyle(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const NutriDisponible(),
+                            Expanded(
+                              flex: 1, // Takes 1/4 of the available space
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const NutriDisponible(),
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  'Voir tous',
+                                  textAlign:
+                                      TextAlign.end, // Aligns text to the right
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF9FE870),
                                   ),
-                                );
-                              },
-                              child: Text(
-                                'Voir tous',
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF9FE870),
                                 ),
                               ),
                             ),
