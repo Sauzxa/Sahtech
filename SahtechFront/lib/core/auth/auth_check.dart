@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sahtech/core/services/auth_service.dart';
 import 'package:sahtech/core/services/storage_service.dart';
+import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/presentation/home/home_screen.dart';
 import 'package:sahtech/presentation/onboarding/loading.dart';
@@ -247,7 +248,9 @@ class _AuthCheckState extends State<AuthCheck> {
               fit: BoxFit.contain,
             ),
             const SizedBox(height: 20),
-            const CircularProgressIndicator(),
+            const CircularProgressIndicator(
+              color: AppColors.lightTeal,
+            ),
             const SizedBox(height: 20),
             const Text(
               'Chargement...',
