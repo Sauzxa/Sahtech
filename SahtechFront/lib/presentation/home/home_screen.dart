@@ -12,6 +12,7 @@ import 'package:sahtech/presentation/profile/UserProfileSettings.dart';
 import 'package:sahtech/core/services/auth_service.dart';
 import 'package:sahtech/core/CustomWidgets/nutritionist_card.dart';
 import 'package:sahtech/presentation/home/ContactNutri.dart';
+import 'package:sahtech/presentation/home/NutriDisponible.dart';
 
 class HomeScreen extends StatefulWidget {
   final UserModel userData;
@@ -519,13 +520,37 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Nutritionists section
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16.w),
-                        child: Text(
-                          'Consulter des nutritionnistes',
-                          style: TextStyle(
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Consulter des nutritionnistes',
+                              style: TextStyle(
+                                fontSize: 20.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const NutriDisponible(),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                'Voir tous',
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF9FE870),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       SizedBox(height: 12.h),
