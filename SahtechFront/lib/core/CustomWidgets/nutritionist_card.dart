@@ -21,7 +21,7 @@ class NutritionistCard extends StatelessWidget {
       width: 260.w,
       margin: EdgeInsets.only(right: 12.w),
       padding: EdgeInsets.only(
-          bottom: 11), // Added 11px padding at the bottom to prevent overflow
+          bottom: 2.h), // Added 11px padding at the bottom to prevent overflow
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade200, width: 1),

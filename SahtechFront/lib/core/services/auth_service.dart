@@ -7,7 +7,7 @@ class AuthService {
   // Spring Boot API endpoint
   static const String apiBaseUrl =
       // final String _baseUrl = 'http://192.168.1.69:8080/API/Sahtech'; hada li yatbadal
-      'http://172.20.10.14:8080'; // Explicit IP address for testing  hada li yatbadal
+      'http://192.168.1.69:8080'; // Explicit IP address for testing  hada li yatbadal
 
   final StorageService _storageService = StorageService();
 
