@@ -3,14 +3,19 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/presentation/scan/product_scanner_screen.dart';
+import 'package:sahtech/core/services/storage_service.dart';
 
 class CameraAccessScreen extends StatelessWidget {
   const CameraAccessScreen({Key? key}) : super(key: key);
 
   Future<void> _requestCameraPermission(BuildContext context) async {
+    final storageService = StorageService();
     final status = await Permission.camera.request();
 
     if (status.isGranted) {
+      // Set flag that user has seen the camera screen
+      await storageService.setHasSeenCameraScreen(true);
+
       // Navigate to scanner screen
       if (context.mounted) {
         Navigator.pushReplacement(

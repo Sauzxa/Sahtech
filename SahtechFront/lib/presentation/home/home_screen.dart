@@ -13,6 +13,9 @@ import 'package:sahtech/core/services/auth_service.dart';
 import 'package:sahtech/core/CustomWidgets/nutritionist_card.dart';
 import 'package:sahtech/presentation/home/ContactNutri.dart';
 import 'package:sahtech/presentation/home/NutriDisponible.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:sahtech/core/services/storage_service.dart';
+import 'package:sahtech/presentation/scan/product_scanner_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final UserModel userData;
@@ -216,17 +219,123 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Navigate to scan product screen
-  void _navigateToScanScreen() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const CameraAccessScreen(),
-      ),
-    ).then((_) {
-      // Refresh product count when returning from scanner
-      print('Returned from scan screen, refreshing data...');
-      _loadData();
-    });
+  Future<void> _navigateToScanScreen() async {
+    final storageService = StorageService();
+    final hasSeenCameraScreen = await storageService.getHasSeenCameraScreen();
+
+    // Check if we already have camera permission
+    final status = await Permission.camera.status;
+
+    if (status.isGranted || status.isLimited) {
+      // Permission already granted, go directly to scanner if we've shown the intro screen before
+      if (hasSeenCameraScreen) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ProductScannerScreen(),
+          ),
+        ).then((_) {
+          print('Returned from scan screen, refreshing data...');
+          _loadData();
+        });
+      } else {
+        // First time - show the camera access screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const CameraAccessScreen(),
+          ),
+        ).then((_) {
+          print('Returned from scan screen, refreshing data...');
+          _loadData();
+        });
+      }
+    } else if (status.isDenied) {
+      // First time requesting or previously denied but not permanently
+      final result = await Permission.camera.request();
+      if (result.isGranted || result.isLimited) {
+        // Permission was just granted
+        if (hasSeenCameraScreen) {
+          // Skip intro if already seen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProductScannerScreen(),
+            ),
+          ).then((_) {
+            print('Returned from scan screen, refreshing data...');
+            _loadData();
+          });
+        } else {
+          // Show intro first time
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CameraAccessScreen(),
+            ),
+          ).then((_) {
+            print('Returned from scan screen, refreshing data...');
+            _loadData();
+          });
+        }
+      } else if (result.isPermanentlyDenied) {
+        // User clicked "never ask again", send them to settings
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) => AlertDialog(
+              title: Text('Permission requise'),
+              content: Text(
+                'L\'accès à la caméra est nécessaire pour scanner les codes-barres des produits. ' +
+                    'Veuillez autoriser l\'accès à la caméra dans les paramètres de votre appareil.',
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Annuler'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                TextButton(
+                  child: Text('Paramètres'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    openAppSettings();
+                  },
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    } else if (status.isPermanentlyDenied) {
+      // The user opted to never again see the permission request dialog for this
+      // app. The only way to change the permission's status now is to let the
+      // user manually enable it in the system settings.
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: Text('Permission requise'),
+            content: Text(
+              'L\'accès à la caméra a été refusé de manière permanente. ' +
+                  'Veuillez l\'activer manuellement dans les paramètres de votre appareil.',
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: Text('Annuler'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              TextButton(
+                child: Text('Paramètres'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  openAppSettings();
+                },
+              ),
+            ],
+          ),
+        );
+      }
+    }
   }
 
   // Call nutritionist

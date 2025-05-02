@@ -8,6 +8,7 @@ class StorageService {
   static const String _isLoggedInKey = 'is_logged_in';
   static const String _hasLoggedOutKey = 'has_logged_out';
   static const String _emailKey = 'user_email';
+  static const String _hasSeenCameraScreenKey = 'hasSeenCameraScreen';
 
   // For secure storage
   final _secureStorage = const FlutterSecureStorage();
@@ -77,6 +78,18 @@ class StorageService {
   Future<bool> hasLoggedOut() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_hasLoggedOutKey) ?? false;
+  }
+
+  // Check if user has seen the camera screen
+  Future<bool> getHasSeenCameraScreen() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_hasSeenCameraScreenKey) ?? false;
+  }
+
+  // Set whether the user has seen the camera screen
+  Future<void> setHasSeenCameraScreen(bool value) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_hasSeenCameraScreenKey, value);
   }
 
   // Clear all stored authentication data (for logout)
