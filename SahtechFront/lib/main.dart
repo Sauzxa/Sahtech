@@ -13,6 +13,7 @@ import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/auth/SigninUser.dart';
 import 'package:sahtech/core/auth/auth_check.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:device_preview/device_preview.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,9 +43,14 @@ void main() async {
     print('Error checking auth state: $e');
   }
 
-  runApp(Main(
-    translationService: translationService,
-  ));
+  runApp(
+    DevicePreview(
+      enabled: true,
+      builder: (context) => Main(
+        translationService: translationService,
+      ),
+    ),
+  );
 }
 
 class Main extends StatefulWidget {
