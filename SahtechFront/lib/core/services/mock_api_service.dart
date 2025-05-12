@@ -113,7 +113,7 @@ class MockApiService {
       final response = await http.get(
         Uri.parse('$_baseUrl/produit/barcode/$barcode'),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 5));
 
       print('Response status code: ${response.statusCode}');
       
