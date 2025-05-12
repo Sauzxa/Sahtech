@@ -234,21 +234,27 @@ class MockApiService {
       }
     }
 
-    // If the product doesn't exist anywhere, create a new one
+    // Instead of creating a random product, fetch from the API
     if (existingProduct == null) {
-      final newProduct = _generateRandomProduct(barcode);
+      // Try to get the product from the actual API
+      final apiProduct = await getProductByBarcode(barcode);
+      
+      if (apiProduct != null) {
+        // Add to global products for consistency
+        _products.add(apiProduct);
 
-      // Add to global products for consistency
-      _products.add(newProduct);
-
-      // If we have a userId, add to user-specific products
-      if (userId != null && userId.isNotEmpty) {
-        _userProductsMap[userId]!.add(newProduct);
-        print(
-            'Added new product to user $userId\'s products. New count: ${_userProductsMap[userId]!.length}');
+        // If we have a userId, add to user-specific products
+        if (userId != null && userId.isNotEmpty) {
+          _userProductsMap[userId]!.add(apiProduct);
+          print('Added product from API to user $userId\'s products. New count: ${_userProductsMap[userId]!.length}');
+        }
+        
+        return apiProduct;
+      } else {
+        // If the product is not found in the API either, return null
+        print('Product not found in API: $barcode');
+        return null;
       }
-
-      return newProduct;
     }
 
     return existingProduct;

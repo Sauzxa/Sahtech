@@ -32,34 +32,21 @@ class _ProductRecommendationScreenState
     recommendation = widget.product.aiRecommendation ?? 
         "Nous n'avons pas encore d'analyse personnalisée pour ce produit. Vérifiez les ingrédients et allergènes ci-dessous pour vous assurer que ce produit convient à votre régime alimentaire.";
 
-    // Use product ingredients if available, otherwise use mock data
-    ingredients = widget.product.ingredients.isNotEmpty 
-        ? widget.product.ingredients 
-        : [
-            'Lait reconstitué écrémé',
-            'Crème fraîche',
-            'Ferments lactiques',
-            'Présure',
-          ];
+    // Use product ingredients without mock fallback
+    ingredients = widget.product.ingredients;
 
-    // We'll keep using mock additives for now until backend provides this data
-    additives = [
-      {
-        'code': 'E330',
-        'name': 'Acide citrique',
-        'function': 'Régulateur d\'acidité',
-      },
-      {
-        'code': 'E202',
-        'name': 'Sorbate de potassium',
-        'function': 'Conservateur',
-      },
-      {
-        'code': 'E410',
-        'name': 'Gomme de caroube',
-        'function': 'Stabilisant pour la texture',
-      },
-    ];
+    // Process additives from product if available, create empty list if none
+    if (widget.product.allergens.isNotEmpty) {
+      // Convert allergens to additives format
+      additives = widget.product.allergens.map((allergen) => {
+        'code': 'Allergène',
+        'name': allergen,
+        'function': 'Substance allergène potentielle',
+      }).toList();
+    } else {
+      // Empty additives list if none provided
+      additives = [];
+    }
   }
 
   // Function to get the Nutri-score color
@@ -143,7 +130,7 @@ class _ProductRecommendationScreenState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Fromage',
+                          widget.product.category,
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: Colors.grey[600],
