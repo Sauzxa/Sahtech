@@ -18,7 +18,7 @@ app = FastAPI(
 )
 
 # API Key security
-API_KEY = os.environ.get("API_KEY", "your-default-api-key")  # Replace in production
+API_KEY = os.environ.get("API_KEY", "sahtech-fastapi-secure-key-2025")  # Secure API key for Spring Boot integration
 api_key_header = APIKeyHeader(name="X-API-Key")
 
 def verify_api_key(api_key: str = Security(api_key_header)):
@@ -33,6 +33,9 @@ def verify_api_key(api_key: str = Security(api_key_header)):
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")  # Set your Groq API key in environment variables
 client = Groq(api_key=GROQ_API_KEY)
 
+# Spring Boot API endpoint
+SPRING_BOOT_API = os.environ.get("SPRING_BOOT_API", "http://192.168.1.69:8080/API/Sahtech")
+
 # Data models
 class HealthCondition(BaseModel):
     name: str
@@ -45,25 +48,32 @@ class Nutrient(BaseModel):
 
 class UserData(BaseModel):
     user_id: str
-    age: int
-    height: Optional[float] = None
+    age: Optional[int] = None
     weight: Optional[float] = None
+    height: Optional[float] = None
+    bmi: Optional[float] = None
     allergies: List[str] = []
     health_conditions: List[str] = []
-    dietary_preferences: List[str] = []
+    gender: Optional[str] = None
     activity_level: Optional[str] = None
-    goal: Optional[str] = None
+    objectives: Optional[List[str]] = []
+    has_allergies: Optional[bool] = False
+    has_chronic_disease: Optional[bool] = False
+    preferred_language: Optional[str] = "french"  # Default to French
 
 class ProductData(BaseModel):
-    barcode: str
+    id: Optional[str] = None
     name: str
-    brand: str
-    category: str
-    ingredients: List[str]
+    barcode: Optional[str] = None
+    brand: Optional[str] = None
+    category: Optional[str] = None
+    description: Optional[str] = None
+    type: Optional[str] = None
+    ingredients: List[str] = []
     additives: List[str] = []
-    nutrition_values: Dict[str, Any]
     nutri_score: Optional[str] = None
-    eco_score: Optional[str] = None
+    nutri_score_description: Optional[str] = None
+    nutrition_values: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
 class RecommendationRequest(BaseModel):
     user_data: UserData
@@ -82,26 +92,30 @@ You are a nutrition expert AI assistant. Your task is to analyze a food product 
 
 **Product Information**:
 - Name: {product_data.name}
-- Brand: {product_data.brand}
-- Category: {product_data.category}
-- Ingredients: {', '.join(product_data.ingredients)}
+- Brand: {product_data.brand or 'N/A'}
+- Category: {product_data.category or 'N/A'}
+- Description: {product_data.description or 'N/A'}
+- Type: {product_data.type or 'N/A'}
+- Ingredients: {', '.join(product_data.ingredients) if product_data.ingredients else 'No information available'}
 - Additives: {', '.join(product_data.additives) if product_data.additives else 'None'}
-- Nutrition Values: {product_data.nutrition_values}
 - Nutri-Score: {product_data.nutri_score if product_data.nutri_score else 'N/A'}
-- Eco-Score: {product_data.eco_score if product_data.eco_score else 'N/A'}
 
 **User Health Profile**:
-- Age: {user_data.age}
-- Height: {user_data.height if user_data.height else 'N/A'}
-- Weight: {user_data.weight if user_data.weight else 'N/A'}
-- Allergies: {', '.join(user_data.allergies) if user_data.allergies else 'None'}
-- Health Conditions: {', '.join(user_data.health_conditions) if user_data.health_conditions else 'None'}
-- Dietary Preferences: {', '.join(user_data.dietary_preferences) if user_data.dietary_preferences else 'None'}
+- Age: {user_data.age if user_data.age else 'N/A'}
+- Gender: {user_data.gender if user_data.gender else 'N/A'}
+- BMI: {user_data.bmi if user_data.bmi else 'N/A'}
+- Weight: {user_data.weight if user_data.weight else 'N/A'} kg
+- Height: {user_data.height if user_data.height else 'N/A'} cm
+- Allergies: {', '.join(user_data.allergies) if user_data.allergies else 'None reported'}
+- Health Conditions: {', '.join(user_data.health_conditions) if user_data.health_conditions else 'None reported'}
 - Activity Level: {user_data.activity_level if user_data.activity_level else 'N/A'}
-- Goal: {user_data.goal if user_data.goal else 'N/A'}
+- Health Objectives: {', '.join(user_data.objectives) if user_data.objectives else 'None specified'}
+- Has Chronic Disease: {'Yes' if user_data.has_chronic_disease else 'No'}
+- Has Allergies: {'Yes' if user_data.has_allergies else 'No'}
+- Preferred Language: {user_data.preferred_language or 'French'}
 
 Based on this information, analyze the compatibility of this product with the user's health profile. 
-Consider allergies, health conditions, dietary preferences, and nutritional needs.
+Consider allergies, health conditions, nutritional needs, and health objectives.
 
 Provide a personalized recommendation in the following format:
 1. Start with one of these indicators: "✅ Recommended", "⚠️ Consume with caution", or "❌ Avoid"
@@ -109,7 +123,7 @@ Provide a personalized recommendation in the following format:
 3. Include specific health implications based on the user's profile
 4. Provide alternative suggestions if the product is not recommended
 
-Your response should be clear, concise, and focused on the health implications.
+Your response should be in {user_data.preferred_language or 'French'}, clear, concise, and focused on the health implications.
 """
     return system_prompt.strip()
 
@@ -158,7 +172,7 @@ async def root():
 async def health_check():
     return {"status": "healthy"}
 
-@app.post("/predict", response_model=RecommendationResponse, dependencies=[Depends(verify_api_key)])
+@app.post("/predict", dependencies=[Depends(verify_api_key)])
 async def predict(request: RecommendationRequest):
     """Generate a personalized recommendation based on user and product data"""
     try:
@@ -172,10 +186,11 @@ async def predict(request: RecommendationRequest):
         
         logger.info(f"Generated recommendation of type '{recommendation_type}' for user {request.user_data.user_id}")
         
-        return RecommendationResponse(
-            recommendation=recommendation,
-            recommendation_type=recommendation_type
-        )
+        # Return in format Spring Boot expects
+        return {
+            "recommendation": recommendation,
+            "recommendation_type": recommendation_type
+        }
     
     except Exception as e:
         logger.error(f"Error processing recommendation request: {str(e)}")

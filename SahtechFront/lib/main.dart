@@ -13,7 +13,7 @@ import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/auth/SigninUser.dart';
 import 'package:sahtech/core/auth/auth_check.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:device_preview/device_preview.dart';
+// Device preview removed as requested
 
 // before AI integration
 void main() async {
@@ -45,11 +45,8 @@ void main() async {
   }
 
   runApp(
-    DevicePreview(
-      enabled: true,
-      builder: (context) => Main(
-        translationService: translationService,
-      ),
+    Main(
+      translationService: translationService,
     ),
   );
 }

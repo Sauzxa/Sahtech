@@ -28,19 +28,21 @@ class _ProductRecommendationScreenState
   void initState() {
     super.initState();
 
-    // Generate mock recommendation based on the product
-    recommendation =
-        "Attention ! Le fromage frais de Soummam contient des ingrédients susceptibles de déclencher une réaction allergique en raison de votre sensibilité déclarée. Pour une alternative plus adaptée à votre régime, nous vous recommandons d'opter pour Soummam Tartifast, qui est exempt des allergènes concernés et plus sûr pour votre consommation.";
+    // Use the AI recommendation if available, otherwise use a default message
+    recommendation = widget.product.aiRecommendation ?? 
+        "Nous n'avons pas encore d'analyse personnalisée pour ce produit. Vérifiez les ingrédients et allergènes ci-dessous pour vous assurer que ce produit convient à votre régime alimentaire.";
 
-    // Mock ingredients list
-    ingredients = [
-      'Lait reconstitué écrémé',
-      'Crème fraîche',
-      'Ferments lactiques',
-      'Présure',
-    ];
+    // Use product ingredients if available, otherwise use mock data
+    ingredients = widget.product.ingredients.isNotEmpty 
+        ? widget.product.ingredients 
+        : [
+            'Lait reconstitué écrémé',
+            'Crème fraîche',
+            'Ferments lactiques',
+            'Présure',
+          ];
 
-    // Mock additives
+    // We'll keep using mock additives for now until backend provides this data
     additives = [
       {
         'code': 'E330',

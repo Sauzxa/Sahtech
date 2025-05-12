@@ -190,73 +190,100 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
   }
 
   Future<void> _processBarcodeResult(String barcode) async {
-    // Prevent duplicate scans of the same barcode in rapid succession
-    if (_lastScannedBarcode == barcode || _isProcessingBarcode) return;
-
-    setState(() {
-      _lastScannedBarcode = barcode;
-      _isProcessingBarcode = true;
-      _isScanning = false;
-    });
+    // Avoid processing the same barcode multiple times in rapid succession
+    if (_isProcessingBarcode || _lastScannedBarcode == barcode) {
+      return;
+    }
 
     try {
-      // Haptic feedback
+      setState(() {
+        _lastScannedBarcode = barcode;
+        _isProcessingBarcode = true;
+      });
+
+      // Haptic feedback for successful scan
       HapticFeedback.mediumImpact();
 
-      // Call API to get product info with user ID
-      final product = await _apiService.scanProduct(
-        barcode,
-        userId: _currentUserId,
+      // Show scanning indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Recherche du produit: $barcode...'),
+          backgroundColor: Colors.blue,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          margin: EdgeInsets.all(16.w),
+        ),
       );
 
-      if (mounted) {
-        setState(() {
-          _scannedProduct = product;
-          _isProcessingBarcode = false;
-        });
+      // Fetch product information using the barcode from Spring Boot backend
+      final product = await _apiService.getProductByBarcode(barcode);
 
-        // Show product info
-        if (product != null) {
-          _showProductPreview(product);
-        } else {
-          // Handle case where product is not found
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Produit non trouvé pour le code: $barcode'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-              margin: EdgeInsets.all(16.w),
-            ),
-          );
-          // Reset scanner
-          setState(() {
-            _isScanning = true;
-            _lastScannedBarcode = null;
-          });
+      if (product != null) {
+        if (!mounted) return;
+
+        // If we have a current user ID, request a personalized recommendation
+        if (_currentUserId != null) {
+          try {
+            // Request recommendation from Spring Boot backend which calls the AI service
+            final recommendationResponse = await _apiService.getPersonalizedRecommendation(
+              _currentUserId!,
+              product.id,
+            );
+
+            // Update the product with the recommendation
+            if (recommendationResponse != null && recommendationResponse.containsKey('recommendation')) {
+              product.aiRecommendation = recommendationResponse['recommendation'];
+              product.recommendationType = recommendationResponse.containsKey('recommendation_type') 
+                ? recommendationResponse['recommendation_type'] 
+                : 'caution'; // Default to caution if not provided
+            }
+          } catch (recommendationError) {
+            print('Failed to get personalized recommendation: $recommendationError');
+            // Continue even if recommendation fails - we'll just show the product without a recommendation
+          }
         }
-      }
-    } catch (e) {
-      if (mounted) {
+
+        // Show the product preview dialog
+        _showProductPreview(product);
+      } else {
+        if (!mounted) return;
+
+        // Show error message for product not found
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: $e'),
+            content: const Text('Produit non trouvé dans notre base de données. Veuillez réessayer ou contacter votre nutritionniste.'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10.r),
             ),
             margin: EdgeInsets.all(16.w),
           ),
         );
+      }
+    } catch (e) {
+      if (!mounted) return;
 
-        // Reset scanner
+      // Show error message for any other error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors du traitement du code-barres: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          margin: EdgeInsets.all(16.w),
+        ),
+      );
+    } finally {
+      if (mounted) {
         setState(() {
           _isProcessingBarcode = false;
-          _isScanning = true;
-          _lastScannedBarcode = null;
         });
       }
     }
@@ -341,11 +368,11 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Produit Inconnue',
+                        product.name,
                         style: TextStyle(
                           fontSize: 18.sp,
                           fontWeight: FontWeight.bold,
-                          color: Colors.red,
+                          color: Colors.black87,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

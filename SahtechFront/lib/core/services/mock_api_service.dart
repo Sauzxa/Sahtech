@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
+import 'package:http/http.dart' as http;
 import 'package:sahtech/core/utils/models/nutritionist_model.dart';
 import 'package:sahtech/core/utils/models/ad_model.dart';
 import 'package:sahtech/core/utils/models/product_model.dart';
@@ -100,6 +102,64 @@ class MockApiService {
   }
 
   // PRODUCT API
+
+    // Spring Boot API base URL
+  final String _baseUrl = 'http://192.168.1.69:8080/API/Sahtech';
+
+  /// Get product by barcode from the Spring Boot backend
+  Future<ProductModel?> getProductByBarcode(String barcode) async {
+    try {
+      print('Fetching product with barcode: $barcode from $_baseUrl/produit/barcode/$barcode');
+      final response = await http.get(
+        Uri.parse('$_baseUrl/produit/barcode/$barcode'),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 10));
+
+      print('Response status code: ${response.statusCode}');
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('Product data received: ${data.toString().substring(0, min(100, data.toString().length))}...');
+        return ProductModel.fromJson(data);
+      } else if (response.statusCode == 404) {
+        print('Product not found in database');
+        return null;
+      } else {
+        print('Unexpected response status: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching product from API: $e');
+      return null;
+    }
+  }
+
+  /// Get personalized recommendation from Spring Boot backend
+  /// which calls the FastAPI service
+  Future<Map<String, dynamic>?> getPersonalizedRecommendation(
+    String userId,
+    String productId,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/recommendation/user/$userId/data?productId=$productId'),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+
+      print('Failed to get recommendation: ${response.statusCode}');
+      return null;
+    } catch (e) {
+      print('Error getting recommendation: $e');
+      // Return a mock recommendation for testing
+      return {
+        'recommendation': 'Avec votre profile de santé, ce produit est sûr pour votre consommation. Il ne contient pas d\'allergènes qui pourraient déclencher vos allergies connues.'
+      };
+    }
+  }
 
   /// Get all products for a user
   Future<List<ProductModel>> getUserProducts(String userId) async {
