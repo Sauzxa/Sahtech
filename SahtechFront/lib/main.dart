@@ -15,6 +15,7 @@ import 'package:sahtech/core/auth/auth_check.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:device_preview/device_preview.dart';
 
+// before AI integration
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 

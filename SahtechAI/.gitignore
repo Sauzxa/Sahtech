@@ -1,0 +1,87 @@
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.env
+
+# Python related
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE related
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+*.sublime-workspace
+*.iml
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Log files
+*.log
+logs/
+
+# Database files
+*.sqlite
+*.db
+*.sql
+
+# API key files
+*apikey*
+*api_key*
+*token*
+credentials.json
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+
+# Distribution / packaging
+.Python
+*.manifest
+*.spec
+.Python
+
+# Model files/weights that might be large
+*.h5
+*.pkl
+*.pt
+*.pth
+*.bin
+model/
+models/
+
+# Other
+.hypothesis/
+.pytest_cache/
