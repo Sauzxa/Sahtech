@@ -14,7 +14,7 @@ import 'package:sahtech/core/auth/SigninUser.dart';
 import 'package:sahtech/core/auth/auth_check.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // Device preview removed as requested
-// before AI integration
+// first from teckInov
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
