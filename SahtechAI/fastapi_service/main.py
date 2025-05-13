@@ -34,7 +34,7 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")  # Set your Groq API key in en
 client = Groq(api_key=GROQ_API_KEY)
 
 # Spring Boot API endpoint
-SPRING_BOOT_API = os.environ.get("SPRING_BOOT_API", "http://192.168.137.1:8080/API/Sahtech")
+SPRING_BOOT_API = os.environ.get("SPRING_BOOT_API", "http://192.168.1.69:8080/API/Sahtech")
 
 # Data models
 class HealthCondition(BaseModel):
