@@ -98,9 +98,11 @@ class _EditUserDataState extends State<EditUserData> {
 
   // Fetch user data directly from API
   Future<void> _fetchUserData() async {
-    setState(() {
-      _isLoadingUserData = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoadingUserData = true;
+      });
+    }
 
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -177,29 +179,32 @@ class _EditUserDataState extends State<EditUserData> {
         print('----------------------------------------');
 
         // Update controllers with fresh data
-        setState(() {
-          _firstNameController.text =
-              _userData.name != null && _userData.name!.contains(" ")
-                  ? _userData.name!.split(" ")[0]
-                  : _userData.name ?? '';
+        // Check if widget is still mounted before calling setState
+        if (mounted) {
+          setState(() {
+            _firstNameController.text =
+                _userData.name != null && _userData.name!.contains(" ")
+                    ? _userData.name!.split(" ")[0]
+                    : _userData.name ?? '';
 
-          _lastNameController.text =
-              _userData.name != null && _userData.name!.contains(" ")
-                  ? _userData.name!.split(" ").length > 1
-                      ? _userData.name!.split(" ")[1]
-                      : ""
-                  : "";
+            _lastNameController.text =
+                _userData.name != null && _userData.name!.contains(" ")
+                    ? _userData.name!.split(" ").length > 1
+                        ? _userData.name!.split(" ")[1]
+                        : ""
+                    : "";
 
-          _emailController.text = _userData.email ?? '';
-          _heightController.text =
-              _userData.height != null ? '${_userData.height}' : '';
-          _weightController.text =
-              _userData.weight != null ? '${_userData.weight}' : '';
+            _emailController.text = _userData.email ?? '';
+            _heightController.text =
+                _userData.height != null ? '${_userData.height}' : '';
+            _weightController.text =
+                _userData.weight != null ? '${_userData.weight}' : '';
 
-          // Reset the changes flag since we just loaded fresh data
-          _hasChanges = false;
-          _isLoadingUserData = false;
-        });
+            // Reset the changes flag since we just loaded fresh data
+            _hasChanges = false;
+            _isLoadingUserData = false;
+          });
+        }
       } else {
         throw Exception('Failed to load user data: ${response.statusCode}');
       }
@@ -207,9 +212,12 @@ class _EditUserDataState extends State<EditUserData> {
       print('Error fetching user data: $e');
       _showCustomSnackBar('Erreur lors du chargement des données utilisateur',
           isError: true);
-      setState(() {
-        _isLoadingUserData = false;
-      });
+      // Check if widget is still mounted before calling setState
+      if (mounted) {
+        setState(() {
+          _isLoadingUserData = false;
+        });
+      }
     }
   }
 
@@ -524,6 +532,12 @@ class _EditUserDataState extends State<EditUserData> {
 
   // Custom SnackBar that matches Figma design
   void _showCustomSnackBar(String message, {bool isError = false}) {
+    // Check if the widget is still mounted before using context
+    if (!mounted) {
+      print('Warning: Attempted to show SnackBar but widget is unmounted');
+      return;
+    }
+    
     final scaffold = ScaffoldMessenger.of(context);
     scaffold.clearSnackBars();
 

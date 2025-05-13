@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # API endpoint and key
-FASTAPI_URL = "http://localhost:8000/predict"
+FASTAPI_URL = "http://192.168.137.1:8000/predict"
 API_KEY = os.getenv("API_KEY", "your-api-key-for-spring-boot")
 
 def test_recommendation_api():
