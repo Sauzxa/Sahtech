@@ -5,8 +5,10 @@ import 'package:sahtech/core/utils/models/nutritionist_model.dart';
 import 'package:sahtech/core/CustomWidgets/nutritionist_card.dart';
 import 'package:sahtech/core/services/mock_api_service.dart';
 import 'package:sahtech/presentation/profile/UserProfileSettings.dart';
-import 'package:sahtech/presentation/scan/camera_access_screen.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:sahtech/core/services/storage_service.dart';
+import 'package:sahtech/presentation/scan/product_scanner_screen.dart';
 
 // Widget for displaying nutritionist cards in a vertical list
 class VerticalNutritionistCard extends StatelessWidget {
@@ -291,13 +293,77 @@ class _ContactNutriState extends State<ContactNutri> {
     );
   }
 
-  void _navigateToScanScreen() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const CameraAccessScreen(),
-      ),
-    );
+  void _navigateToScanScreen() async {
+    final storageService = StorageService();
+    final hasRequested = await storageService.getCameraPermissionRequested();
+    final status = await Permission.camera.status;
+
+    print(
+        'ContactNutri: Camera permission status: $status, previously requested: $hasRequested');
+
+    if (status.isGranted) {
+      // Permission already granted, go directly to scanner
+      print(
+          'ContactNutri: Camera permission already granted, navigating to scanner');
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ProductScannerScreen(),
+        ),
+      );
+    } else if (!hasRequested) {
+      // First time requesting permission
+      print('ContactNutri: First time requesting camera permission');
+      final result = await Permission.camera.request();
+      await storageService.setCameraPermissionRequested(true);
+
+      if (result.isGranted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ProductScannerScreen(),
+          ),
+        );
+      } else {
+        // Permission denied, show message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'L\'accès à la caméra est nécessaire pour scanner des produits.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'Paramètres',
+              textColor: Colors.white,
+              onPressed: () {
+                openAppSettings();
+              },
+            ),
+          ),
+        );
+      }
+    } else {
+      // Permission was previously denied
+      print(
+          'ContactNutri: Camera permission previously denied, showing settings message');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+              'Autorisation caméra requise. Ouvrez les paramètres pour l\'activer.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: 'Paramètres',
+            textColor: Colors.white,
+            onPressed: () {
+              openAppSettings();
+            },
+          ),
+        ),
+      );
+    }
   }
 
   void _navigateToProfile() {

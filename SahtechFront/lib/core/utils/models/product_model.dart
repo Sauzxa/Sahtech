@@ -1,3 +1,5 @@
+import 'dart:math';
+
 class ProductModel {
   final String id;
   final String name;
@@ -10,10 +12,10 @@ class ProductModel {
   final List<String> allergens;
   final double healthScore;
   final DateTime scanDate;
-  
+
   // AI-generated personalized recommendation for this product
   String? aiRecommendation;
-  
+
   // Type of recommendation: 'recommended', 'caution', or 'avoid'
   String? recommendationType;
 
@@ -35,25 +37,91 @@ class ProductModel {
 
   // Factory method to create a product from a map
   factory ProductModel.fromMap(Map<String, dynamic> map) {
+    // Debug the raw data
+    print(
+        'Creating ProductModel from data: ${map.toString().substring(0, min(100, map.toString().length))}...');
+
+    // Handle different field naming conventions from backend
+    // Debug the barcode field
+    final barcodeValue =
+        map['barcode'] ?? map['codeBarre'] ?? map['code_barre'] ?? '';
+    print(
+        'Raw barcode value: $barcodeValue (type: ${barcodeValue.runtimeType})');
+    final barcodeString = barcodeValue.toString();
+    print('Converted barcode: $barcodeString');
+
+    // Nutrition facts can be nested or directly in the map
+    Map<String, dynamic> nutritionFacts = {};
+    if (map['nutritionFacts'] is Map) {
+      nutritionFacts = Map<String, dynamic>.from(map['nutritionFacts']);
+    } else if (map['nutrition_facts'] is Map) {
+      nutritionFacts = Map<String, dynamic>.from(map['nutrition_facts']);
+    } else if (map['valeurNutrimentielle'] is Map) {
+      nutritionFacts = Map<String, dynamic>.from(map['valeurNutrimentielle']);
+    }
+
+    // Handle ingredients as string or list
+    List<String> ingredientsList = [];
+    if (map['ingredients'] is List) {
+      ingredientsList = List<String>.from(map['ingredients']);
+    } else if (map['nomingredients'] is List) {
+      ingredientsList = List<String>.from(map['nomingredients']);
+    } else if (map['ingredients'] is String) {
+      ingredientsList = [map['ingredients']];
+    } else if (map['nomingredients'] is String) {
+      ingredientsList = [map['nomingredients']];
+    }
+
+    // Handle allergens in different formats
+    List<String> allergensList = [];
+    if (map['allergens'] is List) {
+      allergensList = List<String>.from(map['allergens']);
+    } else if (map['allergenes'] is List) {
+      allergensList = List<String>.from(map['allergenes']);
+    }
+
+    // Health score can be named differently
+    final healthScoreRaw = map['healthScore'] ??
+        map['valeurNutriScore'] ??
+        map['health_score'] ??
+        map['nutriScore'] ??
+        0.0;
+
+    double healthScore = 0.0;
+    if (healthScoreRaw is num) {
+      healthScore = healthScoreRaw.toDouble();
+    } else if (healthScoreRaw is String) {
+      healthScore = double.tryParse(healthScoreRaw) ?? 0.0;
+    }
+
+    // Extract ID with fallbacks
+    final id = map['_id']?.toString() ??
+        map['id']?.toString() ??
+        map['productId']?.toString() ??
+        barcodeString;
+
+    // Create product model with all possible field names
     return ProductModel(
-      id: map['_id'] ?? map['id'] ?? '',
-      name: map['name'] ?? map['nom'] ?? '',
-      imageUrl: map['imageUrl'] ?? '',
-      barcode: map['barcode'] ?? map['codeBarre']?.toString() ?? '',
-      brand: map['brand'] ?? map['marque'] ?? '',
-      category: map['category'] ?? map['categorie'] ?? '',
-      nutritionFacts: Map<String, dynamic>.from(map['nutritionFacts'] ?? {}),
-      ingredients: List<String>.from(map['ingredients'] ?? map['nomingredients'] ?? []),
-      allergens: List<String>.from(map['allergens'] ?? []),
-      healthScore: (map['healthScore'] ?? map['valeurNutriScore'] ?? 0.0).toDouble(),
+      id: id,
+      name: map['name']?.toString() ?? map['nom']?.toString() ?? '',
+      imageUrl: map['imageUrl']?.toString() ?? map['image']?.toString() ?? '',
+      barcode: barcodeString,
+      brand: map['brand']?.toString() ?? map['marque']?.toString() ?? '',
+      category:
+          map['category']?.toString() ?? map['categorie']?.toString() ?? '',
+      nutritionFacts: nutritionFacts,
+      ingredients: ingredientsList,
+      allergens: allergensList,
+      healthScore: healthScore,
       scanDate: map['scanDate'] != null
           ? DateTime.parse(map['scanDate'])
           : DateTime.now(),
       aiRecommendation: map['aiRecommendation'] ?? map['recommendation'],
-      recommendationType: map['recommendationType'] ?? map['recommendation_type'],
+      recommendationType:
+          map['recommendationType'] ?? map['recommendation_type'],
     );
   }
-  
+
   // Factory method to create a product from JSON string
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     return ProductModel.fromMap(json);

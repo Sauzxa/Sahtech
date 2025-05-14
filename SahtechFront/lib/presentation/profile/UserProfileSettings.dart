@@ -5,7 +5,7 @@ import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/nutritionist_model.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/presentation/home/home_screen.dart';
-import 'package:sahtech/presentation/scan/camera_access_screen.dart';
+import 'package:sahtech/presentation/scan/product_scanner_screen.dart';
 import 'package:sahtech/core/services/auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sahtech/presentation/profile/EditUserData.dart';
@@ -14,6 +14,8 @@ import 'package:provider/provider.dart';
 import 'package:sahtech/core/services/translation_service.dart';
 import 'package:sahtech/presentation/home/ContactNutri.dart';
 import 'package:sahtech/core/auth/SigninUser.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:sahtech/core/services/storage_service.dart';
 
 class UserProfileSettings extends StatefulWidget {
   final UserModel user;
@@ -43,16 +45,8 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
         ),
       );
     } else if (index == 2) {
-      // Navigate to Scan
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const CameraAccessScreen(),
-        ),
-      ).then((_) {
-        // Refresh user data when returning from scan
-        _fetchLatestUserData();
-      });
+      // Navigate to Scan with permission checking
+      _navigateToScanScreen();
     } else if (index == 3) {
       // Navigate to Contacts
       Navigator.push(
@@ -181,6 +175,86 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
       print("No result returned from EditUserData");
       // Even if no result returned, refresh data from the server
       _fetchLatestUserData();
+    }
+  }
+
+  // New method for navigating to scan screen with permission handling
+  Future<void> _navigateToScanScreen() async {
+    final storageService = StorageService();
+    final hasRequested = await storageService.getCameraPermissionRequested();
+    final status = await Permission.camera.status;
+
+    print(
+        'UserProfile: Camera permission status: $status, previously requested: $hasRequested');
+
+    if (status.isGranted) {
+      // Permission already granted, go directly to scanner
+      print(
+          'UserProfile: Camera permission already granted, navigating to scanner');
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ProductScannerScreen(),
+        ),
+      ).then((_) {
+        // Refresh user data when returning from scan
+        _fetchLatestUserData();
+      });
+    } else if (!hasRequested) {
+      // First time requesting permission
+      print('UserProfile: First time requesting camera permission');
+      final result = await Permission.camera.request();
+      await storageService.setCameraPermissionRequested(true);
+
+      if (result.isGranted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ProductScannerScreen(),
+          ),
+        ).then((_) {
+          // Refresh user data when returning from scan
+          _fetchLatestUserData();
+        });
+      } else {
+        // Permission denied, show message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'L\'accès à la caméra est nécessaire pour scanner des produits.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'Paramètres',
+              textColor: Colors.white,
+              onPressed: () {
+                openAppSettings();
+              },
+            ),
+          ),
+        );
+      }
+    } else {
+      // Permission was previously denied
+      print(
+          'UserProfile: Camera permission previously denied, showing settings message');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+              'Autorisation caméra requise. Ouvrez les paramètres pour l\'activer.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: 'Paramètres',
+            textColor: Colors.white,
+            onPressed: () {
+              openAppSettings();
+            },
+          ),
+        ),
+      );
     }
   }
 
@@ -818,7 +892,7 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
   // Build the special scan button in the middle - matching HomeScreen style
   Widget _buildNavScanItem() {
     return GestureDetector(
-      onTap: () => _onItemTapped(2),
+      onTap: _navigateToScanScreen,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,

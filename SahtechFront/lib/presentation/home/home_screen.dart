@@ -221,13 +221,15 @@ class _HomeScreenState extends State<HomeScreen> {
   // Navigate to scan product screen
   Future<void> _navigateToScanScreen() async {
     final storageService = StorageService();
-    final hasSeenCameraScreen = await storageService.getHasSeenCameraScreen();
-
-    // Check if we already have camera permission
+    final hasRequested = await storageService.getCameraPermissionRequested();
     final status = await Permission.camera.status;
 
-    if (status.isGranted || status.isLimited) {
-      // Permission already granted, go directly to scanner regardless of whether camera screen was shown before
+    print(
+        'Home: Camera permission status: $status, previously requested: $hasRequested');
+
+    if (status.isGranted) {
+      // Permission already granted, go directly to scanner
+      print('Home: Camera permission already granted, navigating to scanner');
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -237,11 +239,13 @@ class _HomeScreenState extends State<HomeScreen> {
         print('Returned from scan screen, refreshing data...');
         _loadData();
       });
-    } else if (status.isDenied) {
-      // First time requesting or previously denied but not permanently
+    } else if (!hasRequested) {
+      // First time requesting permission
+      print('Home: First time requesting camera permission');
       final result = await Permission.camera.request();
-      if (result.isGranted || result.isLimited) {
-        // Permission was just granted - go directly to scanner
+      await storageService.setCameraPermissionRequested(true);
+
+      if (result.isGranted) {
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -251,63 +255,45 @@ class _HomeScreenState extends State<HomeScreen> {
           print('Returned from scan screen, refreshing data...');
           _loadData();
         });
-      } else if (result.isPermanentlyDenied) {
-        // User clicked "never ask again", send them to settings
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (BuildContext context) => AlertDialog(
-              title: Text('Permission requise'),
-              content: Text(
-                'L\'accès à la caméra est nécessaire pour scanner les codes-barres des produits. ' +
-                    'Veuillez autoriser l\'accès à la caméra dans les paramètres de votre appareil.',
-              ),
-              actions: <Widget>[
-                TextButton(
-                  child: Text('Annuler'),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-                TextButton(
-                  child: Text('Paramètres'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    openAppSettings();
-                  },
-                ),
-              ],
+      } else {
+        // Permission denied, show message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'L\'accès à la caméra est nécessaire pour scanner des produits.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'Paramètres',
+              textColor: Colors.white,
+              onPressed: () {
+                openAppSettings();
+              },
             ),
-          );
-        }
-      }
-    } else if (status.isPermanentlyDenied) {
-      // The user opted to never again see the permission request dialog for this
-      // app. The only way to change the permission's status now is to let the
-      // user manually enable it in the system settings.
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) => AlertDialog(
-            title: Text('Permission requise'),
-            content: Text(
-              'L\'accès à la caméra a été refusé de manière permanente. ' +
-                  'Veuillez l\'activer manuellement dans les paramètres de votre appareil.',
-            ),
-            actions: <Widget>[
-              TextButton(
-                child: Text('Annuler'),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-              TextButton(
-                child: Text('Paramètres'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  openAppSettings();
-                },
-              ),
-            ],
           ),
         );
       }
+    } else {
+      // Permission was previously denied
+      print(
+          'Home: Camera permission previously denied, showing settings message');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+              'Autorisation caméra requise. Ouvrez les paramètres pour l\'activer.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: 'Paramètres',
+            textColor: Colors.white,
+            onPressed: () {
+              openAppSettings();
+            },
+          ),
+        ),
+      );
     }
   }
 

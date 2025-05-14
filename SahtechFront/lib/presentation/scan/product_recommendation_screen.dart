@@ -28,25 +28,51 @@ class _ProductRecommendationScreenState
   void initState() {
     super.initState();
 
+    // Enhanced logging to debug product data
+    print('=== PRODUCT RECOMMENDATION SCREEN ===');
+    print('Product name: ${widget.product.name}');
+    print('Product ID: ${widget.product.id}');
+    print('Product barcode: ${widget.product.barcode}');
+    print('AI Recommendation: ${widget.product.aiRecommendation}');
+    print('Recommendation Type: ${widget.product.recommendationType}');
+    print('Ingredients count: ${widget.product.ingredients.length}');
+    print('Allergens count: ${widget.product.allergens.length}');
+
     // Use the AI recommendation if available, otherwise use a default message
-    recommendation = widget.product.aiRecommendation ?? 
+    recommendation = widget.product.aiRecommendation ??
         "Nous n'avons pas encore d'analyse personnalisée pour ce produit. Vérifiez les ingrédients et allergènes ci-dessous pour vous assurer que ce produit convient à votre régime alimentaire.";
 
-    // Use product ingredients without mock fallback
+    // Use product ingredients, with a fallback if empty
     ingredients = widget.product.ingredients;
+    if (ingredients.isEmpty) {
+      ingredients = ['Informations sur les ingrédients non disponibles'];
+    }
 
     // Process additives from product if available, create empty list if none
     if (widget.product.allergens.isNotEmpty) {
       // Convert allergens to additives format
-      additives = widget.product.allergens.map((allergen) => {
-        'code': 'Allergène',
-        'name': allergen,
-        'function': 'Substance allergène potentielle',
-      }).toList();
+      additives = widget.product.allergens
+          .map((allergen) => {
+                'code': 'Allergène',
+                'name': allergen,
+                'function': 'Substance allergène potentielle',
+              })
+          .toList();
     } else {
-      // Empty additives list if none provided
-      additives = [];
+      // Empty additives list with a message if none provided
+      additives = [
+        {
+          'code': 'Info',
+          'name': 'Aucun allergène déclaré',
+          'function': 'Consultez l\'emballage pour confirmation',
+        }
+      ];
     }
+
+    // Display Nutri-Score details
+    print('Health Score: ${widget.product.healthScore}');
+    print(
+        'Nutri-Score Letter: ${_getNutriScoreLetter(widget.product.healthScore)}');
   }
 
   // Function to get the Nutri-score color

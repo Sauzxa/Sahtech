@@ -14,6 +14,7 @@ import 'package:sahtech/core/auth/SigninUser.dart';
 import 'package:sahtech/core/auth/auth_check.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:sahtech/core/services/storage_service.dart';
 
 // Device preview removed as requested
 // first from teckInov
@@ -24,16 +25,31 @@ void main() async {
   final translationService = TranslationService();
   await translationService.init();
 
-  // Request camera permission early to prevent black screen issues
-  try {
-    final cameraStatus = await Permission.camera.status;
-    if (cameraStatus.isDenied) {
-      await Permission.camera.request();
+  // Initialize storage service
+  final storageService = StorageService();
+
+  // Check if camera permission has been requested before
+  final hasRequestedCameraPermission =
+      await storageService.getCameraPermissionRequested();
+
+  // Only request camera permission if it hasn't been requested before
+  if (!hasRequestedCameraPermission) {
+    try {
+      print('First time requesting camera permission');
+      final cameraStatus = await Permission.camera.status;
+      if (cameraStatus.isDenied) {
+        await Permission.camera.request();
+        // Mark that we've requested camera permission
+        await storageService.setCameraPermissionRequested(true);
+      }
+      print(
+          'Camera permission status at app startup: ${await Permission.camera.status}');
+    } catch (e) {
+      print('Error requesting camera permission: $e');
     }
+  } else {
     print(
-        'Camera permission status at app startup: ${await Permission.camera.status}');
-  } catch (e) {
-    print('Error requesting camera permission: $e');
+        'Camera permission already requested previously, skipping request at startup');
   }
 
   // For debugging: Print auth status at startup
