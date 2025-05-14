@@ -104,56 +104,104 @@ class MockApiService {
   // PRODUCT API
 
   // Spring Boot API base URL
-  final String _baseUrl = 'http://192.168.1.69:8080/API/Sahtech';
+  final String _baseUrl =
+      'http://192.168.169.8080/API/Sahtech'; // Actual backend IP address
+  // Alternative URLs for different environments:
+  // final String _baseUrl = 'http://10.0.2.2:8080/API/Sahtech'; // Use 10.0.2.2 for Android emulator to connect to host machine's localhost
+  // final String _baseUrl = 'http://localhost:8080/API/Sahtech'; // For web testing
 
   /// Get product by barcode from the Spring Boot backend
   Future<ProductModel?> getProductByBarcode(String barcode) async {
     try {
-      // First check if the product exists in the database
-      print(
-          'Checking if product with barcode $barcode exists at $_baseUrl/scan/check/$barcode');
-      final existsResponse = await http.get(
-        Uri.parse('$_baseUrl/scan/check/$barcode'),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 3));
+      print('===== PRODUCT SCAN DEBUG =====');
+      print('Starting product scan for barcode: $barcode');
 
-      print('Exists response status code: ${existsResponse.statusCode}');
+      // First check if the product exists in the database with error handling
+      final String checkUrl = '$_baseUrl/scan/check/$barcode';
+      print('Sending request to: $checkUrl');
+
+      final existsResponse = await http.get(
+        Uri.parse(checkUrl),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 5));
+
+      print('Check response status code: ${existsResponse.statusCode}');
+      print('Check response body: ${existsResponse.body}');
+
       bool productExists = false;
 
       if (existsResponse.statusCode == 200) {
-        final data = json.decode(existsResponse.body);
+        final Map<String, dynamic> data = json.decode(existsResponse.body);
         productExists = data['exists'] == true;
-        print('Product exists: $productExists');
+        print('Product exists according to API: $productExists');
+      } else {
+        print(
+            'Error checking if product exists: HTTP ${existsResponse.statusCode}');
+        // Try once more with a mock product if in dev mode
+        if (_shouldUseMockData()) {
+          print('Using mock data as fallback since product check failed');
+          return _generateRandomProduct(barcode);
+        }
       }
 
       // If the product exists, fetch its details
       if (productExists) {
-        print(
-            'Fetching product with barcode: $barcode from $_baseUrl/scan/barcode/$barcode');
-        final response = await http.get(
-          Uri.parse('$_baseUrl/scan/barcode/$barcode'),
-          headers: {'Content-Type': 'application/json'},
-        ).timeout(const Duration(seconds: 5));
+        final String productUrl = '$_baseUrl/scan/barcode/$barcode';
+        print('Fetching product details from: $productUrl');
 
-        print('Response status code: ${response.statusCode}');
+        final response = await http.get(
+          Uri.parse(productUrl),
+          headers: {'Content-Type': 'application/json'},
+        ).timeout(const Duration(seconds: 7));
+
+        print('Product details response status: ${response.statusCode}');
 
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
-          print(
-              'Product data received: ${data.toString().substring(0, min(100, data.toString().length))}...');
+          print('Product data received successfully');
           return ProductModel.fromJson(data);
         } else {
-          print('Unexpected response status: ${response.statusCode}');
+          print('Error fetching product details: HTTP ${response.statusCode}');
+          print('Response body: ${response.body}');
+
+          // Try once more with a mock product if in dev mode
+          if (_shouldUseMockData()) {
+            print(
+                'Using mock data as fallback since product details fetch failed');
+            return _generateRandomProduct(barcode);
+          }
           return null;
         }
       } else {
         print('Product not found in database');
+
+        // Attempt to use mock data for testing if needed
+        if (_shouldUseMockData()) {
+          print(
+              'Using mock data for testing since product not found in database');
+          return _generateRandomProduct(barcode);
+        }
         return null;
       }
     } catch (e) {
-      print('Error fetching product from API: $e');
+      print('Exception in getProductByBarcode: $e');
+
+      // Fallback to mock data for testing if needed
+      if (_shouldUseMockData()) {
+        print('Using mock data as fallback due to exception');
+        return _generateRandomProduct(barcode);
+      }
       return null;
+    } finally {
+      print('===== END PRODUCT SCAN DEBUG =====');
     }
+  }
+
+  // Helper method to determine if we should use mock data
+  // This allows easier testing without a live backend
+  bool _shouldUseMockData() {
+    // Set this to false in production, true for testing
+    return false; // Disabling mock data to use only real products from database
   }
 
   /// Get personalized recommendation from Spring Boot backend
@@ -163,26 +211,121 @@ class MockApiService {
     String productId,
   ) async {
     try {
+      print('===== RECOMMENDATION REQUEST DEBUG =====');
+      print('Requesting recommendation for user: $userId, product: $productId');
+
+      final String recommendationUrl =
+          '$_baseUrl/recommendation/user/$userId/data?productId=$productId';
+      print('Sending request to: $recommendationUrl');
+
       final response = await http.get(
-        Uri.parse(
-            '$_baseUrl/recommendation/user/$userId/data?productId=$productId'),
+        Uri.parse(recommendationUrl),
         headers: {'Content-Type': 'application/json'},
       ).timeout(const Duration(seconds: 10));
 
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      }
+      print('Recommendation response status: ${response.statusCode}');
 
-      print('Failed to get recommendation: ${response.statusCode}');
-      return null;
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        print('Recommendation received successfully');
+        print(
+            'Recommendation content: ${data.toString().substring(0, min(100, data.toString().length))}...');
+
+        // Save the recommendation to the user's history
+        _saveRecommendationToHistory(userId, productId, data);
+
+        return data;
+      } else {
+        print('Failed to get recommendation: HTTP ${response.statusCode}');
+        print('Response body: ${response.body}');
+
+        // Use mock recommendation for testing or when backend fails
+        if (_shouldUseMockData()) {
+          print('Using mock recommendation as fallback');
+          final mockRecommendation = _getMockRecommendation(userId, productId);
+          return mockRecommendation;
+        }
+        return null;
+      }
     } catch (e) {
-      print('Error getting recommendation: $e');
-      // Return a mock recommendation for testing
-      return {
-        'recommendation':
-            'Avec votre profile de santé, ce produit est sûr pour votre consommation. Il ne contient pas d\'allergènes qui pourraient déclencher vos allergies connues.'
-      };
+      print('Exception in getPersonalizedRecommendation: $e');
+
+      // Return a mock recommendation for testing or when backend fails
+      if (_shouldUseMockData()) {
+        print('Using mock recommendation due to exception');
+        final mockRecommendation = _getMockRecommendation(userId, productId);
+        return mockRecommendation;
+      }
+      return null;
+    } finally {
+      print('===== END RECOMMENDATION REQUEST DEBUG =====');
     }
+  }
+
+  // Helper method to save recommendations to user history
+  Future<void> _saveRecommendationToHistory(String userId, String productId,
+      Map<String, dynamic> recommendationData) async {
+    try {
+      print(
+          'Saving recommendation to history for user: $userId, product: $productId');
+      final String saveUrl = '$_baseUrl/recommendation/save';
+
+      final Map<String, dynamic> payload = {
+        'userId': userId,
+        'productId': productId,
+        'recommendation': recommendationData['recommendation'],
+        'recommendationType':
+            recommendationData['recommendation_type'] ?? 'caution',
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+
+      final response = await http
+          .post(
+            Uri.parse(saveUrl),
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode(payload),
+          )
+          .timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('Recommendation saved successfully');
+      } else {
+        print('Failed to save recommendation: HTTP ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Exception saving recommendation: $e');
+    }
+  }
+
+  // Helper method to generate a mock recommendation for testing
+  Map<String, dynamic> _getMockRecommendation(String userId, String productId) {
+    final recommendationTypes = ['recommended', 'caution', 'avoid'];
+    final recommendationType =
+        recommendationTypes[_random.nextInt(recommendationTypes.length)];
+
+    String recommendation;
+    switch (recommendationType) {
+      case 'recommended':
+        recommendation =
+            'Ce produit est parfaitement adapté à votre profil de santé. Il contient des nutriments bénéfiques pour vous et ne présente aucun risque connu.';
+        break;
+      case 'avoid':
+        recommendation =
+            'Ce produit n\'est pas recommandé pour votre profil de santé. Il contient des ingrédients qui pourraient aggraver certaines de vos conditions.';
+        break;
+      case 'caution':
+      default:
+        recommendation =
+            'Ce produit peut être consommé avec modération. Certains ingrédients pourraient ne pas être idéaux pour votre profil, mais ne présentent pas de risque majeur.';
+        break;
+    }
+
+    return {
+      'recommendation': recommendation,
+      'recommendation_type': recommendationType,
+      'timestamp': DateTime.now().toIso8601String(),
+      'isMockData': true
+    };
   }
 
   /// Get all products for a user
@@ -411,5 +554,92 @@ class MockApiService {
         scanDate: DateTime.now().subtract(const Duration(days: 1)),
       ),
     ];
+  }
+
+  /// Get user health profile from Spring Boot backend
+  Future<Map<String, dynamic>?> getUserHealthProfile(String userId) async {
+    try {
+      print('===== USER HEALTH PROFILE REQUEST =====');
+      print('Fetching health profile for user: $userId');
+
+      final String userUrl = '$_baseUrl/users/$userId/health-profile';
+      print('Sending request to: $userUrl');
+
+      final response = await http.get(
+        Uri.parse(userUrl),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 5));
+
+      print('User profile response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        print('User health profile received successfully');
+        return data;
+      } else {
+        print('Failed to get user health profile: HTTP ${response.statusCode}');
+        print('Response body: ${response.body}');
+
+        // Use mock data for testing
+        if (_shouldUseMockData()) {
+          print('Using mock user health profile as fallback');
+          return _getMockUserHealthProfile(userId);
+        }
+        return null;
+      }
+    } catch (e) {
+      print('Exception in getUserHealthProfile: $e');
+
+      // Return mock data for testing
+      if (_shouldUseMockData()) {
+        print('Using mock user health profile due to exception');
+        return _getMockUserHealthProfile(userId);
+      }
+      return null;
+    } finally {
+      print('===== END USER HEALTH PROFILE REQUEST =====');
+    }
+  }
+
+  // Helper method to generate a mock user health profile for testing
+  Map<String, dynamic> _getMockUserHealthProfile(String userId) {
+    return {
+      'userId': userId,
+      'height': 170 + _random.nextInt(30),
+      'weight': 60 + _random.nextInt(40),
+      'allergies': _random.nextBool() ? ['Gluten', 'Lactose'] : [],
+      'conditions': _random.nextBool() ? ['Diabète', 'Hypertension'] : [],
+      'dietaryPreferences': _random.nextBool() ? ['Végétarien'] : [],
+      'isMockData': true
+    };
+  }
+
+  // Debug method to check if a barcode exists in the database
+  Future<void> debugCheckBarcode(String barcode) async {
+    try {
+      final String checkUrl = '$_baseUrl/scan/check/$barcode';
+      print('Debug - Sending check request to: $checkUrl');
+
+      final existsResponse = await http.get(
+        Uri.parse(checkUrl),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 5));
+
+      print('Debug - Check response status code: ${existsResponse.statusCode}');
+      print('Debug - Check response body: ${existsResponse.body}');
+
+      if (existsResponse.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(existsResponse.body);
+        final bool productExists = data['exists'] == true;
+        print('Debug - Product exists according to API: $productExists');
+
+        if (productExists) {
+          final String productUrl = '$_baseUrl/scan/barcode/$barcode';
+          print('Debug - Product exists, would fetch from: $productUrl');
+        }
+      }
+    } catch (e) {
+      print('Debug - Exception checking barcode: $e');
+    }
   }
 }

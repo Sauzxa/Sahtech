@@ -316,11 +316,22 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
         ),
       );
 
-      // Fetch product information using the barcode from Spring Boot backend
+      print('===== BARCODE SCAN DEBUG =====');
+      print('Starting product workflow for barcode: $barcode');
+
+      // Debug helper to check product existence directly
+      await _apiService.debugCheckBarcode(barcode);
+
+      // Step 1: Fetch product information using the barcode from Spring Boot backend
+      print('Step 1: Fetching product information');
+      print('Sending request to backend for barcode: $barcode');
       final product = await _apiService.getProductByBarcode(barcode);
 
       if (product != null) {
         if (!mounted) return;
+        print('Product found: ${product.name}');
+        print('Product ID: ${product.id}');
+        print('Image URL: ${product.imageUrl}');
 
         // Show snackbar indicating the product was found in the database
         ScaffoldMessenger.of(context).showSnackBar(
@@ -337,9 +348,35 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
           ),
         );
 
-        // If we have a current user ID, request a personalized recommendation
+        // Step 2: Get user health profile if user is logged in
+        Map<String, dynamic>? userHealthProfile;
         if (_currentUserId != null) {
           try {
+            print('Step 2: Fetching user health profile');
+            print('User ID: $_currentUserId');
+
+            userHealthProfile =
+                await _apiService.getUserHealthProfile(_currentUserId!);
+
+            if (userHealthProfile != null) {
+              print('User health profile retrieved successfully');
+            } else {
+              print('Failed to get user health profile');
+            }
+          } catch (e) {
+            print('Error fetching user health profile: $e');
+            // Continue even if health profile fetch fails
+          }
+        } else {
+          print('No user ID available, skipping health profile fetch');
+        }
+
+        // Step 3: Get personalized recommendation if user is logged in
+        if (_currentUserId != null) {
+          try {
+            print('Step 3: Requesting personalized recommendation');
+            print('User ID: $_currentUserId, Product ID: ${product.id}');
+
             // Request recommendation from Spring Boot backend which calls the AI service
             final recommendationResponse =
                 await _apiService.getPersonalizedRecommendation(
@@ -347,45 +384,68 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
               product.id,
             );
 
-            // Update the product with the recommendation
+            // Step 4: Update the product with the recommendation
             if (recommendationResponse != null &&
                 recommendationResponse.containsKey('recommendation')) {
+              print('Step 4: Recommendation received and applied to product');
               product.aiRecommendation =
                   recommendationResponse['recommendation'];
               product.recommendationType =
                   recommendationResponse.containsKey('recommendation_type')
                       ? recommendationResponse['recommendation_type']
                       : 'caution'; // Default to caution if not provided
+
+              print('Recommendation type: ${product.recommendationType}');
+            } else {
+              print('No recommendation data received');
             }
           } catch (recommendationError) {
             print(
                 'Failed to get personalized recommendation: $recommendationError');
             // Continue even if recommendation fails - we'll just show the product without a recommendation
           }
+        } else {
+          print('No user ID available, skipping personalized recommendation');
         }
 
-        // Show the product preview dialog
+        // Step 5: Show the product preview dialog
+        print('Step 5: Showing product preview');
         _showProductPreview(product);
       } else {
         if (!mounted) return;
+        print('Product not found for barcode: $barcode');
 
         // Show error message for product not found
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
-                'Produit non trouvé dans notre base de données. Veuillez réessayer ou contacter votre nutritionniste.'),
+                'Produit non trouvé dans notre base de données. Veuillez réessayer avec un autre produit.'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 5),
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {
+                // Dismiss the snackbar
+              },
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10.r),
             ),
             margin: EdgeInsets.all(16.w),
           ),
         );
+
+        // Stay in the scanner screen, reset the scanning state
+        setState(() {
+          _isScanning = true;
+          _lastScannedBarcode = null;
+        });
       }
     } catch (e) {
       if (!mounted) return;
+      print('Error in _processBarcodeResult: $e');
 
       // Show error message for any other error
       ScaffoldMessenger.of(context).showSnackBar(
@@ -405,6 +465,7 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
           _isProcessingBarcode = false;
         });
       }
+      print('Barcode processing completed for: $barcode');
     }
   }
 
@@ -514,27 +575,13 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
 
             SizedBox(height: 24.h),
 
-            // Add product button
+            // View Details button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context); // Close the bottom sheet
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ProductRecommendationScreen(product: product),
-                    ),
-                  ).then((_) {
-                    // Reset scan state to enable new scans after returning
-                    if (mounted) {
-                      setState(() {
-                        _isScanning = true;
-                        _lastScannedBarcode = null;
-                      });
-                    }
-                  });
+                  _navigateToRecommendationScreen(product);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.lightTeal,
@@ -549,7 +596,7 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
                   ),
                 ),
                 child: Text(
-                  'Ajouter produit',
+                  'Voir détails',
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
@@ -562,23 +609,28 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
       ),
     );
 
-    // After 5 seconds, navigate to the recommendation screen automatically if the sheet is still showing
-    Future.delayed(const Duration(seconds: 5), () {
+    // After 3 seconds, navigate to the recommendation screen automatically if the sheet is still showing
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted && Navigator.of(context).canPop()) {
         Navigator.pop(context); // Close the bottom sheet if still open
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProductRecommendationScreen(product: product),
-          ),
-        ).then((_) {
-          // Reset scan state to enable new scans after returning
-          if (mounted) {
-            setState(() {
-              _isScanning = true;
-              _lastScannedBarcode = null;
-            });
-          }
+        _navigateToRecommendationScreen(product);
+      }
+    });
+  }
+
+  // Helper method to navigate to recommendation screen
+  void _navigateToRecommendationScreen(ProductModel product) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductRecommendationScreen(product: product),
+      ),
+    ).then((_) {
+      // Reset scan state to enable new scans after returning
+      if (mounted) {
+        setState(() {
+          _isScanning = true;
+          _lastScannedBarcode = null;
         });
       }
     });
