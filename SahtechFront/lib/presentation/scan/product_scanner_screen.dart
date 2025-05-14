@@ -182,18 +182,8 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
     try {
       setState(() => _isFlashOn = !_isFlashOn);
 
-      // Dispose and reinitialize the controller to ensure torch state is updated
-      _scannerController.dispose();
-      _scannerController = MobileScannerController(
-        detectionSpeed: DetectionSpeed.normal,
-        facing: CameraFacing.back,
-        torchEnabled: _isFlashOn,
-        formats: [
-          BarcodeFormat.ean13,
-          BarcodeFormat.ean8,
-          BarcodeFormat.qrCode
-        ],
-      );
+      // Update torch state without recreating the controller
+      _scannerController.toggleTorch();
 
       // Trigger platform-specific vibration feedback
       HapticFeedback.lightImpact();
