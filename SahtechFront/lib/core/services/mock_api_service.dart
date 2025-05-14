@@ -103,29 +103,51 @@ class MockApiService {
 
   // PRODUCT API
 
-    // Spring Boot API base URL
+  // Spring Boot API base URL
   final String _baseUrl = 'http://192.168.1.69:8080/API/Sahtech';
 
   /// Get product by barcode from the Spring Boot backend
   Future<ProductModel?> getProductByBarcode(String barcode) async {
     try {
-      print('Fetching product with barcode: $barcode from $_baseUrl/produit/barcode/$barcode');
-      final response = await http.get(
-        Uri.parse('$_baseUrl/produit/barcode/$barcode'),
+      // First check if the product exists in the database
+      print(
+          'Checking if product with barcode $barcode exists at $_baseUrl/scan/check/$barcode');
+      final existsResponse = await http.get(
+        Uri.parse('$_baseUrl/scan/check/$barcode'),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(const Duration(seconds: 3));
 
-      print('Response status code: ${response.statusCode}');
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        print('Product data received: ${data.toString().substring(0, min(100, data.toString().length))}...');
-        return ProductModel.fromJson(data);
-      } else if (response.statusCode == 404) {
-        print('Product not found in database');
-        return null;
+      print('Exists response status code: ${existsResponse.statusCode}');
+      bool productExists = false;
+
+      if (existsResponse.statusCode == 200) {
+        final data = json.decode(existsResponse.body);
+        productExists = data['exists'] == true;
+        print('Product exists: $productExists');
+      }
+
+      // If the product exists, fetch its details
+      if (productExists) {
+        print(
+            'Fetching product with barcode: $barcode from $_baseUrl/scan/barcode/$barcode');
+        final response = await http.get(
+          Uri.parse('$_baseUrl/scan/barcode/$barcode'),
+          headers: {'Content-Type': 'application/json'},
+        ).timeout(const Duration(seconds: 5));
+
+        print('Response status code: ${response.statusCode}');
+
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          print(
+              'Product data received: ${data.toString().substring(0, min(100, data.toString().length))}...');
+          return ProductModel.fromJson(data);
+        } else {
+          print('Unexpected response status: ${response.statusCode}');
+          return null;
+        }
       } else {
-        print('Unexpected response status: ${response.statusCode}');
+        print('Product not found in database');
         return null;
       }
     } catch (e) {
@@ -142,7 +164,8 @@ class MockApiService {
   ) async {
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/recommendation/user/$userId/data?productId=$productId'),
+        Uri.parse(
+            '$_baseUrl/recommendation/user/$userId/data?productId=$productId'),
         headers: {'Content-Type': 'application/json'},
       ).timeout(const Duration(seconds: 10));
 
@@ -156,7 +179,8 @@ class MockApiService {
       print('Error getting recommendation: $e');
       // Return a mock recommendation for testing
       return {
-        'recommendation': 'Avec votre profile de santé, ce produit est sûr pour votre consommation. Il ne contient pas d\'allergènes qui pourraient déclencher vos allergies connues.'
+        'recommendation':
+            'Avec votre profile de santé, ce produit est sûr pour votre consommation. Il ne contient pas d\'allergènes qui pourraient déclencher vos allergies connues.'
       };
     }
   }
@@ -198,66 +222,34 @@ class MockApiService {
 
   /// Scan a product by barcode
   Future<ProductModel?> scanProduct(String barcode, {String? userId}) async {
-    await _simulateNetworkDelay();
-    _maybeThrowError();
-
     // If no userId is provided, we can't associate the product with a user
     if (userId == null || userId.isEmpty) {
       print(
           'Warning: Scanning product without a userId. Product count won\'t be updated.');
     }
 
-    // Check if the product already exists
-    ProductModel? existingProduct;
-    try {
-      // First check global products
-      existingProduct = _products.firstWhere(
-        (product) => product.barcode == barcode,
-      );
-    } catch (e) {
-      // Product not found in global products
-      existingProduct = null;
-    }
+    // Always use the real API instead of random or mock data
+    final apiProduct = await getProductByBarcode(barcode);
 
-    // If we have a userId, check user-specific products
-    if (userId != null && userId.isNotEmpty) {
-      // Make sure the user has a products list
-      _userProductsMap.putIfAbsent(userId, () => []);
+    if (apiProduct != null) {
+      // Add to global products for consistency
+      _products.add(apiProduct);
 
-      // Check if the user already has this product
-      try {
-        existingProduct = _userProductsMap[userId]!.firstWhere(
-          (product) => product.barcode == barcode,
-        );
-      } catch (e) {
-        // User doesn't have this product yet
+      // If we have a userId, add to user-specific products
+      if (userId != null && userId.isNotEmpty) {
+        // Make sure the user has a products list
+        _userProductsMap.putIfAbsent(userId, () => []);
+        _userProductsMap[userId]!.add(apiProduct);
+        print(
+            'Added product from API to user $userId\'s products. New count: ${_userProductsMap[userId]!.length}');
       }
+
+      return apiProduct;
+    } else {
+      // If the product is not found in the API, return null
+      print('Product not found in API: $barcode');
+      return null;
     }
-
-    // Instead of creating a random product, fetch from the API
-    if (existingProduct == null) {
-      // Try to get the product from the actual API
-      final apiProduct = await getProductByBarcode(barcode);
-      
-      if (apiProduct != null) {
-        // Add to global products for consistency
-        _products.add(apiProduct);
-
-        // If we have a userId, add to user-specific products
-        if (userId != null && userId.isNotEmpty) {
-          _userProductsMap[userId]!.add(apiProduct);
-          print('Added product from API to user $userId\'s products. New count: ${_userProductsMap[userId]!.length}');
-        }
-        
-        return apiProduct;
-      } else {
-        // If the product is not found in the API either, return null
-        print('Product not found in API: $barcode');
-        return null;
-      }
-    }
-
-    return existingProduct;
   }
 
   // Helper method to generate a random product

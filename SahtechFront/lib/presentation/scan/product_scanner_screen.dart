@@ -9,6 +9,7 @@ import 'package:sahtech/core/services/mock_api_service.dart';
 import 'package:sahtech/core/utils/models/product_model.dart';
 import 'package:sahtech/presentation/scan/product_recommendation_screen.dart';
 import 'package:sahtech/core/services/storage_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ProductScannerScreen extends StatefulWidget {
   const ProductScannerScreen({Key? key}) : super(key: key);
@@ -24,29 +25,26 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
   final TextEditingController _barcodeController = TextEditingController();
 
   bool _isFlashOn = false;
-  bool _isScanning = true;
+  bool _isScanning = false;
   bool _isProcessingBarcode = false;
   bool _isQrMode = false;
+  bool _isCameraInitialized = false;
   String? _lastScannedBarcode;
   ProductModel? _scannedProduct;
   String? _currentUserId;
 
   late MobileScannerController _scannerController;
-
-  // Animation controller for the scanning effect
   late AnimationController _animationController;
   late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
-    _scannerController = MobileScannerController(
-      detectionSpeed: DetectionSpeed.noDuplicates,
-      facing: CameraFacing.back,
-      torchEnabled: _isFlashOn,
-    );
 
-    // Setup animation for the scanning line
+    // Mark that we've seen the camera screen
+    StorageService().setHasSeenCameraScreen(true);
+
+    // Setup animation controller first
     _animationController = AnimationController(
       duration: const Duration(seconds: 2, milliseconds: 500),
       vsync: this,
@@ -59,6 +57,109 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
 
     // Get the current user ID
     _getUserId();
+
+    // Check if camera is available before initializing
+    Permission.camera.status.then((status) {
+      if (status.isGranted && mounted) {
+        // Camera permission is already granted, initialize after a short delay
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            _initializeCamera();
+          }
+        });
+      } else if (mounted) {
+        // Request camera permission
+        Permission.camera.request().then((result) {
+          if (result.isGranted && mounted) {
+            _initializeCamera();
+          } else {
+            // Show error message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                    'L\'accès à la caméra est nécessaire pour scanner des produits.'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                margin: EdgeInsets.all(16.w),
+              ),
+            );
+          }
+        });
+      }
+    });
+  }
+
+  Future<void> _initializeCamera() async {
+    try {
+      // Check camera permission
+      final status = await Permission.camera.status;
+
+      if (!status.isGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                  'L\'accès à la caméra est nécessaire pour scanner des produits.'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              margin: EdgeInsets.all(16.w),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Dispose previous controller if it exists
+      if (_isCameraInitialized) {
+        await _scannerController.dispose();
+      }
+
+      // Use a simpler configuration with normal detection speed
+      _scannerController = MobileScannerController(
+        detectionSpeed: DetectionSpeed.normal,
+        facing: CameraFacing.back,
+        torchEnabled: _isFlashOn,
+        // Explicit formats help with optimization
+        formats: [
+          BarcodeFormat.ean13,
+          BarcodeFormat.ean8,
+          BarcodeFormat.qrCode
+        ],
+      );
+
+      // Add delay to ensure proper initialization
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (mounted) {
+        setState(() {
+          _isScanning = true;
+          _isCameraInitialized = true;
+        });
+      }
+
+      print('Camera initialized successfully');
+    } catch (e) {
+      print('Error initializing camera: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur d\'initialisation de la caméra: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            margin: EdgeInsets.all(16.w),
+          ),
+        );
+      }
+    }
   }
 
   // Get the current user ID from storage
@@ -69,7 +170,9 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
 
   @override
   void dispose() {
-    _scannerController.dispose();
+    if (_isCameraInitialized) {
+      _scannerController.dispose();
+    }
     _barcodeController.dispose();
     _animationController.dispose();
     super.dispose();
@@ -82,9 +185,14 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
       // Dispose and reinitialize the controller to ensure torch state is updated
       _scannerController.dispose();
       _scannerController = MobileScannerController(
-        detectionSpeed: DetectionSpeed.noDuplicates,
+        detectionSpeed: DetectionSpeed.normal,
         facing: CameraFacing.back,
         torchEnabled: _isFlashOn,
+        formats: [
+          BarcodeFormat.ean13,
+          BarcodeFormat.ean8,
+          BarcodeFormat.qrCode
+        ],
       );
 
       // Trigger platform-specific vibration feedback
@@ -224,24 +332,44 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
       if (product != null) {
         if (!mounted) return;
 
+        // Show snackbar indicating the product was found in the database
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Produit "${product.name}" trouvé dans notre base de données!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            margin: EdgeInsets.all(16.w),
+          ),
+        );
+
         // If we have a current user ID, request a personalized recommendation
         if (_currentUserId != null) {
           try {
             // Request recommendation from Spring Boot backend which calls the AI service
-            final recommendationResponse = await _apiService.getPersonalizedRecommendation(
+            final recommendationResponse =
+                await _apiService.getPersonalizedRecommendation(
               _currentUserId!,
               product.id,
             );
 
             // Update the product with the recommendation
-            if (recommendationResponse != null && recommendationResponse.containsKey('recommendation')) {
-              product.aiRecommendation = recommendationResponse['recommendation'];
-              product.recommendationType = recommendationResponse.containsKey('recommendation_type') 
-                ? recommendationResponse['recommendation_type'] 
-                : 'caution'; // Default to caution if not provided
+            if (recommendationResponse != null &&
+                recommendationResponse.containsKey('recommendation')) {
+              product.aiRecommendation =
+                  recommendationResponse['recommendation'];
+              product.recommendationType =
+                  recommendationResponse.containsKey('recommendation_type')
+                      ? recommendationResponse['recommendation_type']
+                      : 'caution'; // Default to caution if not provided
             }
           } catch (recommendationError) {
-            print('Failed to get personalized recommendation: $recommendationError');
+            print(
+                'Failed to get personalized recommendation: $recommendationError');
             // Continue even if recommendation fails - we'll just show the product without a recommendation
           }
         }
@@ -254,7 +382,8 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
         // Show error message for product not found
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Produit non trouvé dans notre base de données. Veuillez réessayer ou contacter votre nutritionniste.'),
+            content: const Text(
+                'Produit non trouvé dans notre base de données. Veuillez réessayer ou contacter votre nutritionniste.'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 5),
@@ -489,14 +618,45 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
         children: [
           // Scanner
           if (_isScanning)
-            MobileScanner(
-              controller: _scannerController,
-              onDetect: (capture) {
-                final List<Barcode> barcodes = capture.barcodes;
-                if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
-                  _processBarcodeResult(barcodes.first.rawValue!);
-                }
-              },
+            Container(
+              color: Colors.black,
+              child: MobileScanner(
+                controller: _scannerController,
+                onDetect: (capture) {
+                  final List<Barcode> barcodes = capture.barcodes;
+                  if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
+                    _processBarcodeResult(barcodes.first.rawValue!);
+                  }
+                },
+                errorBuilder: (context, error, child) {
+                  return Container(
+                    color: Colors.black,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.camera_alt_outlined,
+                              size: 64, color: Colors.white),
+                          SizedBox(height: 16),
+                          Text(
+                            'Erreur de caméra: ${error.errorCode}',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: _initializeCamera,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.lightTeal,
+                            ),
+                            child: Text('Réessayer'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                fit: BoxFit.cover,
+              ),
             ),
 
           // UI Overlay
@@ -736,6 +896,34 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
               ],
             ),
           ),
+
+          // Camera debug tools - can be removed in production
+          if (_isScanning && _isCameraInitialized)
+            Positioned(
+              bottom: 80,
+              left: 0,
+              right: 0,
+              child: Opacity(
+                opacity: 0.8,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        // Force camera reload
+                        _initializeCamera();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.lightTeal,
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                      ),
+                      child: Text('Recharger caméra',
+                          style: TextStyle(fontSize: 12)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
           // Loading indicator
           if (_isProcessingBarcode)

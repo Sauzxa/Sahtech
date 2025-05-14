@@ -227,8 +227,21 @@ class _HomeScreenState extends State<HomeScreen> {
     final status = await Permission.camera.status;
 
     if (status.isGranted || status.isLimited) {
-      // Permission already granted, go directly to scanner if we've shown the intro screen before
-      if (hasSeenCameraScreen) {
+      // Permission already granted, go directly to scanner regardless of whether camera screen was shown before
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ProductScannerScreen(),
+        ),
+      ).then((_) {
+        print('Returned from scan screen, refreshing data...');
+        _loadData();
+      });
+    } else if (status.isDenied) {
+      // First time requesting or previously denied but not permanently
+      final result = await Permission.camera.request();
+      if (result.isGranted || result.isLimited) {
+        // Permission was just granted - go directly to scanner
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -238,46 +251,6 @@ class _HomeScreenState extends State<HomeScreen> {
           print('Returned from scan screen, refreshing data...');
           _loadData();
         });
-      } else {
-        // First time - show the camera access screen
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const CameraAccessScreen(),
-          ),
-        ).then((_) {
-          print('Returned from scan screen, refreshing data...');
-          _loadData();
-        });
-      }
-    } else if (status.isDenied) {
-      // First time requesting or previously denied but not permanently
-      final result = await Permission.camera.request();
-      if (result.isGranted || result.isLimited) {
-        // Permission was just granted
-        if (hasSeenCameraScreen) {
-          // Skip intro if already seen
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ProductScannerScreen(),
-            ),
-          ).then((_) {
-            print('Returned from scan screen, refreshing data...');
-            _loadData();
-          });
-        } else {
-          // Show intro first time
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const CameraAccessScreen(),
-            ),
-          ).then((_) {
-            print('Returned from scan screen, refreshing data...');
-            _loadData();
-          });
-        }
       } else if (result.isPermanentlyDenied) {
         // User clicked "never ask again", send them to settings
         if (mounted) {

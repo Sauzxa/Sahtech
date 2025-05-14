@@ -13,6 +13,8 @@ import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/auth/SigninUser.dart';
 import 'package:sahtech/core/auth/auth_check.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 // Device preview removed as requested
 // first from teckInov
 void main() async {
@@ -21,6 +23,18 @@ void main() async {
   // Initialize translation service
   final translationService = TranslationService();
   await translationService.init();
+
+  // Request camera permission early to prevent black screen issues
+  try {
+    final cameraStatus = await Permission.camera.status;
+    if (cameraStatus.isDenied) {
+      await Permission.camera.request();
+    }
+    print(
+        'Camera permission status at app startup: ${await Permission.camera.status}');
+  } catch (e) {
+    print('Error requesting camera permission: $e');
+  }
 
   // For debugging: Print auth status at startup
   try {
