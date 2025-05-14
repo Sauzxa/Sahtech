@@ -105,10 +105,11 @@ class MockApiService {
 
   // Spring Boot API base URL
   final String _baseUrl =
-      'http://192.168.169.8080/API/Sahtech'; // Actual backend IP address
+      'http://192.168.1.69:8080/API/Sahtech'; // Actual backend IP address
   // Alternative URLs for different environments:
   // final String _baseUrl = 'http://10.0.2.2:8080/API/Sahtech'; // Use 10.0.2.2 for Android emulator to connect to host machine's localhost
   // final String _baseUrl = 'http://localhost:8080/API/Sahtech'; // For web testing
+  // final String _baseUrl = 'http://192.168.169.8080/API/Sahtech'; // Testing IP
 
   /// Get product by barcode from the Spring Boot backend
   Future<ProductModel?> getProductByBarcode(String barcode) async {

@@ -32,6 +32,7 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
   String? _lastScannedBarcode;
   ProductModel? _scannedProduct;
   String? _currentUserId;
+  DateTime _lastScanTime = DateTime.now(); // Add cooldown timer
 
   late MobileScannerController _scannerController;
   late AnimationController _animationController;
@@ -288,16 +289,33 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
   }
 
   Future<void> _processBarcodeResult(String barcode) async {
+    // Clear any existing snackbars to prevent stacking
+    ScaffoldMessenger.of(context).clearSnackBars();
+
     // Avoid processing the same barcode multiple times in rapid succession
     if (_isProcessingBarcode || _lastScannedBarcode == barcode) {
       return;
     }
+
+    // Add cooldown check - prevent scanning the same barcode within 5 seconds
+    final now = DateTime.now();
+    if (_lastScannedBarcode == barcode &&
+        now.difference(_lastScanTime).inSeconds < 5) {
+      print('Cooldown active for barcode: $barcode');
+      return;
+    }
+
+    // Update scan time and proceed
+    _lastScanTime = now;
 
     try {
       setState(() {
         _lastScannedBarcode = barcode;
         _isProcessingBarcode = true;
       });
+
+      // Pause the scanner while processing
+      _pauseScanner();
 
       // Haptic feedback for successful scan
       HapticFeedback.mediumImpact();
@@ -427,19 +445,28 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
               label: 'OK',
               textColor: Colors.white,
               onPressed: () {
-                // Dismiss the snackbar
+                // Dismiss the snackbar and resume scanning
+                _resumeScanner();
               },
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10.r),
             ),
             margin: EdgeInsets.all(16.w),
+            onVisible: () {
+              // Pause scanner while snackbar is visible
+              _pauseScanner();
+            },
           ),
         );
 
-        // Stay in the scanner screen, reset the scanning state
+        // Add a delay before resuming scanning
+        Future.delayed(const Duration(seconds: 3), () {
+          _resumeScanner();
+        });
+
+        // Reset the scanning state
         setState(() {
-          _isScanning = true;
           _lastScannedBarcode = null;
         });
       }
@@ -667,6 +694,7 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
                 onDetect: (capture) {
                   final List<Barcode> barcodes = capture.barcodes;
                   if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
+                    print('Raw barcode detected: ${barcodes.first.rawValue}');
                     _processBarcodeResult(barcodes.first.rawValue!);
                   }
                 },
@@ -1003,6 +1031,22 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
         ),
       ),
     );
+  }
+
+  // Add method to pause scanner
+  void _pauseScanner() {
+    setState(() {
+      _isScanning = false;
+    });
+  }
+
+  // Add method to resume scanner
+  void _resumeScanner() {
+    if (mounted) {
+      setState(() {
+        _isScanning = true;
+      });
+    }
   }
 }
 
