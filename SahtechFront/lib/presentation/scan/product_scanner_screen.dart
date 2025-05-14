@@ -897,34 +897,6 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
             ),
           ),
 
-          // Camera debug tools - can be removed in production
-          if (_isScanning && _isCameraInitialized)
-            Positioned(
-              bottom: 80,
-              left: 0,
-              right: 0,
-              child: Opacity(
-                opacity: 0.8,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        // Force camera reload
-                        _initializeCamera();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.lightTeal,
-                        padding: EdgeInsets.symmetric(horizontal: 10),
-                      ),
-                      child: Text('Recharger caméra',
-                          style: TextStyle(fontSize: 12)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
           // Loading indicator
           if (_isProcessingBarcode)
             Container(
