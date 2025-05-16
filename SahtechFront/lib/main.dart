@@ -17,7 +17,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:sahtech/core/services/storage_service.dart';
 
 // Device preview removed as requested
-// first from teckInov
+// first
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
