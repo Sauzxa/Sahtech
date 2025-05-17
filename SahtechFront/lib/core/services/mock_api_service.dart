@@ -117,20 +117,10 @@ class MockApiService {
       print('===== PRODUCT SCAN DEBUG =====');
       print('Starting product scan for barcode: $barcode');
 
-      // Immediately clean and normalize the barcode
+      // Normalize the barcode by removing non-digit characters and leading zeros
       String cleanBarcode = barcode.replaceAll(RegExp(r'\D'), '');
       cleanBarcode = cleanBarcode.replaceAll(RegExp(r'^0+'), '');
-
-      // Try to parse as a number
-      int? numericBarcode;
-      try {
-        numericBarcode = int.parse(cleanBarcode);
-        cleanBarcode =
-            numericBarcode.toString(); // Ensure it's properly formatted
-        print('Using numeric barcode: $cleanBarcode');
-      } catch (e) {
-        print('Using string barcode: $cleanBarcode');
-      }
+      print('Using normalized barcode: $cleanBarcode');
 
       // Debugging the full URL being accessed
       final String checkUrl = '$_baseUrl/scan/check/$cleanBarcode';
@@ -162,7 +152,7 @@ class MockApiService {
       print(
           'Product check response: ${existsResponse.statusCode} - ${existsResponse.body}');
 
-      // Try both formats: barcode and codeBarre
+      // Try alternative format with query parameter
       final alternativeCheckUrl =
           '$_baseUrl/scan/check?codeBarre=$cleanBarcode';
       print('Trying alternative URL (GET): $alternativeCheckUrl');
