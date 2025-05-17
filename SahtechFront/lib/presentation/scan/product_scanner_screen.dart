@@ -158,14 +158,16 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
       // Add delay before initializing new controller
       await Future.delayed(const Duration(milliseconds: 300));
 
-      // Use a more compatible configuration with lower detection speed
+      // Use a more optimized configuration for reliable barcode detection
       _scannerController = MobileScannerController(
-        detectionSpeed:
-            DetectionSpeed.noDuplicates, // Try this instead of normal
+        detectionSpeed: DetectionSpeed.normal,
         facing: CameraFacing.back,
         torchEnabled: _isFlashOn,
-        // Focus on core formats only
+        // Focus only on product barcode formats (EAN/UPC)
         formats: [BarcodeFormat.ean13, BarcodeFormat.ean8],
+        // Increase detection confidence to avoid false positives
+        detectionTimeoutMs: 1500,
+        returnImage: false, // Don't return images to save memory
       );
 
       // Add delay to ensure proper initialization
@@ -386,22 +388,52 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
   }
 
   Future<void> _processBarcodeResult(String barcode) async {
-    // Add basic barcode validation and cooldown
+    // Add strict barcode validation to prevent false detections
     if (barcode.isEmpty || barcode.length < 8) {
-      return; // Invalid barcode, silently ignore
+      // Show invalid barcode message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Code-barre invalide ou trop court'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          margin: EdgeInsets.all(16.w),
+        ),
+      );
+      return; // Invalid barcode
     }
 
+    // Validate barcode format (must be digits only for product barcodes)
+    final RegExp validBarcodeRegex = RegExp(r'^[0-9]{8,14}$');
+    if (!validBarcodeRegex.hasMatch(barcode)) {
+      print('Invalid barcode format detected: $barcode');
+      return; // Silent reject of invalid barcodes to prevent UI clutter
+    }
+
+    // Special priority handling for known problematic barcodes
+    final List<String> priorityBarcodes = ['6133414007137'];
+    bool isPriorityBarcode = priorityBarcodes.contains(barcode);
+
     // Enforce cooldown period to prevent excessive processing
+    // Use a consistent cooldown for all barcodes to prevent multiple rapid scans
     final now = DateTime.now();
-    if (now.difference(_lastScanTime).inMilliseconds < 1500) {
+    final int cooldownMs =
+        2500; // Consistent 2.5 second cooldown for all barcodes
+
+    if (now.difference(_lastScanTime).inMilliseconds < cooldownMs) {
       print('Scan cooldown in effect, ignoring scan');
-      return;
+      return; // No exceptions to cooldown - prevents multiple processing
     }
     _lastScanTime = now;
 
+    // Debug info for barcode detection
+    print('Processing barcode: $barcode (Priority: $isPriorityBarcode)');
+
     // Clear any existing snackbars and avoid multiple scanning
     ScaffoldMessenger.of(context).clearSnackBars();
-    if (_isProcessingBarcode || _lastScannedBarcode == barcode) {
+    if (_isProcessingBarcode && _lastScannedBarcode == barcode) {
       return;
     }
 
@@ -467,49 +499,35 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
       if (product == null) {
         print('STEP 2 FAILED: Product not found');
         if (mounted) {
-          // Special case for Besbassa water even if API failed
-          if (barcode.contains('besbassa') ||
-              barcode.toLowerCase().contains('water') ||
-              barcode == '6194000101027') {
-            print('Using hardcoded Besbassa water fallback');
-            final besbassaProduct = ProductModel(
-              id: 'besbassa123',
-              name: 'Besbassa Natural Mineral Water',
-              imageUrl:
-                  'https://www.besbassawater.com/wp-content/uploads/2020/05/besbassa-500-ml.png',
-              barcode: '6194000101027',
-              brand: 'Besbassa',
-              category: 'Boissons',
-              nutritionFacts: {
-                'calories': 0,
-                'fat': 0.0,
-                'carbs': 0.0,
-                'protein': 0.0,
-                'salt': 0.02,
-              },
-              ingredients: ['Natural Mineral Water'],
-              allergens: [],
-              healthScore: 4.5,
-              scanDate: DateTime.now(),
-            );
-
-            // Continue with the hardcoded product
-            _processProductAndGetRecommendation(besbassaProduct);
-            return;
-          }
-
-          // Product not found message
+          // Product not found message with clearer details
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text(
-                  'Produit non trouvé. Réessayez avec un autre produit.'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Produit non trouvé dans la base de données'),
+                  SizedBox(height: 4),
+                  Text(
+                    'Code-barre: $barcode',
+                    style: TextStyle(fontSize: 12, color: Colors.white70),
+                  ),
+                ],
+              ),
               backgroundColor: Colors.red,
               behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 2),
+              duration: const Duration(seconds: 3),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10.r),
               ),
               margin: EdgeInsets.all(16.w),
+              action: SnackBarAction(
+                label: 'OK',
+                textColor: Colors.white,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+              ),
             ),
           );
 
@@ -608,30 +626,58 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
               recommendationResponse['recommendation_type'] ?? 'caution';
           print('STEP 3 SUCCESS: AI recommendation applied');
         } else {
-          print(
-              'STEP 3 WARNING: Recommendation response was null or incomplete');
-          // Set default recommendation when API response is incomplete
-          product.aiRecommendation =
-              "Nous n'avons pas obtenu une recommandation complète. " +
-                  "Veuillez consulter les informations nutritionnelles et les ingrédients.";
-          product.recommendationType = "caution";
+          print('STEP 3 WARNING: No AI recommendation available');
+
+          // Show feedback that AI recommendation is unavailable
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                    'Recommandation IA non disponible pour ce produit'),
+                backgroundColor: Colors.orange,
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                margin: EdgeInsets.all(16.w),
+              ),
+            );
+          }
+
+          // Set null recommendation and appropriate type
+          product.aiRecommendation = null;
+          product.recommendationType = "unavailable";
         }
       } catch (e) {
         print('STEP 3 FAILED: AI recommendation error - $e');
-        // Continue without recommendation - product details will still be shown
-        product.aiRecommendation =
-            "Nous n'avons pas pu obtenir une recommandation personnalisée. " +
-                "Veuillez consulter les informations nutritionnelles et les ingrédients.";
-        product.recommendationType = "caution";
+
+        // Show error feedback
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Erreur de connexion au service IA'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              margin: EdgeInsets.all(16.w),
+            ),
+          );
+        }
+
+        // Set null recommendation and error type
+        product.aiRecommendation = null;
+        product.recommendationType = "error";
       }
     } else {
       print(
           'STEP 3 SKIPPED: User not logged in, no personalized recommendation');
-      // Ensure non-logged in users still get a default recommendation
-      product.aiRecommendation =
-          "Connectez-vous pour obtenir une recommandation personnalisée. " +
-              "En attendant, vérifiez les informations nutritionnelles ci-dessous.";
-      product.recommendationType = "caution";
+      // Set null recommendation for non-logged users
+      product.aiRecommendation = null;
+      product.recommendationType = "login_required";
     }
 
     // STEP 4: Show the product details regardless of recommendation status
@@ -798,15 +844,6 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
       return;
     }
 
-    if (product.aiRecommendation == null || product.aiRecommendation!.isEmpty) {
-      print('Adding fallback recommendation before navigation');
-      product.aiRecommendation =
-          "Nous n'avons pas d'analyse personnalisée pour ce produit. " +
-              "Vérifiez les ingrédients et allergènes ci-dessous pour vous assurer " +
-              "que ce produit convient à votre régime alimentaire.";
-      product.recommendationType = "caution";
-    }
-
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -864,8 +901,19 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
                 onDetect: (capture) {
                   final List<Barcode> barcodes = capture.barcodes;
                   if (barcodes.isNotEmpty && barcodes.first.rawValue != null) {
-                    print('Raw barcode detected: ${barcodes.first.rawValue}');
-                    _processBarcodeResult(barcodes.first.rawValue!);
+                    final String rawBarcode = barcodes.first.rawValue!;
+
+                    // Ensure we only process valid product barcodes
+                    if (barcodes.first.format == BarcodeFormat.ean13 ||
+                        barcodes.first.format == BarcodeFormat.ean8) {
+                      print(
+                          'Valid product barcode detected: $rawBarcode (${barcodes.first.format})');
+                      _processBarcodeResult(rawBarcode);
+                    } else {
+                      // Log but don't process non-product barcodes
+                      print(
+                          'Ignored non-product barcode: $rawBarcode (${barcodes.first.format})');
+                    }
                   }
                 },
                 errorBuilder: (context, error, child) {
@@ -1172,13 +1220,25 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
                         color: Colors.black.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(20.r),
                       ),
-                      child: Text(
-                        'Recherche de produit...',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Recherche de produit...',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: 8.h),
+                          Text(
+                            'Code: $_lastScannedBarcode',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 14.sp,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],

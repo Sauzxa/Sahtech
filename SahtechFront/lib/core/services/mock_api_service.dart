@@ -6,6 +6,7 @@ import 'package:sahtech/core/utils/models/nutritionist_model.dart';
 import 'package:sahtech/core/utils/models/ad_model.dart';
 import 'package:sahtech/core/utils/models/product_model.dart';
 import 'package:sahtech/core/services/api_error_handler.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 /// A mock API service that simulates network behavior
 /// This allows testing of loading states, error handling, and UI without real backend
@@ -118,160 +119,45 @@ class MockApiService {
       print('===== PRODUCT SCAN DEBUG =====');
       print('Starting product scan for barcode: $barcode');
 
-      // Use the ApiErrorHandler to normalize the barcode
+      // Use the ApiErrorHandler to normalize the barcode first
       String cleanBarcode = ApiErrorHandler.normalizeBarcode(barcode);
       print('Using normalized barcode: $cleanBarcode');
 
-      // Debugging the full URL being accessed
-      final String checkUrl = '$_baseUrl/scan/check/$cleanBarcode';
-      print('API URL (GET): $checkUrl');
+      // Check internet connectivity first before making any API calls
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult == ConnectivityResult.none) {
+        print('No internet connection available');
+        return null;
+      }
+
+      // Single unified endpoint for all product requests
+      final String productUrl = '$_baseUrl/scan/barcode/$cleanBarcode';
+      print('Fetching product data from: $productUrl');
 
       try {
-        print('Testing connection to server...');
-        final testResponse = await http.get(
-          Uri.parse('$_baseUrl/health'),
+        // Make a single request with adequate timeout
+        final response = await http.get(
+          Uri.parse(productUrl),
           headers: {'Content-Type': 'application/json'},
-        ).timeout(const Duration(seconds: 2));
+        ).timeout(const Duration(seconds: 6));
 
-        print(
-            'Server health check: ${testResponse.statusCode} - ${testResponse.body}');
-      } catch (e) {
-        print('Server health check failed: $e');
-        print('Attempting to continue with product check anyway');
-      }
+        print('Product API response: ${response.statusCode}');
 
-      // Check if the product exists with a longer timeout
-      final existsResponse = await http.get(
-        Uri.parse(checkUrl),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 5), onTimeout: () {
-        print('Timeout when checking product - moving to fallback');
-        throw Exception('Connection timeout');
-      });
+        if (ApiErrorHandler.isValidProductResponse(response)) {
+          final productData = json.decode(response.body);
+          print('Product data received successfully');
 
-      print(
-          'Product check response: ${existsResponse.statusCode} - ${existsResponse.body}');
-
-      // Try alternative formats to handle both codeBarre and barcode naming
-      bool productExists = false;
-
-      // Try main endpoint format
-      try {
-        if (existsResponse.statusCode == 200) {
-          final Map<String, dynamic>? data =
-              ApiErrorHandler.parseJsonResponse(existsResponse);
-          // Check if the response has an 'exists' field that is true
-          if (data != null) {
-            productExists = data['exists'] == true;
-            print('Product exists according to API: $productExists');
+          // Ensure barcode field is always set in the product data
+          if (!productData.containsKey('barcode')) {
+            productData['barcode'] = cleanBarcode;
           }
+
+          return ProductModel.fromJson(productData);
+        } else {
+          print('Invalid product response: ${response.statusCode}');
         }
       } catch (e) {
-        print('Error parsing product check response: $e');
-      }
-
-      // Try alternative format with query parameter if main format returned false
-      if (!productExists) {
-        final alternativeCheckUrl =
-            '$_baseUrl/scan/check?codeBarre=$cleanBarcode';
-        print('Trying alternative URL (GET): $alternativeCheckUrl');
-
-        try {
-          final alternativeCheckResponse = await http.get(
-            Uri.parse(alternativeCheckUrl),
-            headers: {'Content-Type': 'application/json'},
-          ).timeout(const Duration(seconds: 3));
-
-          if (alternativeCheckResponse.statusCode == 200) {
-            final Map<String, dynamic>? data =
-                ApiErrorHandler.parseJsonResponse(alternativeCheckResponse);
-            if (data != null && data['exists'] == true) {
-              productExists = true;
-              print('Product exists according to alternative API check');
-            }
-          }
-        } catch (e) {
-          print('Error with alternative product check: $e');
-        }
-      }
-
-      // If product exists, fetch its details
-      if (productExists) {
-        print('Product exists! Fetching details...');
-
-        // Try both endpoints for fetching product details with standardized field naming
-        final endpoints = [
-          '$_baseUrl/scan/barcode/$cleanBarcode',
-          '$_baseUrl/scan/product?codeBarre=$cleanBarcode',
-        ];
-
-        for (final url in endpoints) {
-          try {
-            print('Trying to fetch product details from: $url');
-            final response = await http.get(
-              Uri.parse(url),
-              headers: {'Content-Type': 'application/json'},
-            ).timeout(const Duration(seconds: 4));
-
-            print('Product details response: ${response.statusCode}');
-
-            if (ApiErrorHandler.isValidProductResponse(response)) {
-              final productData = json.decode(response.body);
-              print(
-                  'Product data received: ${productData.toString().substring(0, min(100, productData.toString().length))}...');
-
-              // Check if we got a valid product
-              if (productData is Map<String, dynamic> &&
-                  (productData.containsKey('name') ||
-                      productData.containsKey('nom'))) {
-                print('Valid product data received');
-
-                // Ensure barcode field is always set in the product data
-                if (!productData.containsKey('barcode')) {
-                  productData['barcode'] = cleanBarcode;
-                }
-
-                return ProductModel.fromJson(productData);
-              } else {
-                print('Invalid product data structure');
-              }
-            }
-          } catch (e) {
-            print('Error fetching from $url: $e');
-          }
-        }
-
-        // Fallback for besbassa special case (temporary workaround)
-        if (cleanBarcode == '6194000101027' ||
-            barcode.contains('besbassa') ||
-            barcode.toLowerCase().contains('water')) {
-          print('Special case: Using hardcoded Besbassa water product');
-          return ProductModel(
-            id: 'besbassa123',
-            name: 'Besbassa Natural Mineral Water',
-            imageUrl:
-                'https://www.besbassawater.com/wp-content/uploads/2020/05/besbassa-500-ml.png',
-            barcode: '6194000101027',
-            brand: 'Besbassa',
-            category: 'Boissons',
-            nutritionFacts: {
-              'calories': 0,
-              'fat': 0.0,
-              'carbs': 0.0,
-              'protein': 0.0,
-              'salt': 0.02,
-            },
-            ingredients: ['Natural Mineral Water'],
-            allergens: [],
-            healthScore: 4.5,
-            scanDate: DateTime.now(),
-          );
-        }
-
-        print('Product exists according to check but could not fetch details');
-      } else {
-        print(
-            'Error checking product: Status code=${existsResponse.statusCode}');
+        print('Error fetching product: $e');
       }
 
       // If we reach here, we didn't get a valid product
@@ -320,23 +206,12 @@ class MockApiService {
         return data;
       } else {
         print('Failed to get AI recommendation: HTTP ${response.statusCode}');
-        return _getFallbackRecommendation();
+        return null; // Return null instead of fallback to ensure only real AI recommendations are used
       }
     } catch (e) {
       print('Error requesting AI recommendation: $e');
-      return _getFallbackRecommendation();
+      return null; // Return null instead of fallback
     }
-  }
-
-  // Simplified fallback recommendation when AI fails
-  Map<String, dynamic> _getFallbackRecommendation() {
-    return {
-      'recommendation':
-          'Ce produit n\'a pas encore été évalué par notre IA. Veuillez consulter la liste d\'ingrédients pour vous assurer qu\'il convient à votre régime alimentaire.',
-      'recommendation_type': 'caution',
-      'timestamp': DateTime.now().toIso8601String(),
-      'isFallback': true
-    };
   }
 
   // Helper method to save recommendations to user history
@@ -439,45 +314,6 @@ class MockApiService {
       print('Product not found in API: $barcode');
       return null;
     }
-  }
-
-  // Helper method to generate a random product
-  ProductModel _generateRandomProduct(String barcode) {
-    final id = 'p${_random.nextInt(10000)}';
-    final categories = [
-      'Produits laitiers',
-      'Boulangerie',
-      'Boissons',
-      'Snacks',
-      'Fruits et légumes'
-    ];
-    final brands = [
-      'Nature Bio',
-      'Délices Frais',
-      'Saveurs Authentiques',
-      'Bon Appétit',
-      'Frutti Fresh'
-    ];
-
-    return ProductModel(
-      id: id,
-      name: 'Produit ${_random.nextInt(100)}',
-      imageUrl: 'https://picsum.photos/200?random=${_random.nextInt(100)}',
-      barcode: barcode,
-      brand: brands[_random.nextInt(brands.length)],
-      category: categories[_random.nextInt(categories.length)],
-      nutritionFacts: {
-        'calories': (50 + _random.nextInt(400)).toDouble(),
-        'fat': _random.nextDouble() * 20,
-        'carbs': _random.nextDouble() * 50,
-        'protein': _random.nextDouble() * 20,
-        'salt': _random.nextDouble() * 2,
-      },
-      ingredients: ['Ingrédient 1', 'Ingrédient 2', 'Ingrédient 3'],
-      allergens: _random.nextBool() ? ['Gluten', 'Lait'] : [],
-      healthScore: 1 + _random.nextDouble() * 4,
-      scanDate: DateTime.now(),
-    );
   }
 
   // MOCK DATA
