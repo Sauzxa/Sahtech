@@ -132,6 +132,31 @@ class MockApiService {
 
       print('Using normalized barcode: $cleanBarcode');
 
+      // Special handling for known problematic barcode
+      if (cleanBarcode == '6133414007137') {
+        print(
+            'PRIORITY BARCODE DETECTED: Using hardcoded data while database issue is fixed');
+
+        // Return hardcoded product for this specific barcode
+        final productData = {
+          'id': '6823605c2ccee252df93845e',
+          'codeBarre': 6133414007137,
+          'barcode': '6133414007137',
+          'nom': 'KOOL 4 Zinners',
+          'marque': 'palmary',
+          'categorie': 'gateau',
+          'description': 'Biscuit topped with milk chocolate',
+          'imageUrl':
+              'https://res.cloudinary.com/dnt9u8t5m/image/upload/v1747149093/sahtech/...',
+          'valeurNutriScore': 'E',
+          'descriptionNutriScore': '',
+          'ingredients': [], // Add ingredients if available
+          'nomAdditif': [], // Add additives if available
+        };
+
+        return ProductModel.fromJson(productData);
+      }
+
       // Check internet connectivity first before making any API calls
       final connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
@@ -161,7 +186,8 @@ class MockApiService {
 
           // Ensure barcode field is always set in the product data
           if (!productData.containsKey('barcode')) {
-            productData['barcode'] = cleanBarcode;
+            productData['barcode'] =
+                cleanBarcode; // ProductModel will convert to BigInt
           }
 
           return ProductModel.fromJson(productData);

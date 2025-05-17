@@ -66,7 +66,7 @@ class ProductService {
         id: '1',
         name: 'Yaourt Nature',
         imageUrl: 'https://picsum.photos/200?random=1',
-        barcode: '3033490004751',
+        barcode: BigInt.parse('3033490004751'),
         brand: 'Nature Bio',
         category: 'Produits laitiers',
         nutritionFacts: {
@@ -85,7 +85,7 @@ class ProductService {
         id: '2',
         name: 'Pain Complet',
         imageUrl: 'https://picsum.photos/200?random=2',
-        barcode: '3564700011439',
+        barcode: BigInt.parse('3564700011439'),
         brand: 'Boulangerie Artisanale',
         category: 'Boulangerie',
         nutritionFacts: {
@@ -104,7 +104,7 @@ class ProductService {
         id: '3',
         name: 'Jus d\'Orange',
         imageUrl: 'https://picsum.photos/200?random=3',
-        barcode: '3057640385575',
+        barcode: BigInt.parse('3057640385575'),
         brand: 'Fruits Bio',
         category: 'Boissons',
         nutritionFacts: {
