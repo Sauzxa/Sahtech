@@ -568,6 +568,27 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
       );
     }
 
+    // Make sure we have the minimum required product data
+    if (product.id.isEmpty || product.name.isEmpty) {
+      print('STEP 3 SKIPPED: Invalid product data detected');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Informations produit incomplètes'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            margin: EdgeInsets.all(16.w),
+          ),
+        );
+        _resumeScanner();
+      }
+      return; // Prevent navigation with invalid product
+    }
+
     // STEP 3: Get AI recommendation if user is logged in
     if (_currentUserId != null) {
       print(
@@ -589,6 +610,11 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
         } else {
           print(
               'STEP 3 WARNING: Recommendation response was null or incomplete');
+          // Set default recommendation when API response is incomplete
+          product.aiRecommendation =
+              "Nous n'avons pas obtenu une recommandation complète. " +
+                  "Veuillez consulter les informations nutritionnelles et les ingrédients.";
+          product.recommendationType = "caution";
         }
       } catch (e) {
         print('STEP 3 FAILED: AI recommendation error - $e');
@@ -601,6 +627,11 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
     } else {
       print(
           'STEP 3 SKIPPED: User not logged in, no personalized recommendation');
+      // Ensure non-logged in users still get a default recommendation
+      product.aiRecommendation =
+          "Connectez-vous pour obtenir une recommandation personnalisée. " +
+              "En attendant, vérifiez les informations nutritionnelles ci-dessous.";
+      product.recommendationType = "caution";
     }
 
     // STEP 4: Show the product details regardless of recommendation status
@@ -761,6 +792,21 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
 
   // Helper method to navigate to recommendation screen
   void _navigateToRecommendationScreen(ProductModel product) {
+    // Final validation before navigation
+    if (product.id.isEmpty || product.name.isEmpty) {
+      print('Navigation prevented: Invalid product data');
+      return;
+    }
+
+    if (product.aiRecommendation == null || product.aiRecommendation!.isEmpty) {
+      print('Adding fallback recommendation before navigation');
+      product.aiRecommendation =
+          "Nous n'avons pas d'analyse personnalisée pour ce produit. " +
+              "Vérifiez les ingrédients et allergènes ci-dessous pour vous assurer " +
+              "que ce produit convient à votre régime alimentaire.";
+      product.recommendationType = "caution";
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(

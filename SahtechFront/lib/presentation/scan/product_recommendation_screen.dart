@@ -38,9 +38,8 @@ class _ProductRecommendationScreenState
     print('Ingredients count: ${widget.product.ingredients.length}');
     print('Allergens count: ${widget.product.allergens.length}');
 
-    // Use the AI recommendation if available, otherwise use a default message
-    recommendation = widget.product.aiRecommendation ??
-        "Nous n'avons pas encore d'analyse personnalisée pour ce produit. Vérifiez les ingrédients et allergènes ci-dessous pour vous assurer que ce produit convient à votre régime alimentaire.";
+    // Parse and format AI recommendation if available
+    recommendation = _formatAiRecommendation(widget.product.aiRecommendation);
 
     // Use product ingredients, with a fallback if empty
     ingredients = widget.product.ingredients;
@@ -75,6 +74,38 @@ class _ProductRecommendationScreenState
         'Nutri-Score Letter: ${_getNutriScoreLetter(widget.product.healthScore)}');
   }
 
+  // Format and structure the AI recommendation text
+  String _formatAiRecommendation(String? rawRecommendation) {
+    if (rawRecommendation == null || rawRecommendation.isEmpty) {
+      return "Nous n'avons pas encore d'analyse personnalisée pour ce produit. "
+          "Vérifiez les ingrédients et allergènes ci-dessous pour vous assurer "
+          "que ce produit convient à votre régime alimentaire.";
+    }
+
+    // Log the raw recommendation for debugging
+    print('Raw AI recommendation: $rawRecommendation');
+
+    // Add paragraph breaks where appropriate to improve readability
+    // Look for key phrases that indicate new sections
+    String formatted = rawRecommendation
+        // Major section breaks
+        .replaceAll(". Alternative", ".\n\nAlternatives recommandées:")
+        .replaceAll("Alternatives:", "\n\nAlternatives recommandées:")
+        .replaceAll(". Si vous avez", ".\n\nConseil médical: Si vous avez")
+        .replaceAll("Précautions:", "\n\nPrécautions:")
+        .replaceAll("À noter:", "\n\nÀ noter:")
+        .replaceAll(". Pour", ".\n\nPour")
+        .replaceAll(". En conclusion", ".\n\nEn conclusion")
+        // Line breaks for readability
+        .replaceAll(". De plus", ".\nDe plus")
+        .replaceAll(". Par ailleurs", ".\nPar ailleurs")
+        .replaceAll(". Cependant", ".\nCependant")
+        .replaceAll(". Toutefois", ".\nToutefois")
+        .replaceAll(". Nous recommandons", ".\n\nNous recommandons");
+
+    return formatted;
+  }
+
   // Function to get the Nutri-score color
   Color _getNutriScoreColor(double score) {
     if (score >= 4.0) return Colors.green;
@@ -91,6 +122,67 @@ class _ProductRecommendationScreenState
     if (score >= 2.0) return 'C';
     if (score >= 1.0) return 'D';
     return 'E';
+  }
+
+  // Get color based on recommendation type
+  Color _getRecommendationColor() {
+    final type = widget.product.recommendationType?.toLowerCase() ?? 'caution';
+    switch (type) {
+      case 'recommended':
+        return Colors.green.shade50;
+      case 'avoid':
+        return Colors.red.shade50;
+      case 'caution':
+      default:
+        return Colors.amber.shade50;
+    }
+  }
+
+  // Get icon based on recommendation type
+  IconData _getRecommendationIcon() {
+    final type = widget.product.recommendationType?.toLowerCase() ?? 'caution';
+    switch (type) {
+      case 'recommended':
+        return Icons.check_circle;
+      case 'avoid':
+        return Icons.do_not_disturb;
+      case 'caution':
+      default:
+        return Icons.warning_amber;
+    }
+  }
+
+  // Get text based on recommendation type for accessibility
+  String _getRecommendationTypeText() {
+    final type = widget.product.recommendationType?.toLowerCase() ?? 'caution';
+    switch (type) {
+      case 'recommended':
+        return 'Recommandé';
+      case 'avoid':
+        return 'À éviter';
+      case 'caution':
+      default:
+        return 'Attention';
+    }
+  }
+
+  // Get badge color based on recommendation type
+  Color _getRecommendationBadgeColor() {
+    final type = widget.product.recommendationType?.toLowerCase() ?? 'caution';
+    switch (type) {
+      case 'recommended':
+        return Colors.green;
+      case 'avoid':
+        return Colors.red;
+      case 'caution':
+      default:
+        return Colors.amber;
+    }
+  }
+
+  // Get badge text color based on recommendation type
+  Color _getRecommendationBadgeTextColor() {
+    return Colors.white;
   }
 
   @override
@@ -221,42 +313,109 @@ class _ProductRecommendationScreenState
               margin: EdgeInsets.symmetric(horizontal: 16.w),
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
-                color: Color(0xFFE8F5CF),
+                color: _getRecommendationColor(),
                 borderRadius: BorderRadius.circular(12.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Recommendation title
+                  // Recommendation title with type
                   Row(
                     children: [
-                      Text(
-                        'Recommendation',
-                        style: TextStyle(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Icon(
+                              _getRecommendationIcon(),
+                              color: Colors.black87,
+                              size: 24.sp,
+                            ),
+                            SizedBox(width: 8.w),
+                            Text(
+                              'Recommendation IA',
+                              style: TextStyle(
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      SizedBox(width: 8.w),
-                      Icon(
-                        Icons.lightbulb_outline,
-                        color: Colors.black87,
-                        size: 20.sp,
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getRecommendationBadgeColor(),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Text(
+                          _getRecommendationTypeText(),
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: _getRecommendationBadgeTextColor(),
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 12.h),
+                  SizedBox(height: 16.h),
 
-                  // Recommendation text
-                  Text(
-                    recommendation,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: Colors.black87,
-                      height: 1.4,
+                  // Recommendation text with better formatting
+                  Container(
+                    padding: EdgeInsets.all(12.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    child: Text(
+                      recommendation,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        color: Colors.black87,
+                        height: 1.5,
+                      ),
                     ),
                   ),
+
+                  // Additional information button if needed
+                  if (_hasAlternatives() || _hasWarnings())
+                    Padding(
+                      padding: EdgeInsets.only(top: 12.h),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton.icon(
+                            icon: Icon(
+                              Icons.info_outline,
+                              size: 18.sp,
+                              color: AppColors.lightTeal,
+                            ),
+                            label: Text(
+                              'Plus d\'informations',
+                              style: TextStyle(
+                                color: AppColors.lightTeal,
+                                fontSize: 12.sp,
+                              ),
+                            ),
+                            onPressed: () {
+                              // Show detailed information modal
+                              _showDetailedRecommendationModal();
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -402,6 +561,108 @@ class _ProductRecommendationScreenState
             label: 'Profil',
           ),
         ],
+      ),
+    );
+  }
+
+  bool _hasAlternatives() {
+    // Check if the AI recommendation contains alternatives section
+    if (widget.product.aiRecommendation == null) return false;
+
+    final String aiRec = widget.product.aiRecommendation!.toLowerCase();
+    return aiRec.contains('alternative') ||
+        aiRec.contains('remplacer') ||
+        aiRec.contains('suggestion') ||
+        aiRec.contains('recommand') ||
+        aiRec.contains('essayer plutôt');
+  }
+
+  bool _hasWarnings() {
+    // Check if the AI recommendation contains warnings
+    if (widget.product.aiRecommendation == null) return false;
+
+    final String aiRec = widget.product.aiRecommendation!.toLowerCase();
+    return aiRec.contains('éviter') ||
+        aiRec.contains('attention') ||
+        aiRec.contains('précaution') ||
+        aiRec.contains('risque') ||
+        aiRec.contains('allergen') ||
+        aiRec.contains('déconseill') ||
+        aiRec.contains('consulter un');
+  }
+
+  void _showDetailedRecommendationModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        minChildSize: 0.5,
+        expand: false,
+        builder: (context, scrollController) {
+          return Container(
+            padding: EdgeInsets.all(16.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Center(
+                  child: Container(
+                    width: 40.w,
+                    height: 5.h,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+
+                Text(
+                  'Détails de la Recommendation',
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 16.h),
+
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    children: [
+                      // Full recommendation text
+                      Text(
+                        widget.product.aiRecommendation ??
+                            'Aucune recommendation disponible',
+                        style: TextStyle(
+                          fontSize: 15.sp,
+                          height: 1.6,
+                        ),
+                      ),
+
+                      SizedBox(height: 20.h),
+
+                      // Additional notes
+                      Text(
+                        'Ces recommandations sont générées par l\'IA et sont basées sur les informations disponibles sur ce produit et votre profil de santé. Consultez un professionnel de santé pour des conseils personnalisés.',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
