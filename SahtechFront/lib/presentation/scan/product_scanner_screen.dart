@@ -494,7 +494,8 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
 
       // STEP 2: Fetch product data from API
       print('STEP 2: Fetching product with barcode: $barcode');
-      final product = await _apiService.getProductByBarcode(barcode);
+      final product = await _apiService.getProductByBarcode(barcode,
+          userId: _currentUserId);
 
       if (product == null) {
         print('STEP 2 FAILED: Product not found');

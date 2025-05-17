@@ -4,7 +4,7 @@ class ProductModel {
   final String id;
   final String name;
   final String imageUrl;
-  final String barcode;
+  final BigInt barcode;
   final String brand;
   final String category;
   final Map<String, dynamic> nutritionFacts;
@@ -44,50 +44,59 @@ class ProductModel {
     // Handle different field naming conventions from backend and validate data
     // Standardized field mapping - prioritize 'barcode' first, then fallback to others
     final rawBarcode =
-        map['barcode'] ?? map['codeBarre'] ?? map['code_barre'] ?? '';
-    final String barcodeString;
+        map['barcode'] ?? map['codeBarre'] ?? map['code_barre'] ?? '0';
 
-    // Ensure barcode is always a string
-    if (rawBarcode is int || rawBarcode is double) {
-      barcodeString = rawBarcode.toString();
-    } else {
-      barcodeString = rawBarcode.toString();
+    // Convert to BigInt, handling different input types
+    BigInt barcodeValue;
+    try {
+      if (rawBarcode is int) {
+        barcodeValue = BigInt.from(rawBarcode);
+      } else if (rawBarcode is String) {
+        // Remove any non-digits
+        final cleanBarcode = rawBarcode.replaceAll(RegExp(r'[^0-9]'), '');
+        barcodeValue =
+            cleanBarcode.isEmpty ? BigInt.zero : BigInt.parse(cleanBarcode);
+      } else {
+        barcodeValue = BigInt.zero;
+      }
+    } catch (e) {
+      print('Error converting barcode to BigInt: $e');
+      barcodeValue = BigInt.zero;
     }
 
-    print('Converted barcode: $barcodeString (from ${rawBarcode.runtimeType})');
+    print('Converted barcode: $barcodeValue (from ${rawBarcode.runtimeType})');
 
     // Validate and extract required fields with appropriate defaults
     final String id = map['id']?.toString() ?? '';
 
-    // Extract nutrition facts with validation
-    final Map<String, dynamic> nutritionFacts = (map['nutritionFacts'] is Map)
-        ? Map<String, dynamic>.from(map['nutritionFacts'])
-        : (map['nutrition_values'] is Map)
-            ? Map<String, dynamic>.from(map['nutrition_values'])
-            : {};
+    // Extract nutrition facts or provide empty map
+    Map<String, dynamic> nutritionFacts = {};
+    if (map['nutritionFacts'] is Map) {
+      nutritionFacts = Map<String, dynamic>.from(map['nutritionFacts']);
+    } else if (map['nutrition_facts'] is Map) {
+      nutritionFacts = Map<String, dynamic>.from(map['nutrition_facts']);
+    }
 
-    // Extract ingredients with validation
+    // Extract ingredients list or provide empty list
     List<String> ingredientsList = [];
     if (map['ingredients'] is List) {
       ingredientsList = List<String>.from(
-          (map['ingredients'] as List).map((i) => i.toString()));
+          (map['ingredients'] as List).map((item) => item.toString()));
     }
 
-    // Extract allergens with validation
+    // Extract allergens list or provide empty list
     List<String> allergensList = [];
     if (map['allergens'] is List) {
       allergensList = List<String>.from(
-          (map['allergens'] as List).map((i) => i.toString()));
+          (map['allergens'] as List).map((item) => item.toString()));
     }
 
-    // Health score validation (defaults to 2.5 as middle value if missing)
-    double healthScore = 2.5;
-    final rawScore =
-        map['healthScore'] ?? map['health_score'] ?? map['score'] ?? 2.5;
-    if (rawScore is num) {
-      healthScore = rawScore.toDouble();
-    } else if (rawScore is String) {
-      healthScore = double.tryParse(rawScore) ?? 2.5;
+    // Extract health score with fallbacks
+    double healthScore = 0.0;
+    if (map['healthScore'] != null) {
+      healthScore = double.tryParse(map['healthScore'].toString()) ?? 0.0;
+    } else if (map['health_score'] != null) {
+      healthScore = double.tryParse(map['health_score'].toString()) ?? 0.0;
     }
 
     // Create product model with all possible field names
@@ -95,7 +104,7 @@ class ProductModel {
       id: id,
       name: map['name']?.toString() ?? map['nom']?.toString() ?? '',
       imageUrl: map['imageUrl']?.toString() ?? map['image']?.toString() ?? '',
-      barcode: barcodeString,
+      barcode: barcodeValue,
       brand: map['brand']?.toString() ?? map['marque']?.toString() ?? '',
       category:
           map['category']?.toString() ?? map['categorie']?.toString() ?? '',
@@ -123,7 +132,7 @@ class ProductModel {
       'id': id,
       'name': name,
       'imageUrl': imageUrl,
-      'barcode': barcode, // Use standardized field name
+      'barcode': barcode.toString(),
       'brand': brand,
       'category': category,
       'nutritionFacts': nutritionFacts,
@@ -142,7 +151,7 @@ class ProductModel {
       'id': id,
       'nom': name,
       'imageUrl': imageUrl,
-      'codeBarre': barcode, // Convert to Spring Boot expected field name
+      'codeBarre': barcode.toString(),
       'marque': brand,
       'categorie': category,
       'nutritionFacts': nutritionFacts,
@@ -161,12 +170,12 @@ class ProductModel {
       'id': id,
       'name': name,
       'imageUrl': imageUrl,
-      'barcode': barcode, // FastAPI uses 'barcode'
+      'barcode': barcode.toString(),
       'brand': brand,
       'category': category,
-      'nutrition_values': nutritionFacts, // FastAPI uses 'nutrition_values'
+      'nutrition_values': nutritionFacts,
       'ingredients': ingredients,
-      'additives': [], // Add empty additives field for FastAPI
+      'additives': [],
       'nutri_score': null,
       'type': category,
       'description': '',

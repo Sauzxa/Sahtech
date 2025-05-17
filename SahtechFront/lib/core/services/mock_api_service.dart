@@ -114,13 +114,22 @@ class MockApiService {
   // final String _baseUrl = 'http://192.168.169.8080/API/Sahtech'; // Testing IP
 
   /// Get product by barcode from the Spring Boot backend
-  Future<ProductModel?> getProductByBarcode(String barcode) async {
+  Future<ProductModel?> getProductByBarcode(String barcode,
+      {String? userId}) async {
     try {
       print('===== PRODUCT SCAN DEBUG =====');
       print('Starting product scan for barcode: $barcode');
+      if (userId != null) {
+        print('Including userId in request: $userId');
+      }
 
       // Use the ApiErrorHandler to normalize the barcode first
       String cleanBarcode = ApiErrorHandler.normalizeBarcode(barcode);
+      if (cleanBarcode.isEmpty) {
+        print('Invalid barcode format after normalization');
+        return null;
+      }
+
       print('Using normalized barcode: $cleanBarcode');
 
       // Check internet connectivity first before making any API calls
@@ -130,8 +139,11 @@ class MockApiService {
         return null;
       }
 
-      // Single unified endpoint for all product requests
-      final String productUrl = '$_baseUrl/scan/barcode/$cleanBarcode';
+      // Build URL with user ID if available (for immediate AI processing)
+      String productUrl = '$_baseUrl/scan/barcode/$cleanBarcode';
+      if (userId != null && userId.isNotEmpty) {
+        productUrl += '?userId=$userId';
+      }
       print('Fetching product data from: $productUrl');
 
       try {
@@ -293,7 +305,7 @@ class MockApiService {
     }
 
     // Always use the real API instead of random or mock data
-    final apiProduct = await getProductByBarcode(barcode);
+    final apiProduct = await getProductByBarcode(barcode, userId: userId);
 
     if (apiProduct != null) {
       // Add to global products for consistency
@@ -382,7 +394,7 @@ class MockApiService {
         id: '1',
         name: 'Yaourt Nature',
         imageUrl: 'https://picsum.photos/200?random=1',
-        barcode: '3033490004751',
+        barcode: BigInt.parse('3033490004751'),
         brand: 'Nature Bio',
         category: 'Produits laitiers',
         nutritionFacts: {
@@ -401,7 +413,7 @@ class MockApiService {
         id: '2',
         name: 'Pain Complet',
         imageUrl: 'https://picsum.photos/200?random=2',
-        barcode: '3564700011439',
+        barcode: BigInt.parse('3564700011439'),
         brand: 'Boulangerie Artisanale',
         category: 'Boulangerie',
         nutritionFacts: {
@@ -420,7 +432,7 @@ class MockApiService {
         id: '3',
         name: 'Jus d\'Orange',
         imageUrl: 'https://picsum.photos/200?random=3',
-        barcode: '3057640385575',
+        barcode: BigInt.parse('3057640385575'),
         brand: 'Fruits Bio',
         category: 'Boissons',
         nutritionFacts: {
