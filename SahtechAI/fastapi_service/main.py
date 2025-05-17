@@ -1,10 +1,11 @@
 from fastapi import FastAPI, HTTPException, Depends, Security, status
 from fastapi.security import APIKeyHeader
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import List, Dict, Any, Optional
 import os
 from groq import Groq
 import logging
+import re
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -64,7 +65,7 @@ class UserData(BaseModel):
 class ProductData(BaseModel):
     id: Optional[str] = None
     name: str
-    barcode: Optional[str] = None
+    barcode: Optional[str] = None  # Always a string type
     brand: Optional[str] = None
     category: Optional[str] = None
     description: Optional[str] = None
@@ -74,6 +75,23 @@ class ProductData(BaseModel):
     nutri_score: Optional[str] = None
     nutri_score_description: Optional[str] = None
     nutrition_values: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    
+    # Validator to ensure barcode is always a string and contains only digits
+    @validator('barcode')
+    def validate_barcode(cls, v):
+        if v is None:
+            return None
+        
+        # Convert to string if not already
+        barcode_str = str(v)
+        
+        # Remove non-digit characters
+        barcode_digits = re.sub(r'[^\d]', '', barcode_str)
+        
+        # Log validation for debugging purposes
+        logger.debug(f"Normalized barcode from '{v}' to '{barcode_digits}'")
+        
+        return barcode_digits
 
 class RecommendationRequest(BaseModel):
     user_data: UserData
@@ -177,6 +195,9 @@ async def predict(request: RecommendationRequest):
     """Generate a personalized recommendation based on user and product data"""
     try:
         logger.info(f"Received recommendation request for user {request.user_data.user_id} and product {request.product_data.name}")
+        
+        # Log the barcode value for debugging
+        logger.info(f"Product barcode: {request.product_data.barcode} (type: {type(request.product_data.barcode).__name__})")
         
         # Generate recommendation using AI
         recommendation = generate_ai_recommendation(request.user_data, request.product_data)

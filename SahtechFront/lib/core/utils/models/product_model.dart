@@ -41,64 +41,54 @@ class ProductModel {
     print(
         'Creating ProductModel from data: ${map.toString().substring(0, min(100, map.toString().length))}...');
 
-    // Handle different field naming conventions from backend
-    // Debug the barcode field
-    final barcodeValue =
+    // Handle different field naming conventions from backend and validate data
+    // Standardized field mapping - prioritize 'barcode' first, then fallback to others
+    final rawBarcode =
         map['barcode'] ?? map['codeBarre'] ?? map['code_barre'] ?? '';
-    print(
-        'Raw barcode value: $barcodeValue (type: ${barcodeValue.runtimeType})');
-    final barcodeString = barcodeValue.toString();
-    print('Converted barcode: $barcodeString');
+    final String barcodeString;
 
-    // Nutrition facts can be nested or directly in the map
-    Map<String, dynamic> nutritionFacts = {};
-    if (map['nutritionFacts'] is Map) {
-      nutritionFacts = Map<String, dynamic>.from(map['nutritionFacts']);
-    } else if (map['nutrition_facts'] is Map) {
-      nutritionFacts = Map<String, dynamic>.from(map['nutrition_facts']);
-    } else if (map['valeurNutrimentielle'] is Map) {
-      nutritionFacts = Map<String, dynamic>.from(map['valeurNutrimentielle']);
+    // Ensure barcode is always a string
+    if (rawBarcode is int || rawBarcode is double) {
+      barcodeString = rawBarcode.toString();
+    } else {
+      barcodeString = rawBarcode.toString();
     }
 
-    // Handle ingredients as string or list
+    print('Converted barcode: $barcodeString (from ${rawBarcode.runtimeType})');
+
+    // Validate and extract required fields with appropriate defaults
+    final String id = map['id']?.toString() ?? '';
+
+    // Extract nutrition facts with validation
+    final Map<String, dynamic> nutritionFacts = (map['nutritionFacts'] is Map)
+        ? Map<String, dynamic>.from(map['nutritionFacts'])
+        : (map['nutrition_values'] is Map)
+            ? Map<String, dynamic>.from(map['nutrition_values'])
+            : {};
+
+    // Extract ingredients with validation
     List<String> ingredientsList = [];
     if (map['ingredients'] is List) {
-      ingredientsList = List<String>.from(map['ingredients']);
-    } else if (map['nomingredients'] is List) {
-      ingredientsList = List<String>.from(map['nomingredients']);
-    } else if (map['ingredients'] is String) {
-      ingredientsList = [map['ingredients']];
-    } else if (map['nomingredients'] is String) {
-      ingredientsList = [map['nomingredients']];
+      ingredientsList = List<String>.from(
+          (map['ingredients'] as List).map((i) => i.toString()));
     }
 
-    // Handle allergens in different formats
+    // Extract allergens with validation
     List<String> allergensList = [];
     if (map['allergens'] is List) {
-      allergensList = List<String>.from(map['allergens']);
-    } else if (map['allergenes'] is List) {
-      allergensList = List<String>.from(map['allergenes']);
+      allergensList = List<String>.from(
+          (map['allergens'] as List).map((i) => i.toString()));
     }
 
-    // Health score can be named differently
-    final healthScoreRaw = map['healthScore'] ??
-        map['valeurNutriScore'] ??
-        map['health_score'] ??
-        map['nutriScore'] ??
-        0.0;
-
-    double healthScore = 0.0;
-    if (healthScoreRaw is num) {
-      healthScore = healthScoreRaw.toDouble();
-    } else if (healthScoreRaw is String) {
-      healthScore = double.tryParse(healthScoreRaw) ?? 0.0;
+    // Health score validation (defaults to 2.5 as middle value if missing)
+    double healthScore = 2.5;
+    final rawScore =
+        map['healthScore'] ?? map['health_score'] ?? map['score'] ?? 2.5;
+    if (rawScore is num) {
+      healthScore = rawScore.toDouble();
+    } else if (rawScore is String) {
+      healthScore = double.tryParse(rawScore) ?? 2.5;
     }
-
-    // Extract ID with fallbacks
-    final id = map['_id']?.toString() ??
-        map['id']?.toString() ??
-        map['productId']?.toString() ??
-        barcodeString;
 
     // Create product model with all possible field names
     return ProductModel(
@@ -114,7 +104,7 @@ class ProductModel {
       allergens: allergensList,
       healthScore: healthScore,
       scanDate: map['scanDate'] != null
-          ? DateTime.parse(map['scanDate'])
+          ? DateTime.parse(map['scanDate'].toString())
           : DateTime.now(),
       aiRecommendation: map['aiRecommendation'] ?? map['recommendation'],
       recommendationType:
@@ -127,13 +117,13 @@ class ProductModel {
     return ProductModel.fromMap(json);
   }
 
-  // Convert product data to a map
+  // Convert product data to a map - use standardized field names for API communication
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'name': name,
       'imageUrl': imageUrl,
-      'barcode': barcode,
+      'barcode': barcode, // Use standardized field name
       'brand': brand,
       'category': category,
       'nutritionFacts': nutritionFacts,
@@ -143,6 +133,43 @@ class ProductModel {
       'scanDate': scanDate.toIso8601String(),
       'aiRecommendation': aiRecommendation,
       'recommendationType': recommendationType,
+    };
+  }
+
+  // Convert to Spring Boot compatible format
+  Map<String, dynamic> toSpringFormat() {
+    return {
+      'id': id,
+      'nom': name,
+      'imageUrl': imageUrl,
+      'codeBarre': barcode, // Convert to Spring Boot expected field name
+      'marque': brand,
+      'categorie': category,
+      'nutritionFacts': nutritionFacts,
+      'ingredients': ingredients,
+      'allergens': allergens,
+      'healthScore': healthScore,
+      'scanDate': scanDate.toIso8601String(),
+      'aiRecommendation': aiRecommendation,
+      'recommendationType': recommendationType,
+    };
+  }
+
+  // Convert to FastAPI compatible format
+  Map<String, dynamic> toFastAPIFormat() {
+    return {
+      'id': id,
+      'name': name,
+      'imageUrl': imageUrl,
+      'barcode': barcode, // FastAPI uses 'barcode'
+      'brand': brand,
+      'category': category,
+      'nutrition_values': nutritionFacts, // FastAPI uses 'nutrition_values'
+      'ingredients': ingredients,
+      'additives': [], // Add empty additives field for FastAPI
+      'nutri_score': null,
+      'type': category,
+      'description': '',
     };
   }
 }

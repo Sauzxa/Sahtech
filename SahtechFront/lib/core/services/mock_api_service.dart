@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:sahtech/core/utils/models/nutritionist_model.dart';
 import 'package:sahtech/core/utils/models/ad_model.dart';
 import 'package:sahtech/core/utils/models/product_model.dart';
+import 'package:sahtech/core/services/api_error_handler.dart';
 
 /// A mock API service that simulates network behavior
 /// This allows testing of loading states, error handling, and UI without real backend
@@ -117,9 +118,8 @@ class MockApiService {
       print('===== PRODUCT SCAN DEBUG =====');
       print('Starting product scan for barcode: $barcode');
 
-      // Normalize the barcode by removing non-digit characters and leading zeros
-      String cleanBarcode = barcode.replaceAll(RegExp(r'\D'), '');
-      cleanBarcode = cleanBarcode.replaceAll(RegExp(r'^0+'), '');
+      // Use the ApiErrorHandler to normalize the barcode
+      String cleanBarcode = ApiErrorHandler.normalizeBarcode(barcode);
       print('Using normalized barcode: $cleanBarcode');
 
       // Debugging the full URL being accessed
@@ -152,120 +152,126 @@ class MockApiService {
       print(
           'Product check response: ${existsResponse.statusCode} - ${existsResponse.body}');
 
-      // Try alternative format with query parameter
-      final alternativeCheckUrl =
-          '$_baseUrl/scan/check?codeBarre=$cleanBarcode';
-      print('Trying alternative URL (GET): $alternativeCheckUrl');
-      final alternativeResponse = await http.get(
-        Uri.parse(alternativeCheckUrl),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 3));
+      // Try alternative formats to handle both codeBarre and barcode naming
+      bool productExists = false;
 
-      print(
-          'Alternative check response: ${alternativeResponse.statusCode} - ${alternativeResponse.body}');
-
-      // If product exists using either approach, fetch details
-      if (existsResponse.statusCode == 200 ||
-          alternativeResponse.statusCode == 200) {
-        Map<String, dynamic>? data;
-        bool productExists = false;
-
-        // Try to parse the response from the primary check
+      // Try main endpoint format
+      try {
         if (existsResponse.statusCode == 200) {
-          try {
-            data = json.decode(existsResponse.body);
-            productExists = data?['exists'] == true;
-            print('Primary check result: productExists=$productExists');
-          } catch (e) {
-            print('Error parsing primary check response: $e');
+          final Map<String, dynamic>? data =
+              ApiErrorHandler.parseJsonResponse(existsResponse);
+          // Check if the response has an 'exists' field that is true
+          if (data != null) {
+            productExists = data['exists'] == true;
+            print('Product exists according to API: $productExists');
           }
         }
+      } catch (e) {
+        print('Error parsing product check response: $e');
+      }
 
-        // If primary check failed, try the alternative
-        if (!productExists && alternativeResponse.statusCode == 200) {
-          try {
-            data = json.decode(alternativeResponse.body);
-            productExists = data?['exists'] == true;
-            print('Alternative check result: productExists=$productExists');
-          } catch (e) {
-            print('Error parsing alternative check response: $e');
-          }
-        }
+      // Try alternative format with query parameter if main format returned false
+      if (!productExists) {
+        final alternativeCheckUrl =
+            '$_baseUrl/scan/check?codeBarre=$cleanBarcode';
+        print('Trying alternative URL (GET): $alternativeCheckUrl');
 
-        if (productExists) {
-          print('Product exists! Fetching details...');
+        try {
+          final alternativeCheckResponse = await http.get(
+            Uri.parse(alternativeCheckUrl),
+            headers: {'Content-Type': 'application/json'},
+          ).timeout(const Duration(seconds: 3));
 
-          // Try both endpoints for fetching product details
-          final endpoints = [
-            '$_baseUrl/scan/barcode/$cleanBarcode',
-            '$_baseUrl/scan/product?codeBarre=$cleanBarcode',
-          ];
-
-          for (final url in endpoints) {
-            try {
-              print('Trying to fetch product details from: $url');
-              final response = await http.get(
-                Uri.parse(url),
-                headers: {'Content-Type': 'application/json'},
-              ).timeout(const Duration(seconds: 4));
-
-              print('Product details response: ${response.statusCode}');
-
-              if (response.statusCode == 200) {
-                final productData = json.decode(response.body);
-                print(
-                    'Product data received: ${productData.toString().substring(0, min(100, productData.toString().length))}...');
-
-                // Check if we got a valid product
-                if (productData is Map<String, dynamic> &&
-                    (productData.containsKey('name') ||
-                        productData.containsKey('nom'))) {
-                  print('Valid product data received');
-                  return ProductModel.fromJson(productData);
-                } else {
-                  print('Invalid product data structure');
-                }
-              }
-            } catch (e) {
-              print('Error fetching from $url: $e');
+          if (alternativeCheckResponse.statusCode == 200) {
+            final Map<String, dynamic>? data =
+                ApiErrorHandler.parseJsonResponse(alternativeCheckResponse);
+            if (data != null && data['exists'] == true) {
+              productExists = true;
+              print('Product exists according to alternative API check');
             }
           }
-
-          // Fallback for besbassa special case (temporary workaround)
-          if (cleanBarcode == '6194000101027' ||
-              barcode.contains('besbassa') ||
-              barcode.toLowerCase().contains('water')) {
-            print('Special case: Using hardcoded Besbassa water product');
-            return ProductModel(
-              id: 'besbassa123',
-              name: 'Besbassa Natural Mineral Water',
-              imageUrl:
-                  'https://www.besbassawater.com/wp-content/uploads/2020/05/besbassa-500-ml.png',
-              barcode: '6194000101027',
-              brand: 'Besbassa',
-              category: 'Boissons',
-              nutritionFacts: {
-                'calories': 0,
-                'fat': 0.0,
-                'carbs': 0.0,
-                'protein': 0.0,
-                'salt': 0.02,
-              },
-              ingredients: ['Natural Mineral Water'],
-              allergens: [],
-              healthScore: 4.5,
-              scanDate: DateTime.now(),
-            );
-          }
-
-          print(
-              'Product exists according to check but could not fetch details');
-        } else {
-          print('Product not found in database according to both checks');
+        } catch (e) {
+          print('Error with alternative product check: $e');
         }
+      }
+
+      // If product exists, fetch its details
+      if (productExists) {
+        print('Product exists! Fetching details...');
+
+        // Try both endpoints for fetching product details with standardized field naming
+        final endpoints = [
+          '$_baseUrl/scan/barcode/$cleanBarcode',
+          '$_baseUrl/scan/product?codeBarre=$cleanBarcode',
+        ];
+
+        for (final url in endpoints) {
+          try {
+            print('Trying to fetch product details from: $url');
+            final response = await http.get(
+              Uri.parse(url),
+              headers: {'Content-Type': 'application/json'},
+            ).timeout(const Duration(seconds: 4));
+
+            print('Product details response: ${response.statusCode}');
+
+            if (ApiErrorHandler.isValidProductResponse(response)) {
+              final productData = json.decode(response.body);
+              print(
+                  'Product data received: ${productData.toString().substring(0, min(100, productData.toString().length))}...');
+
+              // Check if we got a valid product
+              if (productData is Map<String, dynamic> &&
+                  (productData.containsKey('name') ||
+                      productData.containsKey('nom'))) {
+                print('Valid product data received');
+
+                // Ensure barcode field is always set in the product data
+                if (!productData.containsKey('barcode')) {
+                  productData['barcode'] = cleanBarcode;
+                }
+
+                return ProductModel.fromJson(productData);
+              } else {
+                print('Invalid product data structure');
+              }
+            }
+          } catch (e) {
+            print('Error fetching from $url: $e');
+          }
+        }
+
+        // Fallback for besbassa special case (temporary workaround)
+        if (cleanBarcode == '6194000101027' ||
+            barcode.contains('besbassa') ||
+            barcode.toLowerCase().contains('water')) {
+          print('Special case: Using hardcoded Besbassa water product');
+          return ProductModel(
+            id: 'besbassa123',
+            name: 'Besbassa Natural Mineral Water',
+            imageUrl:
+                'https://www.besbassawater.com/wp-content/uploads/2020/05/besbassa-500-ml.png',
+            barcode: '6194000101027',
+            brand: 'Besbassa',
+            category: 'Boissons',
+            nutritionFacts: {
+              'calories': 0,
+              'fat': 0.0,
+              'carbs': 0.0,
+              'protein': 0.0,
+              'salt': 0.02,
+            },
+            ingredients: ['Natural Mineral Water'],
+            allergens: [],
+            healthScore: 4.5,
+            scanDate: DateTime.now(),
+          );
+        }
+
+        print('Product exists according to check but could not fetch details');
       } else {
         print(
-            'Error checking product: Primary=${existsResponse.statusCode}, Alternative=${alternativeResponse.statusCode}');
+            'Error checking product: Status code=${existsResponse.statusCode}');
       }
 
       // If we reach here, we didn't get a valid product
