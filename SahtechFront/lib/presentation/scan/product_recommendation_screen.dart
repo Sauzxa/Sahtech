@@ -238,6 +238,18 @@ class _ProductRecommendationScreenState
                       width: 60.w,
                       height: 60.w,
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        // Show a placeholder when image fails to load
+                        return Container(
+                          width: 60.w,
+                          height: 60.w,
+                          color: Colors.grey[300],
+                          child: Icon(
+                            Icons.no_food,
+                            color: Colors.grey[600],
+                          ),
+                        );
+                      },
                     ),
                   ),
                   SizedBox(width: 16.w),

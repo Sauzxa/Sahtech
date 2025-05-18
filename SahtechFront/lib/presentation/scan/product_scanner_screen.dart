@@ -828,6 +828,20 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
                           ),
                         );
                       },
+                      errorBuilder: (context, error, stackTrace) {
+                        print('Error loading product image: $error');
+                        // Show a placeholder when image fails to load
+                        return Container(
+                          width: 70.w,
+                          height: 70.w,
+                          color: Colors.grey[300],
+                          child: Icon(
+                            Icons.no_food,
+                            color: Colors.grey[600],
+                            size: 30.sp,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),

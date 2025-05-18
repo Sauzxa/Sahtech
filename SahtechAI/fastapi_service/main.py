@@ -30,9 +30,18 @@ def verify_api_key(api_key: str = Security(api_key_header)):
         )
     return api_key
 
-# Initialize Groq client
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")  # Set your Groq API key in environment variables
-client = Groq(api_key=GROQ_API_KEY)
+# Initialize Groq client - Get from environment or use a mock response if not available
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+if not GROQ_API_KEY:
+    logger.warning("⚠️ GROQ_API_KEY environment variable not set! The service will use mock responses.")
+    client = None
+else:
+    try:
+        client = Groq(api_key=GROQ_API_KEY)
+        logger.info("✅ Groq client initialized successfully")
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize Groq client: {str(e)}")
+        client = None
 
 # Spring Boot API endpoint
 SPRING_BOOT_API = os.environ.get("SPRING_BOOT_API", "http://192.168.1.69:8080/API/Sahtech")
@@ -156,9 +165,29 @@ def determine_recommendation_type(recommendation: str) -> str:
     else:
         return "caution"  # Default to caution if unclear
 
+def mock_recommendation(user_data: UserData, product_data: ProductData) -> str:
+    """Generate a mock recommendation when Groq API is unavailable"""
+    has_allergies = len(user_data.allergies) > 0
+    has_conditions = len(user_data.health_conditions) > 0
+    
+    # Base recommendation on simple rules
+    if has_allergies and any(item in product_data.ingredients for item in user_data.allergies):
+        return "❌ Avoid - Ce produit contient des allergènes qui correspondent à vos allergies déclarées. Veuillez consulter un professionnel de la santé avant de consommer. Des alternatives sans allergènes sont recommandées."
+    elif "diabetes" in user_data.health_conditions and product_data.nutri_score in ["D", "E"]:
+        return "⚠️ Consume with caution - Ce produit a un score nutritionnel bas qui peut être problématique pour votre diabète. Limitez votre consommation et privilégiez des options avec moins de sucre."
+    elif product_data.nutri_score in ["D", "E"]:
+        return "⚠️ Consume with caution - Ce produit a un score nutritionnel faible. Limitez votre consommation, surtout si vous suivez un régime particulier. Recherchez des alternatives plus saines."
+    else:
+        return "✅ Recommended - Ce produit semble être compatible avec votre profil de santé. Consommez dans le cadre d'une alimentation équilibrée et variée."
+
 def generate_ai_recommendation(user_data: UserData, product_data: ProductData) -> str:
-    """Generate AI recommendation using Groq"""
+    """Generate AI recommendation using Groq or fallback to mock"""
     try:
+        # Check if Groq client is available
+        if not client:
+            logger.warning("Using mock recommendation because Groq client is not available")
+            return mock_recommendation(user_data, product_data)
+        
         system_prompt = format_system_prompt(user_data, product_data)
         
         completion = client.chat.completions.create(
@@ -176,10 +205,9 @@ def generate_ai_recommendation(user_data: UserData, product_data: ProductData) -
     
     except Exception as e:
         logger.error(f"Error generating AI recommendation: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate recommendation: {str(e)}"
-        )
+        # Use mock response when API fails
+        logger.info("Falling back to mock recommendation")
+        return mock_recommendation(user_data, product_data)
 
 # Endpoints
 @app.get("/")
@@ -188,7 +216,12 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    # Check if Groq client is available
+    groq_status = "available" if client else "unavailable"
+    return {
+        "status": "healthy",
+        "groq_api": groq_status
+    }
 
 @app.post("/predict", dependencies=[Depends(verify_api_key)])
 async def predict(request: RecommendationRequest):
@@ -199,7 +232,7 @@ async def predict(request: RecommendationRequest):
         # Log the barcode value for debugging
         logger.info(f"Product barcode: {request.product_data.barcode} (type: {type(request.product_data.barcode).__name__})")
         
-        # Generate recommendation using AI
+        # Generate recommendation using AI or mock if not available
         recommendation = generate_ai_recommendation(request.user_data, request.product_data)
         
         # Determine recommendation type

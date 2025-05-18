@@ -141,10 +141,7 @@ class MockApiService {
 
       // Special handling for known problematic barcode
       if (cleanBarcode == '6133414007137') {
-        print(
-            'PRIORITY BARCODE DETECTED: Using hardcoded data while database issue is fixed');
-
-        // Return hardcoded product for this specific barcode
+        print('Using hardcoded data for KOOL 4 Zinners');
         final productData = {
           'id': '6823605c2ccee252df93845e',
           'codeBarre': 6133414007137,
@@ -154,7 +151,7 @@ class MockApiService {
           'categorie': 'gateau',
           'description': 'Biscuit topped with milk chocolate',
           'imageUrl':
-              'https://res.cloudinary.com/dnt9u8t5m/image/upload/v1747149093/sahtech/...',
+              'https://res.cloudinary.com/dnt9u8t5m/image/upload/v1747149093/sahtech/placeholder_product.jpg',
           'valeurNutriScore': 'E',
           'descriptionNutriScore': '',
           'ingredients': [], // Add ingredients if available

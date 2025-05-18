@@ -103,7 +103,8 @@ class ProductModel {
     return ProductModel(
       id: id,
       name: map['name']?.toString() ?? map['nom']?.toString() ?? '',
-      imageUrl: map['imageUrl']?.toString() ?? map['image']?.toString() ?? '',
+      imageUrl: _validateImageUrl(
+          map['imageUrl']?.toString() ?? map['image']?.toString() ?? ''),
       barcode: barcodeValue,
       brand: map['brand']?.toString() ?? map['marque']?.toString() ?? '',
       category:
@@ -119,6 +120,15 @@ class ProductModel {
       recommendationType:
           map['recommendationType'] ?? map['recommendation_type'],
     );
+  }
+
+  // Helper method to validate and provide fallback for image URLs
+  static String _validateImageUrl(String url) {
+    if (url.isEmpty || url.contains('...') || url.endsWith('/')) {
+      // Return a default placeholder image URL when the image URL is invalid
+      return 'https://via.placeholder.com/150?text=Produit';
+    }
+    return url;
   }
 
   // Factory method to create a product from JSON string

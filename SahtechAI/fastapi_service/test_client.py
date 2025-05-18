@@ -1,14 +1,10 @@
 import requests
 import json
 import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
 
 # API endpoint and key
-FASTAPI_URL = "http://192.168.137.1:8000/predict"
-API_KEY = os.getenv("API_KEY", "your-api-key-for-spring-boot")
+FASTAPI_URL = "http://192.168.1.69:8000/predict"  # Use the FastAPI URL from application.properties
+API_KEY = "sahtech-fastapi-secure-key-2025"  # Use the API key from application.properties
 
 def test_recommendation_api():
     """
@@ -20,26 +16,34 @@ def test_recommendation_api():
         "user_data": {
             "user_id": "user123",
             "age": 25,
+            "weight": 70,
+            "height": 175,
+            "bmi": 22.9,
             "allergies": ["peanuts"],
             "health_conditions": ["diabetes"],
-            "dietary_preferences": ["vegetarian"],
+            "gender": "male",
             "activity_level": "moderate", 
-            "goal": "weight_loss"
+            "objectives": ["weight_loss"],
+            "has_allergies": True,
+            "has_chronic_disease": True,
+            "preferred_language": "french"
         },
         "product_data": {
+            "id": "prod123",
+            "name": "KOOL 4 Zinners",  # Use the product from the screenshot
             "barcode": "1234567890",
-            "name": "Protein Bar",
-            "brand": "FitFood", 
-            "category": "Snacks",
-            "ingredients": ["soy", "peanuts", "sugar"],
-            "additives": ["E150d", "E420"],
+            "brand": "KOOL", 
+            "category": "gateau",
+            "description": "Gâteau chocolaté",
+            "type": "Dessert",
+            "ingredients": ["farine", "sucre", "chocolat"],
+            "additives": [],
+            "nutri_score": "E",
             "nutrition_values": {
-                "calories": "250kcal",
-                "sugar": "15g",
-                "protein": "10g"
-            },
-            "nutri_score": "C",
-            "eco_score": "B"
+                "calories": 250,
+                "sugar": 15,
+                "protein": 10
+            }
         }
     }
     
@@ -50,26 +54,28 @@ def test_recommendation_api():
     }
     
     try:
+        print(f"Sending request to {FASTAPI_URL}")
+        print(f"Headers: {headers}")
+        print(f"Request data: {json.dumps(request_data, indent=2)}")
+        
         # Send POST request to FastAPI
         response = requests.post(FASTAPI_URL, json=request_data, headers=headers)
         
         # Check if request was successful
         if response.status_code == 200:
             recommendation = response.json()
-            print("✅ Recommendation received successfully:")
-            print(f"Recommendation Type: {recommendation['recommendation_type']}")
-            print(f"Recommendation: {recommendation['recommendation']}")
+            print("\n✅ Recommendation received successfully:")
+            print(f"Recommendation Type: {recommendation.get('recommendation_type', 'N/A')}")
+            print(f"Recommendation: {recommendation.get('recommendation', 'N/A')}")
             
-            # In your Spring Boot application, you would store this recommendation
-            # and forward it to the Flutter application
             return recommendation
         else:
-            print(f"❌ Error: {response.status_code}")
+            print(f"\n❌ Error: {response.status_code}")
             print(response.text)
             return None
             
     except Exception as e:
-        print(f"❌ Exception: {str(e)}")
+        print(f"\n❌ Exception: {str(e)}")
         return None
 
 if __name__ == "__main__":
