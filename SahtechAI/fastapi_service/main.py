@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends, Security, status
 from fastapi.security import APIKeyHeader
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, root_validator
 from typing import List, Dict, Any, Optional
 import os
 from groq import Groq
@@ -50,7 +50,7 @@ else:
         client = None
 
 # Spring Boot API endpoint
-SPRING_BOOT_API = os.environ.get("SPRING_BOOT_API", "http://192.168.1.69:8080/API/Sahtech")
+SPRING_BOOT_API = os.environ.get("SPRING_BOOT_API", "http://192.168.144.26:8080/API/Sahtech")
 
 # Data models
 class HealthCondition(BaseModel):
@@ -76,6 +76,32 @@ class UserData(BaseModel):
     has_allergies: Optional[bool] = False
     has_chronic_disease: Optional[bool] = False
     preferred_language: Optional[str] = "french"  # Default to French
+    
+    # Validator to handle None values in lists
+    @root_validator(pre=True)
+    def clean_lists(cls, values):
+        # Ensure allergies is a list with no None values
+        if "allergies" in values and values["allergies"] is not None:
+            if isinstance(values["allergies"], list):
+                values["allergies"] = [a for a in values["allergies"] if a is not None]
+            else:
+                values["allergies"] = []
+                
+        # Ensure health_conditions is a list with no None values
+        if "health_conditions" in values and values["health_conditions"] is not None:
+            if isinstance(values["health_conditions"], list):
+                values["health_conditions"] = [hc for hc in values["health_conditions"] if hc is not None]
+            else:
+                values["health_conditions"] = []
+                
+        # Ensure objectives is a list with no None values
+        if "objectives" in values and values["objectives"] is not None:
+            if isinstance(values["objectives"], list):
+                values["objectives"] = [o for o in values["objectives"] if o is not None]
+            else:
+                values["objectives"] = []
+        
+        return values
 
 class ProductData(BaseModel):
     id: Optional[str] = None
@@ -90,6 +116,23 @@ class ProductData(BaseModel):
     nutri_score: Optional[str] = None
     nutri_score_description: Optional[str] = None
     nutrition_values: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    
+    # Root validator to clean the data before validation
+    @root_validator(pre=True)
+    def clean_data(cls, values):
+        # Handle null/empty lists
+        for list_field in ["ingredients", "additives"]:
+            if list_field in values and values[list_field] is not None:
+                if isinstance(values[list_field], list):
+                    values[list_field] = [item for item in values[list_field] if item is not None]
+                else:
+                    values[list_field] = []
+        
+        # Handle nutrition_values
+        if "nutrition_values" in values and not values["nutrition_values"]:
+            values["nutrition_values"] = {}
+            
+        return values
     
     # Validator to ensure barcode is always a string and contains only digits
     @validator('barcode')
@@ -111,6 +154,10 @@ class ProductData(BaseModel):
 class RecommendationRequest(BaseModel):
     user_data: UserData
     product_data: ProductData
+    
+    class Config:
+        # This makes validation more tolerant
+        extra = "ignore"
 
 class RecommendationResponse(BaseModel):
     recommendation: str
@@ -229,6 +276,49 @@ async def health_check():
         "groq_api": groq_status
     }
 
+@app.post("/debug", dependencies=[Depends(verify_api_key)])
+async def debug_request(request_data: dict):
+    """Debug endpoint to validate incoming request data structure"""
+    try:
+        # Log the raw request data for debugging
+        logger.info(f"Received debug request: {request_data}")
+        
+        # Try to parse user_data
+        user_data = None
+        if "user_data" in request_data:
+            try:
+                user_data = UserData(**request_data["user_data"])
+                logger.info("✅ User data validated successfully")
+            except Exception as e:
+                logger.error(f"❌ User data validation error: {str(e)}")
+                return {"error": f"User data validation failed: {str(e)}"}
+        else:
+            return {"error": "Missing 'user_data' field in request"}
+            
+        # Try to parse product_data
+        product_data = None
+        if "product_data" in request_data:
+            try:
+                product_data = ProductData(**request_data["product_data"])
+                logger.info("✅ Product data validated successfully")
+            except Exception as e:
+                logger.error(f"❌ Product data validation error: {str(e)}")
+                return {"error": f"Product data validation failed: {str(e)}"}
+        else:
+            return {"error": "Missing 'product_data' field in request"}
+        
+        # If we got here, everything parsed correctly
+        return {
+            "status": "success",
+            "message": "Request data structure is valid",
+            "user_data": user_data.dict(),
+            "product_data": product_data.dict()
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Debug request error: {str(e)}")
+        return {"error": f"Debug request failed: {str(e)}"}
+
 @app.post("/predict", dependencies=[Depends(verify_api_key)])
 async def predict(request: RecommendationRequest):
     """Generate a personalized recommendation based on user and product data"""
@@ -261,4 +351,8 @@ async def predict(request: RecommendationRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.environ.get("PORT", 8000))
+    host = os.environ.get("HOST", "0.0.0.0")
+    # Default port to 8000 if not specified, but Spring Boot is configured to use 8000
+    logger.info(f"Starting AI Recommendation Service on {host}:{port}")
+    uvicorn.run("main:app", host=host, port=port, reload=True)

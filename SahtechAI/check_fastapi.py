@@ -1,7 +1,7 @@
 import requests
 import sys
 
-def check_fastapi_service(url="http://192.168.1.69:8000"):
+def check_fastapi_service(url="http://192.168.144.26:8000"):
     """Check if the FastAPI service is running"""
     try:
         response = requests.get(f"{url}/health", timeout=5)
@@ -23,5 +23,5 @@ def check_fastapi_service(url="http://192.168.1.69:8000"):
 
 if __name__ == "__main__":
     # Use custom URL if provided as command line argument
-    url = sys.argv[1] if len(sys.argv) > 1 else "http://192.168.1.69:8000"
+    url = sys.argv[1] if len(sys.argv) > 1 else "http://192.168.144.26:8000"
     check_fastapi_service(url) 
