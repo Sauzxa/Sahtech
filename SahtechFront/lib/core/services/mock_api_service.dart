@@ -7,6 +7,7 @@ import 'package:sahtech/core/utils/models/ad_model.dart';
 import 'package:sahtech/core/utils/models/product_model.dart';
 import 'package:sahtech/core/services/api_error_handler.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// A mock API service that simulates network behavior
 /// This allows testing of loading states, error handling, and UI without real backend
@@ -35,6 +36,20 @@ class MockApiService {
 
   // Map to store user-specific products
   final Map<String, List<ProductModel>> _userProductsMap = {};
+
+  // Spring Boot API base URL
+  final String _baseUrl =
+      'http://192.168.1.69:8080/API/Sahtech'; // Actual backend IP address
+  // Alternative URLs for different environments:
+  // final String _baseUrl = 'http://10.0.2.2:8080/API/Sahtech'; // Use 10.0.2.2 for Android emulator to connect to host machine's localhost
+  // final String _baseUrl = 'http://localhost:8080/API/Sahtech'; // For web testing
+  // final String _baseUrl = 'http://192.168.169.8080/API/Sahtech'; // Testing IP
+
+  /// Get auth token from shared preferences
+  Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_token');
+  }
 
   // Helper method to simulate network delay
   Future<void> _simulateNetworkDelay() async {
@@ -105,14 +120,6 @@ class MockApiService {
 
   // PRODUCT API
 
-  // Spring Boot API base URL
-  final String _baseUrl =
-      'http://192.168.1.69:8080/API/Sahtech'; // Actual backend IP address
-  // Alternative URLs for different environments:
-  // final String _baseUrl = 'http://10.0.2.2:8080/API/Sahtech'; // Use 10.0.2.2 for Android emulator to connect to host machine's localhost
-  // final String _baseUrl = 'http://localhost:8080/API/Sahtech'; // For web testing
-  // final String _baseUrl = 'http://192.168.169.8080/API/Sahtech'; // Testing IP
-
   /// Get product by barcode from the Spring Boot backend
   Future<ProductModel?> getProductByBarcode(String barcode,
       {String? userId}) async {
@@ -172,11 +179,28 @@ class MockApiService {
       print('Fetching product data from: $productUrl');
 
       try {
+        // Get the authentication token
+        final token = await _getToken();
+
+        // Prepare headers with authentication token if available
+        final headers = {
+          'Content-Type': 'application/json',
+        };
+
+        if (token != null && token.isNotEmpty) {
+          headers['Authorization'] = 'Bearer $token';
+          print('Including authentication token in request');
+        } else {
+          print('Warning: No authentication token available for product scan');
+        }
+
         // Make a single request with adequate timeout
-        final response = await http.get(
-          Uri.parse(productUrl),
-          headers: {'Content-Type': 'application/json'},
-        ).timeout(const Duration(seconds: 6));
+        final response = await http
+            .get(
+              Uri.parse(productUrl),
+              headers: headers,
+            )
+            .timeout(const Duration(seconds: 6));
 
         print('Product API response: ${response.statusCode}');
 
@@ -224,14 +248,24 @@ class MockApiService {
     try {
       print('Requesting AI recommendation via Spring Boot -> LLama/Groq');
 
+      // Get the auth token
+      final token = await _getToken();
+      if (token == null) {
+        print('No auth token available for AI recommendation request');
+        return null;
+      }
+
       // Build the URL for recommendation request
       final String recommendationUrl =
           '$_baseUrl/recommendation/user/$userId/data?productId=$productId';
 
-      // Make the request with a clear timeout
+      // Make the request with a clear timeout and proper authentication
       final response = await http.get(
         Uri.parse(recommendationUrl),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
@@ -244,6 +278,27 @@ class MockApiService {
         return data;
       } else {
         print('Failed to get AI recommendation: HTTP ${response.statusCode}');
+
+        // Provide more detailed error info based on status code
+        if (response.statusCode == 403) {
+          print(
+              'Authentication error: Access denied (403 Forbidden). Check if token is valid.');
+        } else if (response.statusCode == 401) {
+          print(
+              'Authentication error: Not authenticated (401 Unauthorized). Token may be expired.');
+        } else if (response.statusCode == 404) {
+          print(
+              'Resource not found (404 Not Found). Check if endpoint URL is correct.');
+        } else if (response.statusCode >= 500) {
+          print(
+              'Server error (${response.statusCode}). The recommendation service may be down.');
+        }
+
+        // Log response body for debugging if available
+        if (response.body.isNotEmpty) {
+          print('Error response body: ${response.body}');
+        }
+
         return null; // Return null instead of fallback to ensure only real AI recommendations are used
       }
     } catch (e) {
@@ -258,6 +313,14 @@ class MockApiService {
     try {
       print(
           'Saving recommendation to history for user: $userId, product: $productId');
+
+      // Get the auth token
+      final token = await _getToken();
+      if (token == null) {
+        print('No auth token available for saving recommendation');
+        return;
+      }
+
       final String saveUrl = '$_baseUrl/recommendation/save';
 
       final Map<String, dynamic> payload = {
@@ -272,7 +335,10 @@ class MockApiService {
       final response = await http
           .post(
             Uri.parse(saveUrl),
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
             body: json.encode(payload),
           )
           .timeout(const Duration(seconds: 5));

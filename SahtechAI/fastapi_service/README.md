@@ -13,13 +13,36 @@ This service provides AI-powered food product recommendations based on user heal
    - Create a `.env` file with the following variables:
      ```
      GROQ_API_KEY=your-groq-api-key
-     API_KEY=your-api-key-for-spring-boot
+     API_KEY=sahtech-fastapi-secure-key-2025
      ```
+   - **IMPORTANT**: You must obtain a valid Groq API key from [https://console.groq.com/](https://console.groq.com/)
 
 3. Run the service:
    ```
    uvicorn main:app --reload --host 0.0.0.0 --port 8000
    ```
+
+4. Verify the service is running:
+   ```
+   python check_fastapi.py
+   ```
+
+## Spring Boot Integration
+
+The Spring Boot application communicates with this FastAPI service. To ensure proper connectivity:
+
+1. Make sure the FastAPI service is running before starting the Spring Boot app
+2. Check that the `ai.service.url` property in `application.properties` matches your FastAPI service URL (http://192.168.1.69:8000)
+3. The Spring Boot application uses a default timeout of 10 seconds for API calls
+
+## Troubleshooting
+
+If the product scanning feature is not working:
+
+1. Check that the FastAPI service is running: `python check_fastapi.py`
+2. Verify your Groq API key is valid and has sufficient quota
+3. Look for errors in both the FastAPI logs and Spring Boot logs
+4. If the FastAPI service is running on a different machine, update the URL in `application.properties`
 
 ## API Endpoints
 
@@ -38,9 +61,8 @@ This service provides AI-powered food product recommendations based on user heal
     "age": 25,
     "allergies": ["peanuts"],
     "health_conditions": ["diabetes"],
-    "dietary_preferences": ["vegetarian"],
     "activity_level": "moderate",
-    "goal": "weight_loss"
+    "objectives": ["weight_loss"]
   },
   "product_data": {
     "barcode": "1234567890",
@@ -50,12 +72,11 @@ This service provides AI-powered food product recommendations based on user heal
     "ingredients": ["soy", "peanuts", "sugar"],
     "additives": ["E150d", "E420"],
     "nutrition_values": {
-      "calories": "250kcal",
-      "sugar": "15g",
-      "protein": "10g"
+      "calories": 250,
+      "sugar": 15,
+      "protein": 10
     },
-    "nutri_score": "C",
-    "eco_score": "B"
+    "nutri_score": "C"
   }
 }
 ```

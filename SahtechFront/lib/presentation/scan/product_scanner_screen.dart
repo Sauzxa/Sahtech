@@ -388,20 +388,20 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
   }
 
   Future<void> _processBarcodeResult(String barcode) async {
-    // Add strict barcode validation to prevent false detections
-    if (barcode.isEmpty || barcode.length < 8) {
-      // Show invalid barcode message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Code-barre invalide ou trop court'),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.r),
+    if (barcode.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Code-barres invalide ou vide'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            margin: EdgeInsets.all(16.w),
           ),
-          margin: EdgeInsets.all(16.w),
-        ),
-      );
+        );
+      }
       return; // Invalid barcode
     }
 
@@ -410,6 +410,34 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
     if (!validBarcodeRegex.hasMatch(barcode)) {
       print('Invalid barcode format detected: $barcode');
       return; // Silent reject of invalid barcodes to prevent UI clutter
+    }
+
+    // Check authentication status first
+    final bool isLoggedIn = await _storageService.isLoggedIn();
+    if (!isLoggedIn) {
+      if (mounted) {
+        _pauseScanner();
+        // Show dialog to prompt user to login without navigation
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: Text('Authentification requise'),
+            content:
+                Text('Vous devez être connecté pour scanner des produits.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _resumeScanner();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
     }
 
     // Special priority handling for known problematic barcodes
@@ -492,6 +520,29 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
       _currentUserId = await _storageService.getUserId();
       print('Current user ID: ${_currentUserId ?? "Not logged in"}');
 
+      // Check if we have a valid token before proceeding
+      final token = await _storageService.getToken();
+      if (token == null || token.isEmpty) {
+        // Handle missing token
+        if (mounted) {
+          _pauseScanner();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Votre session a expiré. Reconnectez-vous.'),
+              backgroundColor: Colors.orange,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              margin: EdgeInsets.all(16.w),
+            ),
+          );
+        }
+        // Clear invalid auth data
+        await _storageService.clearAuthData();
+        return;
+      }
+
       // STEP 2: Fetch product data from API
       print('STEP 2: Fetching product with barcode: $barcode');
       final product = await _apiService.getProductByBarcode(barcode,
@@ -542,20 +593,42 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
     } catch (e) {
       print('ERROR in scan flow: $e');
       if (mounted) {
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Erreur: ${e.toString().substring(0, min(50, e.toString().length))}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.r),
+        // Check if this is an authentication error
+        if (e.toString().contains('403') ||
+            e.toString().contains('Forbidden') ||
+            e.toString().contains('Unauthorized') ||
+            e.toString().contains('401')) {
+          // Handle authentication error
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Session expirée, reconnexion nécessaire'),
+              backgroundColor: Colors.orange,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 3),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              margin: EdgeInsets.all(16.w),
             ),
-            margin: EdgeInsets.all(16.w),
-          ),
-        );
+          );
+          // Clear invalid auth data
+          await _storageService.clearAuthData();
+        } else {
+          // Show general error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  'Erreur: ${e.toString().substring(0, min(50, e.toString().length))}'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              margin: EdgeInsets.all(16.w),
+            ),
+          );
+        }
 
         _resumeScanner();
       }
