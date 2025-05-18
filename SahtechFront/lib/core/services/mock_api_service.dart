@@ -38,12 +38,14 @@ class MockApiService {
   final Map<String, List<ProductModel>> _userProductsMap = {};
 
   // Spring Boot API base URL
+  // Updated IP address to match working endpoint seen in logs
   final String _baseUrl =
-      'http://192.168.1.69:8080/API/Sahtech'; // Actual backend IP address
+      'http://192.168.144.26:8080/API/Sahtech'; // Using the IP that works for user data
   // Alternative URLs for different environments:
-  // final String _baseUrl = 'http://10.0.2.2:8080/API/Sahtech'; // Use 10.0.2.2 for Android emulator to connect to host machine's localhost
+  // final String _baseUrl = 'http://10.0.2.2:8080/API/Sahtech'; // Previous setting that caused timeouts
+  // final String _baseUrl = 'http://192.168.43.1:8080/API/Sahtech'; // Previous IP that caused timeouts
   // final String _baseUrl = 'http://localhost:8080/API/Sahtech'; // For web testing
-  // final String _baseUrl = 'http://192.168.169.8080/API/Sahtech'; // Testing IP
+  // final String _baseUrl = 'http://192.168.1.X:8080/API/Sahtech'; // Replace X with your server's actual IP
 
   /// Get auth token from shared preferences
   Future<String?> _getToken() async {
@@ -175,7 +177,7 @@ class MockApiService {
               Uri.parse(productUrl),
               headers: headers,
             )
-            .timeout(const Duration(seconds: 6));
+            .timeout(const Duration(seconds: 15));
 
         print('Product API response: ${response.statusCode}');
 
@@ -195,6 +197,13 @@ class MockApiService {
         }
       } catch (e) {
         print('Error fetching product: $e');
+
+        // Add more detailed error logging for timeout errors
+        if (e.toString().contains('TimeoutException')) {
+          print('Connection timed out when connecting to: $productUrl');
+          print(
+              'Check that your server is running and the IP address is correct');
+        }
       }
 
       // If we reach here, we didn't get a valid product
