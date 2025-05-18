@@ -82,7 +82,6 @@ class _ProductRecommendationScreenState
   // Format and structure the AI recommendation text
   String _formatAiRecommendation(String? rawRecommendation) {
     if (rawRecommendation == null || rawRecommendation.isEmpty) {
-      // Log that we're using the default message
       print('No AI recommendation available - using default message');
       return "Nous n'avons pas encore d'analyse personnalisée pour ce produit. "
           "Vérifiez les ingrédients et allergènes ci-dessous pour vous assurer "
@@ -90,10 +89,11 @@ class _ProductRecommendationScreenState
     }
 
     // Log the raw recommendation for debugging
-    print('AI recommendation found: $rawRecommendation');
+    print('AI recommendation found with length: ${rawRecommendation.length}');
+    print(
+        'AI recommendation preview: ${rawRecommendation.substring(0, min(100, rawRecommendation.length))}...');
 
     // Add paragraph breaks where appropriate to improve readability
-    // Look for key phrases that indicate new sections
     String formatted = rawRecommendation
         // Major section breaks
         .replaceAll(". Alternative", ".\n\nAlternatives recommandées:")
@@ -110,6 +110,15 @@ class _ProductRecommendationScreenState
         .replaceAll(". Toutefois", ".\nToutefois")
         .replaceAll(". Nous recommandons", ".\n\nNous recommandons");
 
+    // Handle AI signifiers in the text if present
+    formatted = formatted
+        .replaceAll("✅ Recommended", "")
+        .replaceAll("⚠️ Consume with caution", "")
+        .replaceAll("❌ Avoid", "")
+        .trim();
+
+    print(
+        'Formatted recommendation (first 50 chars): ${formatted.substring(0, min(50, formatted.length))}...');
     return formatted;
   }
 

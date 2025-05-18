@@ -683,7 +683,7 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
       product.recommendationType = type;
     }
 
-    // Show success message
+    // Show success message for product found
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -699,82 +699,105 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
       );
     }
 
-    // Make sure we have the minimum required product data
-    if (product.id.isEmpty || product.name.isEmpty) {
-      print('STEP 3 SKIPPED: Invalid product data detected');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Informations produit incomplètes'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.r),
-            ),
-            margin: EdgeInsets.all(16.w),
-          ),
-        );
-        _resumeScanner();
-      }
-      return; // Prevent navigation with invalid product
+    print('Processing product: ${product.name} (ID: ${product.id})');
+
+    // STEP 1: Check if user is logged in
+    print('STEP 1: Checking user authentication status');
+    _currentUserId = await _storageService.getUserId();
+    final bool isLoggedIn =
+        _currentUserId != null && _currentUserId!.isNotEmpty;
+
+    if (!isLoggedIn) {
+      print('User not logged in - no personalized recommendation available');
+      setEmptyRecommendation(product, "login_required");
+
+      // Still show product details without recommendation
+      _showProductPreview(product);
+      return;
     }
 
-    // STEP 3: Get AI recommendation if user is logged in
-    if (_currentUserId != null) {
-      print(
-          'STEP 3: Requesting AI recommendation for user: $_currentUserId, product: ${product.id}');
-      try {
-        final recommendationResponse = await _apiService
-            .getPersonalizedRecommendation(
-              _currentUserId!,
-              product.id,
-            )
-            .timeout(const Duration(seconds: 5));
+    print('User logged in with ID: $_currentUserId');
 
-        // Enhanced logging to debug the response data
-        print('API Response: $recommendationResponse');
+    // STEP 2: Request AI recommendation from server
+    print('STEP 2: Requesting AI recommendation');
 
-        if (recommendationResponse != null) {
-          // Check if we have a recommendation field with content
-          if (recommendationResponse.containsKey('recommendation') &&
-              recommendationResponse['recommendation'] != null &&
-              recommendationResponse['recommendation'].toString().isNotEmpty) {
-            product.aiRecommendation = recommendationResponse['recommendation'];
-            product.recommendationType =
-                recommendationResponse['recommendation_type'] ?? 'caution';
-            print('STEP 3 SUCCESS: AI recommendation applied');
-            print('Recommendation content: ${product.aiRecommendation}');
-            print('Recommendation type: ${product.recommendationType}');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20.w,
+                height: 20.h,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.w,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 10.w),
+              Text('Analyse IA en cours...'),
+            ],
+          ),
+          backgroundColor: Colors.blue,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          margin: EdgeInsets.all(16.w),
+        ),
+      );
+    }
 
-            // Check if this is a mock recommendation for logging
-            if (recommendationResponse.containsKey('is_mock') &&
-                recommendationResponse['is_mock'] == true) {
-              print('NOTE: Using mock recommendation data');
-            }
-          } else {
-            print('STEP 3 WARNING: Invalid recommendation data in response');
-            setEmptyRecommendation(product, "unavailable");
+    try {
+      final recommendationResponse =
+          await _apiService.getPersonalizedRecommendation(
+        _currentUserId!,
+        product.id,
+      );
+
+      if (recommendationResponse != null) {
+        // Check if we have a recommendation field with content
+        if (recommendationResponse.containsKey('recommendation') &&
+            recommendationResponse['recommendation'] != null &&
+            recommendationResponse['recommendation'].toString().isNotEmpty) {
+          product.aiRecommendation = recommendationResponse['recommendation'];
+          product.recommendationType =
+              recommendationResponse['recommendation_type'] ?? 'caution';
+
+          print('AI recommendation applied:');
+          print('- Type: ${product.recommendationType}');
+          print('- Length: ${product.aiRecommendation?.length ?? 0}');
+
+          // Show success message for AI recommendation
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Analyse IA complétée'),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                margin: EdgeInsets.all(16.w),
+              ),
+            );
           }
         } else {
-          print('STEP 3 WARNING: No AI recommendation available');
-          // Detailed error logging
-          print('API returned null response');
+          print('WARNING: Invalid recommendation data in response');
           setEmptyRecommendation(product, "unavailable");
         }
-      } catch (e) {
-        print('STEP 3 FAILED: AI recommendation error - $e');
-        setEmptyRecommendation(product, "error");
+      } else {
+        print('WARNING: No AI recommendation available');
+        setEmptyRecommendation(product, "unavailable");
       }
-    } else {
-      print(
-          'STEP 3 SKIPPED: User not logged in, no personalized recommendation');
-      // Set null recommendation for non-logged users
-      setEmptyRecommendation(product, "login_required");
+    } catch (e) {
+      print('ERROR: AI recommendation error - $e');
+      setEmptyRecommendation(product, "error");
     }
 
-    // STEP 4: Show the product details regardless of recommendation status
-    print('STEP 4: Showing product preview');
+    // Show the product details regardless of recommendation status
     if (mounted) {
       _showProductPreview(product);
     }

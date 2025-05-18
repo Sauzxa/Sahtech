@@ -139,28 +139,6 @@ class MockApiService {
 
       print('Using normalized barcode: $cleanBarcode');
 
-      // Special handling for known problematic barcode
-      if (cleanBarcode == '6133414007137') {
-        print('Using hardcoded data for KOOL 4 Zinners');
-        final productData = {
-          'id': '6823605c2ccee252df93845e',
-          'codeBarre': 6133414007137,
-          'barcode': '6133414007137',
-          'nom': 'KOOL 4 Zinners',
-          'marque': 'palmary',
-          'categorie': 'gateau',
-          'description': 'Biscuit topped with milk chocolate',
-          'imageUrl':
-              'https://res.cloudinary.com/dnt9u8t5m/image/upload/v1747149093/sahtech/placeholder_product.jpg',
-          'valeurNutriScore': 'E',
-          'descriptionNutriScore': '',
-          'ingredients': [], // Add ingredients if available
-          'nomAdditif': [], // Add additives if available
-        };
-
-        return ProductModel.fromJson(productData);
-      }
-
       // Check internet connectivity first before making any API calls
       final connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult == ConnectivityResult.none) {
@@ -232,8 +210,8 @@ class MockApiService {
   // Helper method to determine if we should use mock data
   // This allows easier testing without a live backend
   bool _shouldUseMockData() {
-    // Set this to false in production, true for testing
-    return false; // Disabling mock data to use only real products from database
+    // Always return false - we want to use real API data only
+    return false;
   }
 
   /// Get personalized recommendation from Spring Boot backend
@@ -256,6 +234,8 @@ class MockApiService {
       final String recommendationUrl =
           '$_baseUrl/recommendation/user/$userId/data?productId=$productId';
 
+      print('Making AI request to: $recommendationUrl');
+
       // Make the request with a clear timeout and proper authentication
       final response = await http.get(
         Uri.parse(recommendationUrl),
@@ -263,7 +243,8 @@ class MockApiService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(
+          const Duration(seconds: 10)); // Increased timeout for AI generation
 
       print('API response status code: ${response.statusCode}');
 
@@ -295,9 +276,8 @@ class MockApiService {
             }
           }
 
-          // If backend is using mock responses (as per logs), create a valid mock response
-          print(
-              'Creating fallback mock recommendation since API returned invalid structure');
+          // Only use fallback if absolutely necessary
+          print('No valid recommendation data found in API response');
           return _createFallbackMockRecommendation(productId);
         }
 
@@ -310,17 +290,13 @@ class MockApiService {
 
         // Provide more detailed error info based on status code
         if (response.statusCode == 403) {
-          print(
-              'Authentication error: Access denied (403 Forbidden). Check if token is valid.');
+          print('Authentication error: Access denied (403)');
         } else if (response.statusCode == 401) {
-          print(
-              'Authentication error: Not authenticated (401 Unauthorized). Token may be expired.');
+          print('Authentication error: Not authenticated (401)');
         } else if (response.statusCode == 404) {
-          print(
-              'Resource not found (404 Not Found). Check if endpoint URL is correct.');
+          print('Resource not found (404)');
         } else if (response.statusCode >= 500) {
-          print(
-              'Server error (${response.statusCode}). The recommendation service may be down.');
+          print('Server error (${response.statusCode})');
         }
 
         // Log response body for debugging if available
@@ -328,52 +304,27 @@ class MockApiService {
           print('Error response body: ${response.body}');
         }
 
-        // Create mock recommendation for testing when server errors occur
-        print('Creating fallback mock recommendation due to server error');
         return _createFallbackMockRecommendation(productId);
       }
     } catch (e) {
       print('Error requesting AI recommendation: $e');
-
-      // Create mock recommendation for testing when errors occur
-      print('Creating fallback mock recommendation due to error');
       return _createFallbackMockRecommendation(productId);
     }
   }
 
   // Helper method to create a realistic mock recommendation for testing
   Map<String, dynamic> _createFallbackMockRecommendation(String productId) {
-    final List<String> recommendationTypes = [
-      'recommended',
-      'caution',
-      'avoid'
-    ];
-    final type =
-        recommendationTypes[Random().nextInt(recommendationTypes.length)];
+    // Generic fallback message for when AI service is unavailable
+    final String fallbackMessage =
+        "La recommandation IA n'est pas disponible actuellement. Veuillez vérifier les ingrédients et la composition nutritionnelle pour vous assurer que ce produit convient à votre régime alimentaire.";
 
-    String mockRecommendation;
-    switch (type) {
-      case 'recommended':
-        mockRecommendation =
-            "Ce produit est généralement recommandé pour votre profil de santé. Il contient des ingrédients naturels et peu transformés. De plus, sa valeur nutritionnelle est équilibrée et correspond à vos besoins. Nous recommandons une consommation modérée dans le cadre d'une alimentation variée.";
-        break;
-      case 'avoid':
-        mockRecommendation =
-            "Ce produit n'est pas recommandé pour votre profil de santé en raison de sa teneur élevée en additifs alimentaires. De plus, il contient des ingrédients pouvant aggraver certaines conditions de santé mentionnées dans votre profil. Nous recommandons d'éviter ce produit ou de le consommer très occasionnellement. Alternatives: Recherchez des produits similaires avec des listes d'ingrédients plus courtes et naturelles.";
-        break;
-      case 'caution':
-      default:
-        mockRecommendation =
-            "Consommez ce produit avec modération. Il contient certains ingrédients qui pourraient ne pas être idéaux pour votre profil de santé, notamment des additifs et conservateurs. Toutefois, une consommation occasionnelle ne devrait pas poser de problème majeur. Nous recommandons de vérifier la liste complète des ingrédients pour vous assurer qu'il ne contient pas d'allergènes spécifiques à éviter selon votre profil.";
-        break;
-    }
-
-    print('Created fallback mock recommendation of type: $type');
+    // Always return a caution type for fallbacks since we can't make a proper assessment
+    print('Using AI service fallback message (not static mock data)');
 
     return {
-      'recommendation': mockRecommendation,
-      'recommendation_type': type,
-      'is_mock': true
+      'recommendation': fallbackMessage,
+      'recommendation_type': 'caution',
+      'is_fallback': true
     };
   }
 

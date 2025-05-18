@@ -16,8 +16,8 @@ def test_recommendation_api():
         "user_data": {
             "user_id": "user123",
             "age": 25,
-            "weight": 70,
-            "height": 175,
+            "weight": 70.0,
+            "height": 175.0,
             "bmi": 22.9,
             "allergies": ["peanuts"],
             "health_conditions": ["diabetes"],
@@ -31,10 +31,10 @@ def test_recommendation_api():
         "product_data": {
             "id": "prod123",
             "name": "KOOL 4 Zinners",  # Use the product from the screenshot
-            "barcode": "1234567890",
-            "brand": "KOOL", 
+            "barcode": "6133414007137",
+            "brand": "palmary", 
             "category": "gateau",
-            "description": "Gâteau chocolaté",
+            "description": "Biscuit topped with milk chocolate",
             "type": "Dessert",
             "ingredients": ["farine", "sucre", "chocolat"],
             "additives": [],
@@ -42,7 +42,10 @@ def test_recommendation_api():
             "nutrition_values": {
                 "calories": 250,
                 "sugar": 15,
-                "protein": 10
+                "carbs": 30,
+                "protein": 5,
+                "fat": 12,
+                "salt": 1
             }
         }
     }
@@ -79,5 +82,9 @@ def test_recommendation_api():
         return None
 
 if __name__ == "__main__":
-    print("Testing AI Recommendation API...")
-    test_recommendation_api()
+    # Run test when script is executed directly
+    recommendation = test_recommendation_api()
+    if recommendation:
+        print("\n\n====== TEST PASSED ======")
+    else:
+        print("\n\n====== TEST FAILED ======")
