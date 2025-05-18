@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/product_model.dart';
+import 'dart:math';
 
 class ProductRecommendationScreen extends StatefulWidget {
   final ProductModel product;
@@ -34,12 +35,16 @@ class _ProductRecommendationScreenState
     print('Product ID: ${widget.product.id}');
     print('Product barcode: ${widget.product.barcode}');
     print('AI Recommendation: ${widget.product.aiRecommendation}');
+    print(
+        'AI Recommendation length: ${widget.product.aiRecommendation?.length ?? 0}');
     print('Recommendation Type: ${widget.product.recommendationType}');
     print('Ingredients count: ${widget.product.ingredients.length}');
     print('Allergens count: ${widget.product.allergens.length}');
 
     // Parse and format AI recommendation if available
     recommendation = _formatAiRecommendation(widget.product.aiRecommendation);
+    print(
+        'Formatted recommendation: ${recommendation.substring(0, min(50, recommendation.length))}...');
 
     // Use product ingredients, with a fallback if empty
     ingredients = widget.product.ingredients;
@@ -77,13 +82,15 @@ class _ProductRecommendationScreenState
   // Format and structure the AI recommendation text
   String _formatAiRecommendation(String? rawRecommendation) {
     if (rawRecommendation == null || rawRecommendation.isEmpty) {
+      // Log that we're using the default message
+      print('No AI recommendation available - using default message');
       return "Nous n'avons pas encore d'analyse personnalisée pour ce produit. "
           "Vérifiez les ingrédients et allergènes ci-dessous pour vous assurer "
           "que ce produit convient à votre régime alimentaire.";
     }
 
     // Log the raw recommendation for debugging
-    print('Raw AI recommendation: $rawRecommendation');
+    print('AI recommendation found: $rawRecommendation');
 
     // Add paragraph breaks where appropriate to improve readability
     // Look for key phrases that indicate new sections

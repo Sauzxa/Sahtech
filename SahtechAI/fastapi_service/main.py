@@ -6,6 +6,11 @@ import os
 from groq import Groq
 import logging
 import re
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+print(f"Loading environment variables from .env file")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -32,6 +37,7 @@ def verify_api_key(api_key: str = Security(api_key_header)):
 
 # Initialize Groq client - Get from environment or use a mock response if not available
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+logger.info(f"GROQ_API_KEY present: {bool(GROQ_API_KEY)}")
 if not GROQ_API_KEY:
     logger.warning("⚠️ GROQ_API_KEY environment variable not set! The service will use mock responses.")
     client = None

@@ -644,6 +644,45 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
 
   // Extracted method to process a product and get recommendation
   Future<void> _processProductAndGetRecommendation(ProductModel product) async {
+    // Helper method to set empty recommendation with appropriate UI feedback
+    void setEmptyRecommendation(ProductModel product, String type) {
+      if (mounted) {
+        String message = 'Recommandation IA non disponible';
+        Color color = Colors.orange;
+
+        switch (type) {
+          case "error":
+            message = 'Erreur de connexion au service IA';
+            color = Colors.red;
+            break;
+          case "login_required":
+            message = 'Connectez-vous pour voir les recommandations IA';
+            color = Colors.blue;
+            break;
+          case "unavailable":
+          default:
+            // Use default values
+            break;
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: color,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            margin: EdgeInsets.all(16.w),
+          ),
+        );
+      }
+
+      product.aiRecommendation = null;
+      product.recommendationType = type;
+    }
+
     // Show success message
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -693,65 +732,45 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
             )
             .timeout(const Duration(seconds: 5));
 
-        if (recommendationResponse != null &&
-            recommendationResponse.containsKey('recommendation')) {
-          product.aiRecommendation = recommendationResponse['recommendation'];
-          product.recommendationType =
-              recommendationResponse['recommendation_type'] ?? 'caution';
-          print('STEP 3 SUCCESS: AI recommendation applied');
+        // Enhanced logging to debug the response data
+        print('API Response: $recommendationResponse');
+
+        if (recommendationResponse != null) {
+          // Check if we have a recommendation field with content
+          if (recommendationResponse.containsKey('recommendation') &&
+              recommendationResponse['recommendation'] != null &&
+              recommendationResponse['recommendation'].toString().isNotEmpty) {
+            product.aiRecommendation = recommendationResponse['recommendation'];
+            product.recommendationType =
+                recommendationResponse['recommendation_type'] ?? 'caution';
+            print('STEP 3 SUCCESS: AI recommendation applied');
+            print('Recommendation content: ${product.aiRecommendation}');
+            print('Recommendation type: ${product.recommendationType}');
+
+            // Check if this is a mock recommendation for logging
+            if (recommendationResponse.containsKey('is_mock') &&
+                recommendationResponse['is_mock'] == true) {
+              print('NOTE: Using mock recommendation data');
+            }
+          } else {
+            print('STEP 3 WARNING: Invalid recommendation data in response');
+            setEmptyRecommendation(product, "unavailable");
+          }
         } else {
           print('STEP 3 WARNING: No AI recommendation available');
-
-          // Show feedback that AI recommendation is unavailable
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text(
-                    'Recommandation IA non disponible pour ce produit'),
-                backgroundColor: Colors.orange,
-                behavior: SnackBarBehavior.floating,
-                duration: const Duration(seconds: 2),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.r),
-                ),
-                margin: EdgeInsets.all(16.w),
-              ),
-            );
-          }
-
-          // Set null recommendation and appropriate type
-          product.aiRecommendation = null;
-          product.recommendationType = "unavailable";
+          // Detailed error logging
+          print('API returned null response');
+          setEmptyRecommendation(product, "unavailable");
         }
       } catch (e) {
         print('STEP 3 FAILED: AI recommendation error - $e');
-
-        // Show error feedback
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Erreur de connexion au service IA'),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 2),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-              margin: EdgeInsets.all(16.w),
-            ),
-          );
-        }
-
-        // Set null recommendation and error type
-        product.aiRecommendation = null;
-        product.recommendationType = "error";
+        setEmptyRecommendation(product, "error");
       }
     } else {
       print(
           'STEP 3 SKIPPED: User not logged in, no personalized recommendation');
       // Set null recommendation for non-logged users
-      product.aiRecommendation = null;
-      product.recommendationType = "login_required";
+      setEmptyRecommendation(product, "login_required");
     }
 
     // STEP 4: Show the product details regardless of recommendation status
