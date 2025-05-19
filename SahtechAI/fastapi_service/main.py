@@ -14,7 +14,7 @@ from fastapi.responses import Response
 from starlette.requests import Request
 from datetime import datetime
 import httpx
-
+# we gonna detailled the prompt more
 # Load environment variables from .env file
 load_dotenv()
 print(f"Loading environment variables from .env file")
