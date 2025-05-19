@@ -7,6 +7,11 @@ from groq import Groq
 import logging
 import re
 from dotenv import load_dotenv
+from unidecode import unidecode
+import json
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
+from starlette.requests import Request
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,6 +27,60 @@ app = FastAPI(
     description="AI service for food product recommendations based on user health profiles",
     version="1.0.0"
 )
+
+# Add CORS middleware to allow cross-origin requests from the frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Middleware to normalize all response data
+@app.middleware("http")
+async def normalize_response_middleware(request: Request, call_next):
+    # Process the request and get the response
+    response = await call_next(request)
+    
+    # Check if response is JSON
+    if response.headers.get("content-type") == "application/json":
+        try:
+            # Get response body
+            body = await response.body()
+            
+            # Decode and parse JSON
+            text = body.decode("utf-8")
+            data = json.loads(text)
+            
+            # Recursively normalize all strings in the response
+            normalized_data = normalize_dict_values(data)
+            
+            # Create a new response with normalized data
+            return Response(
+                content=json.dumps(normalized_data),
+                status_code=response.status_code,
+                headers=dict(response.headers),
+                media_type="application/json"
+            )
+        except Exception as e:
+            logger.error(f"Error normalizing response: {str(e)}")
+            # Return original response if normalization fails
+            return response
+    
+    # Return original response for non-JSON responses
+    return response
+
+def normalize_dict_values(data):
+    """Recursively normalize all string values in dictionaries and lists"""
+    if isinstance(data, dict):
+        return {k: normalize_dict_values(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [normalize_dict_values(item) for item in data]
+    elif isinstance(data, str):
+        return normalize_text(data)
+    else:
+        return data
 
 # API Key security
 API_KEY = os.environ.get("API_KEY", "sahtech-fastapi-secure-key-2025")  # Secure API key for Spring Boot integration
@@ -167,6 +226,15 @@ class RecommendationResponse(BaseModel):
 def format_system_prompt(user_data: UserData, product_data: ProductData) -> str:
     """Format the system prompt for the AI model"""
     
+    # Normalize ingredients and additives for display
+    normalized_ingredients = ", ".join(product_data.ingredients) if product_data.ingredients else 'No information available'
+    normalized_additives = ", ".join(product_data.additives) if product_data.additives else 'None'
+    
+    # Normalize allergies and health conditions
+    normalized_allergies = ", ".join(user_data.allergies) if user_data.allergies else 'None reported'
+    normalized_health_conditions = ", ".join(user_data.health_conditions) if user_data.health_conditions else 'None reported'
+    normalized_objectives = ", ".join(user_data.objectives) if user_data.objectives else 'None specified'
+    
     system_prompt = f"""
 You are a nutrition expert AI assistant. Your task is to analyze a food product and provide a personalized recommendation based on a user's health profile.
 
@@ -176,8 +244,8 @@ You are a nutrition expert AI assistant. Your task is to analyze a food product 
 - Category: {product_data.category or 'N/A'}
 - Description: {product_data.description or 'N/A'}
 - Type: {product_data.type or 'N/A'}
-- Ingredients: {', '.join(product_data.ingredients) if product_data.ingredients else 'No information available'}
-- Additives: {', '.join(product_data.additives) if product_data.additives else 'None'}
+- Ingredients: {normalized_ingredients}
+- Additives: {normalized_additives}
 - Nutri-Score: {product_data.nutri_score if product_data.nutri_score else 'N/A'}
 
 **User Health Profile**:
@@ -186,10 +254,10 @@ You are a nutrition expert AI assistant. Your task is to analyze a food product 
 - BMI: {user_data.bmi if user_data.bmi else 'N/A'}
 - Weight: {user_data.weight if user_data.weight else 'N/A'} kg
 - Height: {user_data.height if user_data.height else 'N/A'} cm
-- Allergies: {', '.join(user_data.allergies) if user_data.allergies else 'None reported'}
-- Health Conditions: {', '.join(user_data.health_conditions) if user_data.health_conditions else 'None reported'}
+- Allergies: {normalized_allergies}
+- Health Conditions: {normalized_health_conditions}
 - Activity Level: {user_data.activity_level if user_data.activity_level else 'N/A'}
-- Health Objectives: {', '.join(user_data.objectives) if user_data.objectives else 'None specified'}
+- Health Objectives: {normalized_objectives}
 - Has Chronic Disease: {'Yes' if user_data.has_chronic_disease else 'No'}
 - Has Allergies: {'Yes' if user_data.has_allergies else 'No'}
 - Preferred Language: {user_data.preferred_language or 'French'}
@@ -198,51 +266,48 @@ Based on this information, analyze the compatibility of this product with the us
 Consider allergies, health conditions, nutritional needs, and health objectives.
 
 Provide a personalized recommendation in the following format:
-1. Start with one of these indicators: "✅ Recommended", "⚠️ Consume with caution", or "❌ Avoid"
+1. Start with one of these indicators: "✓ Recommended", "⚠ Consume with caution", or "× Avoid"
 2. Followed by a detailed explanation (2-3 sentences) of why this recommendation is given
 3. Include specific health implications based on the user's profile
 4. Provide alternative suggestions if the product is not recommended
 
 Your response should be in {user_data.preferred_language or 'French'}, clear, concise, and focused on the health implications.
+Use simple characters without accents (e.g., use 'e' instead of 'é') for better compatibility.
 """
     return system_prompt.strip()
 
 def determine_recommendation_type(recommendation: str) -> str:
     """Determine the type of recommendation based on the text"""
-    if "✅ Recommended" in recommendation:
+    if "✅ Recommended" in recommendation or "✓ Recommended" in recommendation:
         return "recommended"
-    elif "⚠️ Consume with caution" in recommendation:
+    elif "⚠️ Consume with caution" in recommendation or "⚠ Consume with caution" in recommendation:
         return "caution"
-    elif "❌ Avoid" in recommendation:
+    elif "❌ Avoid" in recommendation or "× Avoid" in recommendation:
         return "avoid"
     else:
         return "caution"  # Default to caution if unclear
 
 def normalize_text(text: str) -> str:
-    """Normalize text to ensure proper UTF-8 encoding for mobile display"""
+    """Normalize text to ensure proper encoding for mobile display"""
     try:
-        # Ensure the text is properly decoded as UTF-8
+        # Handle bytes conversion if needed
         if isinstance(text, bytes):
             text = text.decode('utf-8')
+            
+        # Special handling for common emojis in recommendations
+        emoji_map = {
+            "✅": "✓",  # Replace checkmark with simpler version
+            "⚠️": "⚠",  # Replace warning with simpler version
+            "❌": "×"    # Replace X with simpler version
+        }
         
-        # Replace problematic characters if needed
-        text = text.replace('é', 'e')
-        text = text.replace('è', 'e')
-        text = text.replace('ê', 'e')
-        text = text.replace('ë', 'e')
-        text = text.replace('à', 'a')
-        text = text.replace('â', 'a')
-        text = text.replace('ä', 'a')
-        text = text.replace('ô', 'o')
-        text = text.replace('ö', 'o')
-        text = text.replace('û', 'u')
-        text = text.replace('ü', 'u')
-        text = text.replace('ï', 'i')
-        text = text.replace('ç', 'c')
-        
-        # Keep emojis intact
-        # No action needed as Python 3 handles emoji well in UTF-8
-        
+        # Replace emojis with simpler versions
+        for emoji, simple_emoji in emoji_map.items():
+            text = text.replace(emoji, simple_emoji)
+            
+        # Apply unidecode to convert accented characters to ASCII
+        text = unidecode(text)
+            
         return text
     except Exception as e:
         logger.error(f"Error normalizing text: {str(e)}")
@@ -255,13 +320,13 @@ def mock_recommendation(user_data: UserData, product_data: ProductData) -> str:
     
     # Base recommendation on simple rules
     if has_allergies and any(item in product_data.ingredients for item in user_data.allergies):
-        return "❌ Avoid - Ce produit contient des allergenes qui correspondent a vos allergies declarees. Veuillez consulter un professionnel de la sante avant de consommer. Des alternatives sans allergenes sont recommandees."
+        return "× Avoid - Ce produit contient des allergenes qui correspondent a vos allergies declarees. Veuillez consulter un professionnel de la sante avant de consommer. Des alternatives sans allergenes sont recommandees."
     elif "diabetes" in user_data.health_conditions and product_data.nutri_score in ["D", "E"]:
-        return "⚠️ Consume with caution - Ce produit a un score nutritionnel bas qui peut etre problematique pour votre diabete. Limitez votre consommation et privilegiez des options avec moins de sucre."
+        return "⚠ Consume with caution - Ce produit a un score nutritionnel bas qui peut etre problematique pour votre diabete. Limitez votre consommation et privilegiez des options avec moins de sucre."
     elif product_data.nutri_score in ["D", "E"]:
-        return "⚠️ Consume with caution - Ce produit a un score nutritionnel faible. Limitez votre consommation, surtout si vous suivez un regime particulier. Recherchez des alternatives plus saines."
+        return "⚠ Consume with caution - Ce produit a un score nutritionnel faible. Limitez votre consommation, surtout si vous suivez un regime particulier. Recherchez des alternatives plus saines."
     else:
-        return "✅ Recommended - Ce produit semble etre compatible avec votre profil de sante. Consommez dans le cadre d'une alimentation equilibree et variee."
+        return "✓ Recommended - Ce produit semble etre compatible avec votre profil de sante. Consommez dans le cadre d'une alimentation equilibree et variee."
 
 def generate_ai_recommendation(user_data: UserData, product_data: ProductData) -> str:
     """Generate AI recommendation using Groq or fallback to mock"""
@@ -350,6 +415,26 @@ async def debug_request(request_data: dict):
         logger.error(f"❌ Debug request error: {str(e)}")
         return {"error": f"Debug request failed: {str(e)}"}
 
+@app.post("/normalize", dependencies=[Depends(verify_api_key)])
+async def normalize_data(data: dict):
+    """Normalize any text data sent to this endpoint"""
+    try:
+        logger.info(f"Received normalization request")
+        
+        # Normalize all string values recursively
+        normalized_data = normalize_dict_values(data)
+        
+        logger.info(f"Successfully normalized data")
+        
+        return normalized_data
+    
+    except Exception as e:
+        logger.error(f"Error normalizing data: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to normalize data: {str(e)}"
+        )
+
 @app.post("/predict", dependencies=[Depends(verify_api_key)])
 async def predict(request: RecommendationRequest):
     """Generate a personalized recommendation based on user and product data"""
@@ -358,6 +443,24 @@ async def predict(request: RecommendationRequest):
         
         # Log the barcode value for debugging
         logger.info(f"Product barcode: {request.product_data.barcode} (type: {type(request.product_data.barcode).__name__})")
+        
+        # Normalize product data first to ensure proper display in the UI
+        if request.product_data.name:
+            request.product_data.name = normalize_text(request.product_data.name)
+        if request.product_data.brand:
+            request.product_data.brand = normalize_text(request.product_data.brand)
+        if request.product_data.category:
+            request.product_data.category = normalize_text(request.product_data.category)
+        if request.product_data.description:
+            request.product_data.description = normalize_text(request.product_data.description)
+        if request.product_data.type:
+            request.product_data.type = normalize_text(request.product_data.type)
+        
+        # Normalize ingredients and additives
+        if request.product_data.ingredients:
+            request.product_data.ingredients = [normalize_text(ing) for ing in request.product_data.ingredients]
+        if request.product_data.additives:
+            request.product_data.additives = [normalize_text(add) for add in request.product_data.additives]
         
         # Generate recommendation using AI or mock if not available
         recommendation = generate_ai_recommendation(request.user_data, request.product_data)
@@ -373,7 +476,19 @@ async def predict(request: RecommendationRequest):
         # Return in format Spring Boot expects
         return {
             "recommendation": normalized_recommendation,
-            "recommendation_type": recommendation_type
+            "recommendation_type": recommendation_type,
+            # Include normalized product data in response for the frontend to use
+            "product_data": {
+                "name": request.product_data.name,
+                "brand": request.product_data.brand,
+                "category": request.product_data.category,
+                "description": request.product_data.description,
+                "type": request.product_data.type,
+                "ingredients": request.product_data.ingredients,
+                "additives": request.product_data.additives,
+                "nutri_score": request.product_data.nutri_score,
+                "nutri_score_description": normalize_text(request.product_data.nutri_score_description) if request.product_data.nutri_score_description else None
+            }
         }
     
     except Exception as e:
