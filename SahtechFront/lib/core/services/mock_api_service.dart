@@ -225,12 +225,13 @@ class MockApiService {
 
   /// Get personalized recommendation from Spring Boot backend
   /// which calls the FastAPI service with LLama/Groq
+  /// This method always requests a fresh recommendation and never uses cached data
   Future<Map<String, dynamic>?> getPersonalizedRecommendation(
     String userId,
     String productId,
   ) async {
     try {
-      print('Requesting AI recommendation via Spring Boot -> LLama/Groq');
+      print('Requesting fresh AI recommendation via Spring Boot -> LLama/Groq');
 
       // Get the auth token
       final token = await _getToken();
@@ -259,7 +260,7 @@ class MockApiService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        print('AI recommendation received successfully');
+        print('Fresh AI recommendation received successfully');
         print('Raw API response: ${response.body}');
         print('Parsed data structure: ${data.keys.toList()}');
 
@@ -289,9 +290,6 @@ class MockApiService {
           print('No valid recommendation data found in API response');
           return _createFallbackMockRecommendation(productId);
         }
-
-        // Save the recommendation to history in the background
-        _saveRecommendationToHistory(userId, productId, data);
 
         return data;
       } else {
@@ -337,51 +335,9 @@ class MockApiService {
     };
   }
 
-  // Helper method to save recommendations to user history
-  Future<void> _saveRecommendationToHistory(String userId, String productId,
-      Map<String, dynamic> recommendationData) async {
-    try {
-      print(
-          'Saving recommendation to history for user: $userId, product: $productId');
-
-      // Get the auth token
-      final token = await _getToken();
-      if (token == null) {
-        print('No auth token available for saving recommendation');
-        return;
-      }
-
-      final String saveUrl = '$_baseUrl/recommendation/save';
-
-      final Map<String, dynamic> payload = {
-        'userId': userId,
-        'productId': productId,
-        'recommendation': recommendationData['recommendation'],
-        'recommendationType':
-            recommendationData['recommendation_type'] ?? 'caution',
-        'timestamp': DateTime.now().toIso8601String(),
-      };
-
-      final response = await http
-          .post(
-            Uri.parse(saveUrl),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: json.encode(payload),
-          )
-          .timeout(const Duration(seconds: 5));
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        print('Recommendation saved successfully');
-      } else {
-        print('Failed to save recommendation: HTTP ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Exception saving recommendation: $e');
-    }
-  }
+  // Note: The Spring Boot backend now automatically handles saving recommendations
+  // to the database when it receives a scan request, so we don't need to separately
+  // save recommendations from the mobile app.
 
   /// Get all products for a user
   Future<List<ProductModel>> getUserProducts(String userId) async {
