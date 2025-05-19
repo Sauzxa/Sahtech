@@ -55,7 +55,7 @@ class _ChronicDiseasesState extends State<ChronicDiseases> {
   };
 
   Map<String, String> _translations = {
-    'title': 'Choisir votre maladies ?',
+    'title': 'Choisissez vos maladies ?',
     'subtitle':
         'Afin de vous offrir une expérience optimale et des recommandations personnalisées, veuillez choisir votre maladie',
     'dropdown_label': 'Choisir ton maladie',

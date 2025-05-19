@@ -50,7 +50,7 @@ else:
         client = None
 
 # Spring Boot API endpoint
-SPRING_BOOT_API = os.environ.get("SPRING_BOOT_API", "http://192.168.144.26:8080/API/Sahtech")
+SPRING_BOOT_API = os.environ.get("SPRING_BOOT_API", "http://192.168.137.15:8080/API/Sahtech")
 
 # Data models
 class HealthCondition(BaseModel):
@@ -218,6 +218,36 @@ def determine_recommendation_type(recommendation: str) -> str:
     else:
         return "caution"  # Default to caution if unclear
 
+def normalize_text(text: str) -> str:
+    """Normalize text to ensure proper UTF-8 encoding for mobile display"""
+    try:
+        # Ensure the text is properly decoded as UTF-8
+        if isinstance(text, bytes):
+            text = text.decode('utf-8')
+        
+        # Replace problematic characters if needed
+        text = text.replace('é', 'e')
+        text = text.replace('è', 'e')
+        text = text.replace('ê', 'e')
+        text = text.replace('ë', 'e')
+        text = text.replace('à', 'a')
+        text = text.replace('â', 'a')
+        text = text.replace('ä', 'a')
+        text = text.replace('ô', 'o')
+        text = text.replace('ö', 'o')
+        text = text.replace('û', 'u')
+        text = text.replace('ü', 'u')
+        text = text.replace('ï', 'i')
+        text = text.replace('ç', 'c')
+        
+        # Keep emojis intact
+        # No action needed as Python 3 handles emoji well in UTF-8
+        
+        return text
+    except Exception as e:
+        logger.error(f"Error normalizing text: {str(e)}")
+        return text  # Return original text if normalization fails
+
 def mock_recommendation(user_data: UserData, product_data: ProductData) -> str:
     """Generate a mock recommendation when Groq API is unavailable"""
     has_allergies = len(user_data.allergies) > 0
@@ -225,13 +255,13 @@ def mock_recommendation(user_data: UserData, product_data: ProductData) -> str:
     
     # Base recommendation on simple rules
     if has_allergies and any(item in product_data.ingredients for item in user_data.allergies):
-        return "❌ Avoid - Ce produit contient des allergènes qui correspondent à vos allergies déclarées. Veuillez consulter un professionnel de la santé avant de consommer. Des alternatives sans allergènes sont recommandées."
+        return "❌ Avoid - Ce produit contient des allergenes qui correspondent a vos allergies declarees. Veuillez consulter un professionnel de la sante avant de consommer. Des alternatives sans allergenes sont recommandees."
     elif "diabetes" in user_data.health_conditions and product_data.nutri_score in ["D", "E"]:
-        return "⚠️ Consume with caution - Ce produit a un score nutritionnel bas qui peut être problématique pour votre diabète. Limitez votre consommation et privilégiez des options avec moins de sucre."
+        return "⚠️ Consume with caution - Ce produit a un score nutritionnel bas qui peut etre problematique pour votre diabete. Limitez votre consommation et privilegiez des options avec moins de sucre."
     elif product_data.nutri_score in ["D", "E"]:
-        return "⚠️ Consume with caution - Ce produit a un score nutritionnel faible. Limitez votre consommation, surtout si vous suivez un régime particulier. Recherchez des alternatives plus saines."
+        return "⚠️ Consume with caution - Ce produit a un score nutritionnel faible. Limitez votre consommation, surtout si vous suivez un regime particulier. Recherchez des alternatives plus saines."
     else:
-        return "✅ Recommended - Ce produit semble être compatible avec votre profil de santé. Consommez dans le cadre d'une alimentation équilibrée et variée."
+        return "✅ Recommended - Ce produit semble etre compatible avec votre profil de sante. Consommez dans le cadre d'une alimentation equilibree et variee."
 
 def generate_ai_recommendation(user_data: UserData, product_data: ProductData) -> str:
     """Generate AI recommendation using Groq or fallback to mock"""
@@ -254,7 +284,8 @@ def generate_ai_recommendation(user_data: UserData, product_data: ProductData) -
         )
         
         recommendation = completion.choices[0].message.content
-        return recommendation
+        # Apply normalization to handle special characters
+        return normalize_text(recommendation)
     
     except Exception as e:
         logger.error(f"Error generating AI recommendation: {str(e)}")
@@ -336,9 +367,12 @@ async def predict(request: RecommendationRequest):
         
         logger.info(f"Generated recommendation of type '{recommendation_type}' for user {request.user_data.user_id}")
         
+        # Normalize the recommendation text
+        normalized_recommendation = normalize_text(recommendation)
+        
         # Return in format Spring Boot expects
         return {
-            "recommendation": recommendation,
+            "recommendation": normalized_recommendation,
             "recommendation_type": recommendation_type
         }
     

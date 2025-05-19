@@ -537,7 +537,7 @@ class _EditUserDataState extends State<EditUserData> {
       print('Warning: Attempted to show SnackBar but widget is unmounted');
       return;
     }
-    
+
     final scaffold = ScaffoldMessenger.of(context);
     scaffold.clearSnackBars();
 

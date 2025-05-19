@@ -146,9 +146,6 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
 
     // If returned with updated user data, refresh the UI
     if (result != null && result is UserModel) {
-      print("Returned from EditUserData with updated user data");
-      print("Updated profile image URL: ${result.photoUrl}");
-
       setState(() {
         // Update user data with the returned model
         widget.user.name = result.name;
@@ -165,16 +162,10 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
         // Explicitly set the profile image URL
         if (result.photoUrl != null) {
           widget.user.photoUrl = result.photoUrl;
-          print("Set profile image URL: ${widget.user.photoUrl}");
         }
       });
 
-      // Additionally, fetch the latest data from the server to ensure consistency
-      _fetchLatestUserData();
-    } else {
-      print("No result returned from EditUserData");
-      // Even if no result returned, refresh data from the server
-      _fetchLatestUserData();
+      // No need to call fetchLatestUserData since we already have updated data
     }
   }
 

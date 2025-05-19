@@ -40,7 +40,7 @@ class MockApiService {
   // Spring Boot API base URL
   // Updated IP address to match working endpoint seen in logs
   final String _baseUrl =
-      'http://192.168.144.26:8080/API/Sahtech'; // Using the IP that works for user data
+      'http://192.168.137.15:8080/API/Sahtech'; // Using the IP that works for user data
   // Alternative URLs for different environments:
   // final String _baseUrl = 'http://10.0.2.2:8080/API/Sahtech'; // Previous setting that caused timeouts
   // final String _baseUrl = 'http://192.168.43.1:8080/API/Sahtech'; // Previous IP that caused timeouts
