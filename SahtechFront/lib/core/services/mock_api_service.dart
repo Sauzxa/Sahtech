@@ -226,27 +226,46 @@ class MockApiService {
   /// Get personalized recommendation from Spring Boot backend
   /// which calls the FastAPI service with LLama/Groq
   /// This method always requests a fresh recommendation and never uses cached data
+  /// The flutterCallbackUrl parameter enables direct communication from FastAPI to Flutter
   Future<Map<String, dynamic>?> getPersonalizedRecommendation(
     String userId,
-    String productId,
-  ) async {
+    String productId, {
+    String? flutterCallbackUrl,
+  }) async {
+    print('\n=== STARTING RECOMMENDATION REQUEST ===');
+    print('User ID: $userId');
+    print('Product ID: $productId');
+    if (flutterCallbackUrl != null) {
+      print('Flutter callback URL: $flutterCallbackUrl');
+    }
+
     try {
-      print('Requesting fresh AI recommendation via Spring Boot -> LLama/Groq');
+      print('Requesting fresh AI recommendation via Spring Boot -> FastAPI');
 
       // Get the auth token
       final token = await _getToken();
       if (token == null) {
-        print('No auth token available for AI recommendation request');
+        print('ERROR: No auth token available for AI recommendation request');
         return null;
       }
+      print('Auth token retrieved successfully');
 
       // Build the URL for recommendation request
-      final String recommendationUrl =
+      String recommendationUrl =
           '$_baseUrl/recommendation/user/$userId/data?productId=$productId';
+
+      // Add Flutter callback URL if provided
+      if (flutterCallbackUrl != null && flutterCallbackUrl.isNotEmpty) {
+        // URL encode the callback URL
+        final encodedCallback = Uri.encodeComponent(flutterCallbackUrl);
+        recommendationUrl += '&flutterCallbackUrl=$encodedCallback';
+        print('Including Flutter callback URL in request');
+      }
 
       print('Making AI request to: $recommendationUrl');
 
       // Make the request with a clear timeout and proper authentication
+      print('Sending HTTP request...');
       final response = await http.get(
         Uri.parse(recommendationUrl),
         headers: {
@@ -254,44 +273,70 @@ class MockApiService {
           'Authorization': 'Bearer $token',
         },
       ).timeout(
-          const Duration(seconds: 10)); // Increased timeout for AI generation
+          const Duration(seconds: 15)); // Increased timeout for AI generation
 
-      print('API response status code: ${response.statusCode}');
+      print('API response received: Status ${response.statusCode}');
+      print('Response content length: ${response.body.length}');
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        print('Fresh AI recommendation received successfully');
-        print('Raw API response: ${response.body}');
-        print('Parsed data structure: ${data.keys.toList()}');
+        try {
+          final Map<String, dynamic> data = json.decode(response.body);
+          print('Response decoded successfully');
 
-        // Check if response has a valid recommendation field
-        if (!data.containsKey('recommendation') ||
-            data['recommendation'] == null ||
-            data['recommendation'].toString().isEmpty) {
-          print('WARNING: API response missing valid "recommendation" field');
+          // Log useful debugging info about the response structure
+          print('Response keys: ${data.keys.toList()}');
 
-          // Check if the recommendation is nested inside another field
-          if (data.containsKey('data') &&
-              data['data'] is Map<String, dynamic>) {
-            print('Found "data" field, checking for nested recommendation');
-            final nestedData = data['data'] as Map<String, dynamic>;
-            if (nestedData.containsKey('recommendation')) {
-              print('Found recommendation in nested data');
-              // Extract the recommendation from nested data
-              return {
-                'recommendation': nestedData['recommendation'],
-                'recommendation_type':
-                    nestedData['recommendation_type'] ?? 'caution',
-              };
+          if (data.containsKey('recommendation')) {
+            final recText = data['recommendation'] as String?;
+            final recType = data['recommendation_type'] as String?;
+
+            print(
+                'Recommendation text present: ${recText != null && recText.isNotEmpty}');
+            print('Recommendation type: $recType');
+
+            if (recText != null && recText.isNotEmpty) {
+              print(
+                  'First 50 chars: ${recText.substring(0, min(50, recText.length))}...');
+              print('=== RECOMMENDATION REQUEST SUCCESSFUL ===\n');
+              return data;
+            } else {
+              print('ERROR: Empty recommendation text in response');
+            }
+          } else {
+            print('ERROR: Missing "recommendation" field in response');
+            print(
+                'Response body: ${response.body.substring(0, min(200, response.body.length))}...');
+
+            // Check if the recommendation is nested inside another field
+            if (data.containsKey('data') &&
+                data['data'] is Map<String, dynamic>) {
+              print('Found "data" field, checking for nested recommendation');
+              final nestedData = data['data'] as Map<String, dynamic>;
+              if (nestedData.containsKey('recommendation')) {
+                print('Found recommendation in nested data');
+                // Extract the recommendation from nested data
+                final recommendation = {
+                  'recommendation': nestedData['recommendation'],
+                  'recommendation_type':
+                      nestedData['recommendation_type'] ?? 'caution',
+                };
+                print(
+                    '=== RECOMMENDATION REQUEST SUCCESSFUL (NESTED DATA) ===\n');
+                return recommendation;
+              }
             }
           }
 
-          // Only use fallback if absolutely necessary
-          print('No valid recommendation data found in API response');
+          // If we got here, something's wrong with the response format
+          print(
+              'Falling back to default recommendation due to invalid response format');
+          return _createFallbackMockRecommendation(productId);
+        } catch (parseError) {
+          print('ERROR parsing response JSON: $parseError');
+          print(
+              'Raw response: ${response.body.substring(0, min(100, response.body.length))}...');
           return _createFallbackMockRecommendation(productId);
         }
-
-        return data;
       } else {
         print('Failed to get AI recommendation: HTTP ${response.statusCode}');
 
@@ -308,13 +353,16 @@ class MockApiService {
 
         // Log response body for debugging if available
         if (response.body.isNotEmpty) {
-          print('Error response body: ${response.body}');
+          print(
+              'Error response body: ${response.body.substring(0, min(200, response.body.length))}...');
         }
 
+        print('=== RECOMMENDATION REQUEST FAILED ===\n');
         return _createFallbackMockRecommendation(productId);
       }
     } catch (e) {
-      print('Error requesting AI recommendation: $e');
+      print('ERROR requesting AI recommendation: $e');
+      print('=== RECOMMENDATION REQUEST FAILED ===\n');
       return _createFallbackMockRecommendation(productId);
     }
   }
@@ -382,26 +430,105 @@ class MockApiService {
           'Warning: Scanning product without a userId. Product count won\'t be updated.');
     }
 
+    print('=== PRODUCT SCAN START ===');
+    print('Barcode: $barcode');
+    print('UserId: ${userId ?? "Not provided"}');
+
     // Always use the real API instead of random or mock data
     final apiProduct = await getProductByBarcode(barcode, userId: userId);
 
     if (apiProduct != null) {
+      print('Product found in API: ${apiProduct.name} (${apiProduct.id})');
+
+      // Always request fresh recommendation if userId is provided
+      if (userId != null && userId.isNotEmpty) {
+        print('REQUESTING FRESH RECOMMENDATION from Spring Boot -> FastAPI');
+        print('Product ID: ${apiProduct.id}');
+        print('User ID: $userId');
+
+        try {
+          // Show initial state
+          print('Initial recommendation state:');
+          print(
+              '- aiRecommendation: ${apiProduct.aiRecommendation?.substring(0, min(50, apiProduct.aiRecommendation?.length ?? 0)) ?? "null"}');
+          print(
+              '- recommendationType: ${apiProduct.recommendationType ?? "null"}');
+
+          // Generate a unique callback URL for direct FastAPI to Flutter communication
+          // This would be a real endpoint in a production app
+          final String callbackUrl = getDirectRecommendationCallbackUrl();
+          print('Using Flutter callback URL: $callbackUrl');
+
+          // Get fresh recommendation with callback URL for direct FastAPI->Flutter communication
+          final freshRecommendation = await getPersonalizedRecommendation(
+              userId, apiProduct.id,
+              flutterCallbackUrl: callbackUrl);
+
+          if (freshRecommendation != null) {
+            // Check recommendation content
+            final recText = freshRecommendation['recommendation'] as String?;
+            final recType =
+                freshRecommendation['recommendation_type'] as String?;
+
+            print('Fresh recommendation received:');
+            print(
+                '- Text: ${recText?.substring(0, min(50, recText?.length ?? 0)) ?? "null"}');
+            print('- Type: $recType');
+            print(
+                '- Is fallback: ${freshRecommendation['is_fallback'] ?? false}');
+
+            // Only apply the recommendation if it's not null and not empty
+            if (recText != null && recText.trim().isNotEmpty) {
+              // Update the product with the fresh recommendation
+              apiProduct.aiRecommendation = recText;
+              apiProduct.recommendationType = recType ?? 'caution';
+              print('PRODUCT UPDATED with fresh recommendation');
+              print(
+                  '- New AI recommendation length: ${apiProduct.aiRecommendation?.length ?? 0}');
+            } else {
+              print('WARNING: Received empty recommendation text from server');
+            }
+          } else {
+            print('ERROR: Fresh recommendation request returned null');
+          }
+        } catch (e) {
+          print('ERROR getting fresh recommendation: $e');
+        }
+      } else {
+        print('No userId provided - skipping personalized recommendation');
+      }
+
+      // Verify final recommendation state
+      print('Final recommendation state:');
+      print(
+          '- aiRecommendation present: ${apiProduct.aiRecommendation != null}');
+      print(
+          '- aiRecommendation length: ${apiProduct.aiRecommendation?.length ?? 0}');
+      print('- recommendationType: ${apiProduct.recommendationType ?? "null"}');
+
       // Add to global products for consistency
+      // Remove any existing product with the same ID first to avoid duplicates
+      _products.removeWhere((p) => p.id == apiProduct.id);
       _products.add(apiProduct);
 
       // If we have a userId, add to user-specific products
       if (userId != null && userId.isNotEmpty) {
         // Make sure the user has a products list
         _userProductsMap.putIfAbsent(userId, () => []);
+        // Remove any existing product with the same ID to avoid duplicates
+        _userProductsMap[userId]!.removeWhere((p) => p.id == apiProduct.id);
+        // Add the updated product with fresh recommendation
         _userProductsMap[userId]!.add(apiProduct);
         print(
             'Added product from API to user $userId\'s products. New count: ${_userProductsMap[userId]!.length}');
       }
 
+      print('=== PRODUCT SCAN COMPLETE ===');
       return apiProduct;
     } else {
       // If the product is not found in the API, return null
       print('Product not found in API: $barcode');
+      print('=== PRODUCT SCAN FAILED ===');
       return null;
     }
   }
@@ -620,5 +747,49 @@ class MockApiService {
     } catch (e) {
       print('Debug - Exception checking barcode: $e');
     }
+  }
+
+  // Global callback for handling direct recommendations from FastAPI
+  // In a real app, this would be a proper API endpoint
+  static Function(Map<String, dynamic>)? _directRecommendationCallback;
+
+  /// Register a callback to receive direct recommendations from FastAPI
+  static void registerDirectRecommendationCallback(
+      Function(Map<String, dynamic>) callback) {
+    _directRecommendationCallback = callback;
+    print('Registered callback for direct FastAPI recommendations');
+  }
+
+  /// Unregister the direct recommendation callback
+  static void unregisterDirectRecommendationCallback() {
+    _directRecommendationCallback = null;
+    print('Unregistered callback for direct FastAPI recommendations');
+  }
+
+  /// Handle a direct recommendation from FastAPI
+  /// This would be called by a real API endpoint in a production app
+  static void handleDirectRecommendation(
+      Map<String, dynamic> recommendationData) {
+    print('Received direct recommendation from FastAPI:');
+    print('- Product ID: ${recommendationData['product_id']}');
+    print(
+        '- Recommendation Type: ${recommendationData['recommendation_type']}');
+    print('- Timestamp: ${recommendationData['timestamp']}');
+
+    // Call the registered callback if available
+    if (_directRecommendationCallback != null) {
+      print('Forwarding recommendation to registered callback');
+      _directRecommendationCallback!(recommendationData);
+    } else {
+      print('No callback registered to handle direct recommendation');
+    }
+  }
+
+  /// Get the direct recommendation callback URL
+  /// In a real app, this would be a real API endpoint
+  String getDirectRecommendationCallbackUrl() {
+    // For this PoC, use a placeholder URL
+    // In a real app, this would be generated dynamically based on the device/user
+    return 'https://sahtech-app.example/api/recommendations/callback';
   }
 }

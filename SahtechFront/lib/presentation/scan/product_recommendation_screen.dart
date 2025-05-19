@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/product_model.dart';
+import 'package:sahtech/core/services/mock_api_service.dart';
 import 'dart:math';
 
 class ProductRecommendationScreen extends StatefulWidget {
@@ -41,10 +42,29 @@ class _ProductRecommendationScreenState
     print('Ingredients count: ${widget.product.ingredients.length}');
     print('Allergens count: ${widget.product.allergens.length}');
 
-    // Parse and format AI recommendation if available
-    recommendation = _formatAiRecommendation(widget.product.aiRecommendation);
+    // Register for direct recommendations from FastAPI
+    MockApiService.registerDirectRecommendationCallback(
+        _handleDirectRecommendation);
     print(
-        'Formatted recommendation: ${recommendation.substring(0, min(50, recommendation.length))}...');
+        'Registered for direct recommendations for product: ${widget.product.id}');
+
+    // IMPORTANT: Verify and format the recommendation
+    if (widget.product.aiRecommendation == null ||
+        widget.product.aiRecommendation!.trim().isEmpty ||
+        widget.product.aiRecommendation!.contains("n'est pas disponible")) {
+      print('WARNING: Empty or default recommendation detected');
+
+      // If we have a fallback message that contains "not available", show a more helpful message
+      recommendation =
+          "La recommandation personnalisée n'a pas pu être générée. "
+          "Notre service IA est peut-être temporairement indisponible. "
+          "Veuillez vérifier les ingrédients ci-dessous et réessayer plus tard.";
+    } else {
+      // We have a valid AI recommendation
+      print('SUCCESS: Valid AI recommendation detected');
+      recommendation = _formatAiRecommendation(widget.product.aiRecommendation);
+      print('Recommendation processed successfully');
+    }
 
     // Use product ingredients, with a fallback if empty
     ingredients = widget.product.ingredients;
@@ -81,20 +101,55 @@ class _ProductRecommendationScreenState
 
   // Format and structure the AI recommendation text
   String _formatAiRecommendation(String? rawRecommendation) {
-    if (rawRecommendation == null || rawRecommendation.isEmpty) {
-      print('No AI recommendation available - using default message');
-      return "Nous n'avons pas encore d'analyse personnalisée pour ce produit. "
-          "Vérifiez les ingrédients et allergènes ci-dessous pour vous assurer "
-          "que ce produit convient à votre régime alimentaire.";
+    print('=== FORMATTING AI RECOMMENDATION ===');
+    print('Raw recommendation type: ${rawRecommendation?.runtimeType}');
+    print('Raw recommendation length: ${rawRecommendation?.length ?? 0}');
+    print('Recommendation type: ${widget.product.recommendationType}');
+
+    // Check for null or empty recommendation
+    if (rawRecommendation == null || rawRecommendation.trim().isEmpty) {
+      print('ISSUE DETECTED: Recommendation is null or empty');
+
+      // Use a different message based on recommendation type
+      final type =
+          widget.product.recommendationType?.toLowerCase() ?? 'caution';
+      if (type == 'error') {
+        print('Using error message for empty recommendation');
+        return "Une erreur s'est produite lors de l'analyse de ce produit. "
+            "Veuillez vérifier votre connexion internet et réessayer.";
+      } else if (type == 'login_required') {
+        print('Using login required message for empty recommendation');
+        return "Vous devez être connecté pour voir l'analyse personnalisée. "
+            "Connectez-vous pour obtenir des recommandations adaptées à votre profil.";
+      } else {
+        print('Using generic not available message for empty recommendation');
+        return "Nous n'avons pas encore d'analyse personnalisée pour ce produit. "
+            "Vérifiez les ingrédients et allergènes ci-dessous pour vous assurer "
+            "que ce produit convient à votre régime alimentaire.";
+      }
     }
 
     // Log the raw recommendation for debugging
-    print('AI recommendation found with length: ${rawRecommendation.length}');
     print(
-        'AI recommendation preview: ${rawRecommendation.substring(0, min(100, rawRecommendation.length))}...');
+        'Valid recommendation found with length: ${rawRecommendation.length}');
+    print(
+        'Recommendation preview: ${rawRecommendation.substring(0, min(100, rawRecommendation.length))}...');
+
+    // First, clean the recommendation text by removing any markers
+    String cleaned = rawRecommendation
+        .replaceAll("× Avoid - ", "")
+        .replaceAll("× Avoid -", "")
+        .replaceAll("× Avoid", "")
+        .replaceAll("⚠ Consume with caution - ", "")
+        .replaceAll("⚠ Consume with caution -", "")
+        .replaceAll("⚠ Consume with caution", "")
+        .replaceAll("✓ Recommended - ", "")
+        .replaceAll("✓ Recommended -", "")
+        .replaceAll("✓ Recommended", "")
+        .trim();
 
     // Add paragraph breaks where appropriate to improve readability
-    String formatted = rawRecommendation
+    String formatted = cleaned
         // Major section breaks
         .replaceAll(". Alternative", ".\n\nAlternatives recommandées:")
         .replaceAll("Alternatives:", "\n\nAlternatives recommandées:")
@@ -112,8 +167,11 @@ class _ProductRecommendationScreenState
 
     // Handle AI signifiers in the text if present
     formatted = formatted
+        .replaceAll("✓ Recommended", "")
         .replaceAll("✅ Recommended", "")
+        .replaceAll("⚠ Consume with caution", "")
         .replaceAll("⚠️ Consume with caution", "")
+        .replaceAll("× Avoid", "")
         .replaceAll("❌ Avoid", "")
         .trim();
 
@@ -693,5 +751,57 @@ class _ProductRecommendationScreenState
         },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    // Unregister from direct recommendations
+    MockApiService.unregisterDirectRecommendationCallback();
+    print('Unregistered from direct recommendations');
+    super.dispose();
+  }
+
+  // Handle direct recommendation from FastAPI
+  void _handleDirectRecommendation(Map<String, dynamic> recommendationData) {
+    print('Received direct recommendation in ProductRecommendationScreen');
+
+    // Check if this recommendation is for the current product
+    final String? productId = recommendationData['product_id'] as String?;
+    if (productId != widget.product.id) {
+      print('Ignoring recommendation for different product: $productId');
+      return;
+    }
+
+    // Extract the recommendation data
+    final String? recText = recommendationData['recommendation'] as String?;
+    final String? recType =
+        recommendationData['recommendation_type'] as String?;
+
+    if (recText != null && recText.isNotEmpty) {
+      print('Updating recommendation with direct data from FastAPI');
+
+      // Update the state
+      setState(() {
+        // Update the product model
+        widget.product.aiRecommendation = recText;
+        widget.product.recommendationType = recType ?? 'caution';
+
+        // Update the displayed recommendation
+        recommendation = _formatAiRecommendation(recText);
+      });
+
+      // Show a snackbar to inform the user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Recommandation mise à jour!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      print('Recommendation updated successfully');
+    } else {
+      print('Received empty recommendation from direct callback');
+    }
   }
 }

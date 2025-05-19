@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Security, status
+from fastapi import FastAPI, HTTPException, Depends, Security, status, BackgroundTasks
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field, validator, root_validator
 from typing import List, Dict, Any, Optional
@@ -12,6 +12,8 @@ import json
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from starlette.requests import Request
+from datetime import datetime
+import httpx
 
 # Load environment variables from .env file
 load_dotenv()
@@ -110,6 +112,9 @@ else:
 
 # Spring Boot API endpoint
 SPRING_BOOT_API = os.environ.get("SPRING_BOOT_API", "http://192.168.137.15:8080/API/Sahtech")
+
+# Initialize the httpx AsyncClient for making HTTP requests
+async_client = httpx.AsyncClient(timeout=10.0)
 
 # Data models
 class HealthCondition(BaseModel):
@@ -213,6 +218,7 @@ class ProductData(BaseModel):
 class RecommendationRequest(BaseModel):
     user_data: UserData
     product_data: ProductData
+    flutter_callback_url: Optional[str] = None  # New field to receive Flutter callback URL
     
     class Config:
         # This makes validation more tolerant
@@ -222,91 +228,111 @@ class RecommendationResponse(BaseModel):
     recommendation: str
     recommendation_type: str = Field(..., description="Type of recommendation: 'recommended', 'caution', or 'avoid'")
 
+# Helper function to send recommendation directly to Flutter
+async def send_to_flutter(callback_url: str, recommendation_data: dict):
+    """Send recommendation data directly to Flutter app via the callback URL"""
+    try:
+        logger.info(f"Sending recommendation directly to Flutter at: {callback_url}")
+        
+        # Make sure we have the right content
+        if "recommendation" not in recommendation_data or "recommendation_type" not in recommendation_data:
+            logger.error("Missing required recommendation fields for Flutter callback")
+            return False
+            
+        # Send an asynchronous POST request to the Flutter callback URL
+        response = await async_client.post(
+            callback_url,
+            json=recommendation_data,
+            headers={"Content-Type": "application/json"}
+        )
+        
+        if response.status_code == 200:
+            logger.info("Successfully sent recommendation directly to Flutter app")
+            return True
+        else:
+            logger.error(f"Error sending to Flutter: HTTP {response.status_code}")
+            logger.error(f"Response: {response.text}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Exception sending recommendation to Flutter: {str(e)}")
+        return False
+
 # Helper functions
 def format_system_prompt(user_data: UserData, product_data: ProductData) -> str:
     """Format the system prompt for the AI model"""
     
     # Normalize ingredients and additives for display
-    normalized_ingredients = ", ".join(product_data.ingredients) if product_data.ingredients else 'No information available'
-    normalized_additives = ", ".join(product_data.additives) if product_data.additives else 'None'
+    ingredients_str = ", ".join(product_data.ingredients) if product_data.ingredients else "No ingredients available"
+    health_conditions_str = ", ".join(user_data.health_conditions) if user_data.health_conditions else "None"
+    allergies_str = ", ".join(user_data.allergies) if user_data.allergies else "None"
     
-    # Normalize allergies and health conditions
-    normalized_allergies = ", ".join(user_data.allergies) if user_data.allergies else 'None reported'
-    normalized_health_conditions = ", ".join(user_data.health_conditions) if user_data.health_conditions else 'None reported'
-    normalized_objectives = ", ".join(user_data.objectives) if user_data.objectives else 'None specified'
+    prompt = f"""
+    You are an intelligent nutrition and health advisor tasked with providing personalized product recommendations based on individual health profiles.
+
+    USER HEALTH PROFILE:
+    - Age: {user_data.age if user_data.age else "Not specified"}
+    - Gender: {user_data.gender if user_data.gender else "Not specified"}
+    - BMI: {user_data.bmi if user_data.bmi else "Not calculated"}
+    - Health Conditions: {health_conditions_str}
+    - Allergies: {allergies_str}
+    - Objectives: {", ".join(user_data.objectives) if user_data.objectives else "Not specified"}
+
+    PRODUCT INFORMATION:
+    - Name: {product_data.name}
+    - Brand: {product_data.brand if product_data.brand else "Unknown"}
+    - Category: {product_data.category if product_data.category else "Unknown"}
+    - Nutri-Score: {product_data.nutri_score if product_data.nutri_score else "Not available"}
+    - Ingredients: {ingredients_str}
+    - Additives: {", ".join(product_data.additives) if product_data.additives else "None listed"}
+
+    Based on this information, provide a personalized analysis of whether this product is suitable for this user. 
+    Start your response with one of these indicators:
+    - "✓ Recommended" - if the product appears suitable for the user
+    - "⚠ Consume with caution" - if the user should be careful with this product
+    - "× Avoid" - if the product is likely not suitable for the user's health profile
+
+    Then provide a detailed explanation in French (as the user prefers French) with:
+    1. Why this recommendation is being made
+    2. Any specific ingredients or nutritional aspects to be aware of
+    3. Possible alternatives if applicable
+    4. How this relates to their specific health conditions or allergies
+
+    Keep your response concise but informative, focused on the health implications.
+    """
     
-    system_prompt = f"""
-You are a nutrition expert AI assistant. Your task is to analyze a food product and provide a personalized recommendation based on a user's health profile.
-
-**Product Information**:
-- Name: {product_data.name}
-- Brand: {product_data.brand or 'N/A'}
-- Category: {product_data.category or 'N/A'}
-- Description: {product_data.description or 'N/A'}
-- Type: {product_data.type or 'N/A'}
-- Ingredients: {normalized_ingredients}
-- Additives: {normalized_additives}
-- Nutri-Score: {product_data.nutri_score if product_data.nutri_score else 'N/A'}
-
-**User Health Profile**:
-- Age: {user_data.age if user_data.age else 'N/A'}
-- Gender: {user_data.gender if user_data.gender else 'N/A'}
-- BMI: {user_data.bmi if user_data.bmi else 'N/A'}
-- Weight: {user_data.weight if user_data.weight else 'N/A'} kg
-- Height: {user_data.height if user_data.height else 'N/A'} cm
-- Allergies: {normalized_allergies}
-- Health Conditions: {normalized_health_conditions}
-- Activity Level: {user_data.activity_level if user_data.activity_level else 'N/A'}
-- Health Objectives: {normalized_objectives}
-- Has Chronic Disease: {'Yes' if user_data.has_chronic_disease else 'No'}
-- Has Allergies: {'Yes' if user_data.has_allergies else 'No'}
-- Preferred Language: {user_data.preferred_language or 'French'}
-
-Based on this information, analyze the compatibility of this product with the user's health profile. 
-Consider allergies, health conditions, nutritional needs, and health objectives.
-
-Provide a personalized recommendation in the following format:
-1. Start with one of these indicators: "✓ Recommended", "⚠ Consume with caution", or "× Avoid"
-2. Followed by a detailed explanation (2-3 sentences) of why this recommendation is given
-3. Include specific health implications based on the user's profile
-4. Provide alternative suggestions if the product is not recommended
-
-Your response should be in {user_data.preferred_language or 'French'}, clear, concise, and focused on the health implications.
-Use simple characters without accents (e.g., use 'e' instead of 'é') for better compatibility.
-"""
-    return system_prompt.strip()
+    return prompt.strip()
 
 def determine_recommendation_type(recommendation: str) -> str:
-    """Determine the type of recommendation based on the text"""
-    if "✅ Recommended" in recommendation or "✓ Recommended" in recommendation:
-        return "recommended"
-    elif "⚠️ Consume with caution" in recommendation or "⚠ Consume with caution" in recommendation:
-        return "caution"
-    elif "❌ Avoid" in recommendation or "× Avoid" in recommendation:
+    """Determine the recommendation type based on the AI response"""
+    rec_lower = recommendation.lower()
+    
+    if "avoid" in rec_lower[:50] or "× avoid" in rec_lower[:50] or "❌" in rec_lower[:50]:
         return "avoid"
+    elif "caution" in rec_lower[:50] or "⚠" in rec_lower[:50]:
+        return "caution"
+    elif "recommend" in rec_lower[:50] or "✓" in rec_lower[:50] or "✅" in rec_lower[:50]:
+        return "recommended"
     else:
-        return "caution"  # Default to caution if unclear
+        # Default to caution if unclear
+        return "caution"
 
 def normalize_text(text: str) -> str:
-    """Normalize text to ensure proper encoding for mobile display"""
+    """Normalize text by removing accents and special characters"""
     try:
-        # Handle bytes conversion if needed
-        if isinstance(text, bytes):
-            text = text.decode('utf-8')
+        # Replace any instances of "null" or "undefined" with empty strings
+        if text is None:
+            return ""
             
-        # Special handling for common emojis in recommendations
-        emoji_map = {
-            "✅": "✓",  # Replace checkmark with simpler version
-            "⚠️": "⚠",  # Replace warning with simpler version
-            "❌": "×"    # Replace X with simpler version
-        }
+        text = str(text)
+        text = text.replace("null", "").replace("undefined", "")
         
-        # Replace emojis with simpler versions
-        for emoji, simple_emoji in emoji_map.items():
-            text = text.replace(emoji, simple_emoji)
-            
-        # Apply unidecode to convert accented characters to ASCII
-        text = unidecode(text)
+        # Replace special characters that might cause issues in JSON responses
+        text = text.replace("\x00", "")
+        
+        # Remove accents using unidecode if available
+        if unidecode:
+            text = unidecode(text)
             
         return text
     except Exception as e:
@@ -436,10 +462,15 @@ async def normalize_data(data: dict):
         )
 
 @app.post("/predict", dependencies=[Depends(verify_api_key)])
-async def predict(request: RecommendationRequest):
+async def predict(request: RecommendationRequest, background_tasks: BackgroundTasks):
     """Generate a personalized recommendation based on user and product data"""
     try:
         logger.info(f"Received recommendation request for user {request.user_data.user_id} and product {request.product_data.name}")
+        
+        # Check if a Flutter callback URL was provided
+        has_flutter_callback = request.flutter_callback_url is not None and request.flutter_callback_url != ""
+        if has_flutter_callback:
+            logger.info(f"Flutter callback URL provided: {request.flutter_callback_url}")
         
         # Log the barcode value for debugging
         logger.info(f"Product barcode: {request.product_data.barcode} (type: {type(request.product_data.barcode).__name__})")
@@ -473,8 +504,8 @@ async def predict(request: RecommendationRequest):
         # Normalize the recommendation text
         normalized_recommendation = normalize_text(recommendation)
         
-        # Return in format Spring Boot expects
-        return {
+        # Create the response object with recommendation data
+        response_data = {
             "recommendation": normalized_recommendation,
             "recommendation_type": recommendation_type,
             # Include normalized product data in response for the frontend to use
@@ -490,6 +521,28 @@ async def predict(request: RecommendationRequest):
                 "nutri_score_description": normalize_text(request.product_data.nutri_score_description) if request.product_data.nutri_score_description else None
             }
         }
+        
+        # If Flutter callback URL was provided, send recommendation directly to Flutter
+        if has_flutter_callback:
+            logger.info("Sending recommendation directly to Flutter app")
+            # Create a simplified version of the response for Flutter
+            flutter_data = {
+                "recommendation": normalized_recommendation,
+                "recommendation_type": recommendation_type,
+                "product_id": request.product_data.id,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # Send recommendation to Flutter asynchronously (don't wait for response)
+            background_tasks.add_task(
+                send_to_flutter, 
+                request.flutter_callback_url, 
+                flutter_data
+            )
+            logger.info("Recommendation will be sent to Flutter in background")
+        
+        # Return in format Spring Boot expects (this goes back to Spring Boot)
+        return response_data
     
     except Exception as e:
         logger.error(f"Error processing recommendation request: {str(e)}")

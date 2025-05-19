@@ -719,7 +719,7 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
     print('User logged in with ID: $_currentUserId');
 
     // STEP 2: Request AI recommendation from server
-    print('STEP 2: Requesting AI recommendation');
+    print('STEP 2: Requesting fresh AI recommendation');
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -750,6 +750,8 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
     }
 
     try {
+      // Always request a fresh recommendation
+      print('Requesting fresh recommendation for product ${product.id}');
       final recommendationResponse =
           await _apiService.getPersonalizedRecommendation(
         _currentUserId!,
@@ -761,12 +763,20 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
         if (recommendationResponse.containsKey('recommendation') &&
             recommendationResponse['recommendation'] != null &&
             recommendationResponse['recommendation'].toString().isNotEmpty) {
-          product.aiRecommendation = recommendationResponse['recommendation'];
-          product.recommendationType =
-              recommendationResponse['recommendation_type'] ?? 'caution';
+          // Explicitly set the recommendation on the product
+          final String recommendation =
+              recommendationResponse['recommendation'].toString();
+          final String recommendationType =
+              recommendationResponse['recommendation_type']?.toString() ??
+                  'caution';
 
-          print('AI recommendation applied:');
+          product.aiRecommendation = recommendation;
+          product.recommendationType = recommendationType;
+
+          print('Fresh AI recommendation applied:');
           print('- Type: ${product.recommendationType}');
+          print(
+              '- Content: ${product.aiRecommendation?.substring(0, min(50, product.aiRecommendation?.length ?? 0))}...');
           print('- Length: ${product.aiRecommendation?.length ?? 0}');
 
           // Show success message for AI recommendation
@@ -786,6 +796,7 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
           }
         } else {
           print('WARNING: Invalid recommendation data in response');
+          print('Response contents: $recommendationResponse');
           setEmptyRecommendation(product, "unavailable");
         }
       } else {
@@ -796,6 +807,13 @@ class _ProductScannerScreenState extends State<ProductScannerScreen>
       print('ERROR: AI recommendation error - $e');
       setEmptyRecommendation(product, "error");
     }
+
+    // Verify the recommendation was properly set
+    print('VERIFICATION: Product recommendation state before navigation:');
+    print('- Product: ${product.name}');
+    print('- Recommendation present: ${product.aiRecommendation != null}');
+    print('- Recommendation length: ${product.aiRecommendation?.length ?? 0}');
+    print('- Recommendation type: ${product.recommendationType}');
 
     // Show the product details regardless of recommendation status
     if (mounted) {
