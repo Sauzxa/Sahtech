@@ -713,6 +713,98 @@ class MockApiService {
     };
   }
 
+  /// Get user scanned products history from the new endpoint
+  /// Endpoint: /API/Sahtech/HistoriqueScan/utilisateur/{id}
+  Future<List<Map<String, dynamic>>> getUserScannedProducts(
+      String userId) async {
+    print('===== USER SCANNED PRODUCTS REQUEST =====');
+    print('Fetching scanned products for user: $userId');
+
+    await _simulateNetworkDelay();
+    _maybeThrowError();
+
+    // Construct the API URL for the new endpoint
+    final String url = '$_baseUrl/HistoriqueScan/utilisateur/$userId';
+    print('Would fetch from: $url (using mock data for now)');
+
+    // Return direct mock data that matches the API response format
+    final List<Map<String, dynamic>> mockApiResponse = [
+      {
+        "productId": "1001",
+        "productName": "Nestlé Corn Flakes",
+        "productImageUrl":
+            "https://images.openfoodfacts.org/images/products/761/303/361/7155/front_fr.119.400.jpg",
+        "scanDate":
+            DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
+        "brand": "Nestlé",
+        "category": "Céréales"
+      },
+      {
+        "productId": "1002",
+        "productName": "Activia Yogurt",
+        "productImageUrl":
+            "https://images.openfoodfacts.org/images/products/306/400/809/0267/front_fr.225.400.jpg",
+        "scanDate":
+            DateTime.now().subtract(const Duration(days: 4)).toIso8601String(),
+        "brand": "Danone",
+        "category": "Produits laitiers"
+      },
+      {
+        "productId": "1003",
+        "productName": "Nutella Chocolate Spread",
+        "productImageUrl":
+            "https://images.openfoodfacts.org/images/products/301/762/042/9484/front_fr.366.400.jpg",
+        "scanDate":
+            DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
+        "brand": "Ferrero",
+        "category": "Pâtes à tartiner"
+      },
+      {
+        "productId": "1004",
+        "productName": "Coca-Cola Original",
+        "productImageUrl":
+            "https://images.openfoodfacts.org/images/products/544/900/024/6301/front_en.166.400.jpg",
+        "scanDate":
+            DateTime.now().subtract(const Duration(days: 7)).toIso8601String(),
+        "brand": "Coca-Cola",
+        "category": "Boissons"
+      },
+      {
+        "productId": "1005",
+        "productName": "Lay's Nature Chips",
+        "productImageUrl":
+            "https://images.openfoodfacts.org/images/products/312/617/120/8157/front_fr.140.400.jpg",
+        "scanDate":
+            DateTime.now().subtract(const Duration(days: 5)).toIso8601String(),
+        "brand": "Lay's",
+        "category": "Snacks"
+      }
+    ];
+
+    // For test_user, always return the mock data
+    if (userId == "test_user") {
+      print(
+          'Returning ${mockApiResponse.length} scanned products for user $userId');
+      print('===== END USER SCANNED PRODUCTS REQUEST =====');
+      return mockApiResponse;
+    }
+
+    // For empty_user, return empty list to test that case
+    if (userId == "empty_user") {
+      print('Returning empty list for empty_user');
+      print('===== END USER SCANNED PRODUCTS REQUEST =====');
+      return [];
+    }
+
+    // For any other userId, return a subset of the mock data (first 3 items)
+    final List<Map<String, dynamic>> subsetResponse =
+        mockApiResponse.sublist(0, 3);
+    print(
+        'Returning ${subsetResponse.length} scanned products for user $userId');
+    print('===== END USER SCANNED PRODUCTS REQUEST =====');
+    return subsetResponse;
+  }
+
   // Debug method to check if a barcode exists in the database
   Future<void> debugCheckBarcode(String barcode) async {
     try {

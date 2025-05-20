@@ -27,8 +27,8 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
   final MockApiService _apiService = MockApiService();
 
   // Data for products
-  List<ProductModel> _scannedProducts = [];
-  List<ProductModel> _filteredProducts = [];
+  List<Map<String, dynamic>> _scannedProducts = [];
+  List<Map<String, dynamic>> _filteredProducts = [];
   bool _isLoading = true;
 
   @override
@@ -56,13 +56,13 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
   }
 
   void _filterProducts() {
-    // TODO: Filter product list by name using search
     if (_searchQuery.isEmpty) {
       _filteredProducts = List.from(_scannedProducts);
     } else {
       _filteredProducts = _scannedProducts
-          .where((product) =>
-              product.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+          .where((product) => product["productName"]
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()))
           .toList();
     }
   }
@@ -80,8 +80,32 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
       // In a real app, this would come from authentication
       String userId = "test_user"; // Replace with actual user ID from auth
 
-      // Using the mock_api_service to get user products
-      final products = await _apiService.getUserProducts(userId);
+      print("===== DEBUG: LOADING PRODUCTS FROM NEW ENDPOINT =====");
+      print("Fetching scanned products for user: $userId");
+
+      // Using the new endpoint method in mock_api_service
+      final products = await _apiService.getUserScannedProducts(userId);
+
+      print("Products received: ${products.length}");
+      if (products.isEmpty) {
+        print("WARNING: Received empty products list");
+      } else {
+        print("First product: ${products.first["productName"]}");
+        print("Sample product image URL: ${products.first["productImageUrl"]}");
+
+        // Check if all required fields are present in the first product
+        final firstProduct = products.first;
+        final requiredFields = [
+          "productId",
+          "productName",
+          "productImageUrl",
+          "category"
+        ];
+        for (final field in requiredFields) {
+          print("Field '$field' exists: ${firstProduct.containsKey(field)}");
+          print("Field '$field' value: ${firstProduct[field]}");
+        }
+      }
 
       if (!mounted) return;
 
@@ -94,11 +118,18 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
       print('Loaded ${products.length} products for user $userId');
     } catch (e) {
       print('Error loading products: $e');
+      print(e.toString());
+
       if (!mounted) return;
 
       setState(() {
+        // Clear any previous data and show error state
+        _scannedProducts = [];
+        _filteredProducts = [];
         _isLoading = false;
       });
+
+      // In a real app, you might show a snackbar or other error UI here
     }
   }
 
@@ -126,7 +157,6 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
       body: Column(
         children: [
           // Search Bar
-
           Container(
             padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 16.h),
             decoration: const BoxDecoration(
@@ -185,12 +215,33 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
                   ))
                 : _filteredProducts.isEmpty
                     ? Center(
-                        child: Text(
-                          'Aucun produit scanné',
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            color: Colors.grey,
-                          ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.history_outlined,
+                              size: 64.sp,
+                              color: Colors.grey[400],
+                            ),
+                            SizedBox(height: 16.h),
+                            Text(
+                              'Aucun produit scanné',
+                              style: TextStyle(
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            SizedBox(height: 8.h),
+                            Text(
+                              'Scannez des produits pour les voir apparaître ici',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: Colors.grey[500],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                       )
                     : ListView.builder(
@@ -199,113 +250,38 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
                         itemCount: _filteredProducts.length,
                         itemBuilder: (context, index) {
                           final product = _filteredProducts[index];
-                          // Create a card widget for each product
-                          return Container(
-                            margin: EdgeInsets.only(bottom: 10.h),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12.r),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.03),
-                                  blurRadius: 2,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                // Product Image
-                                ClipRRect(
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(12.r),
-                                    bottomLeft: Radius.circular(12.r),
-                                  ),
-                                  child: Image.network(
-                                    product.imageUrl,
-                                    width: 65.w,
-                                    height: 65.h,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        width: 65.w,
-                                        height: 65.h,
-                                        color: Colors.grey[200],
-                                        child: Icon(
-                                          Icons.image_not_supported,
-                                          color: Colors.grey[400],
-                                          size: 20.sp,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                // Product Info
-                                Expanded(
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 12.w,
-                                      vertical: 10.h,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          product.category,
-                                          style: TextStyle(
-                                            fontSize: 11.sp,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                        SizedBox(height: 4.h),
-                                        Text(
-                                          product.name,
-                                          style: TextStyle(
-                                            fontSize: 14.sp,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                // View Button
-                                Padding(
-                                  padding: EdgeInsets.only(right: 12.w),
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pushNamed(
-                                        '/recommendation',
-                                        arguments: product,
-                                      );
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFFDCF1D4),
-                                      foregroundColor: Colors.black,
-                                      elevation: 0,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(20.r),
-                                      ),
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 16.w,
-                                        vertical: 8.h,
-                                      ),
-                                      minimumSize: Size(0, 30.h),
-                                    ),
-                                    child: Text(
-                                      'Voir',
-                                      style: TextStyle(
-                                        fontSize: 12.sp,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                          print(
+                              'Building product card for: ${product["productName"]}');
+
+                          return ProductRecoCard(
+                            imageUrl: product["productImageUrl"],
+                            productName: product["productName"],
+                            productType: product["category"] ?? "Non classé",
+                            onViewPressed: () {
+                              // Create a simple product model to pass to recommendation screen
+                              print(
+                                  'Viewing product details for: ${product["productName"]}');
+                              final productModel = ProductModel(
+                                id: product["productId"] ?? "",
+                                name: product["productName"],
+                                imageUrl: product["productImageUrl"],
+                                brand: product["brand"] ?? "",
+                                category: product["category"] ?? "Non classé",
+                                barcode: BigInt.parse("0"), // Default value
+                                nutritionFacts: {}, // Empty map for required parameter
+                                ingredients: [], // Empty list for required parameter
+                                allergens: [], // Empty list for required parameter
+                                healthScore: 0.0, // Default value
+                                scanDate: product["scanDate"] != null
+                                    ? DateTime.parse(product["scanDate"])
+                                    : DateTime.now(),
+                              );
+
+                              Navigator.of(context).pushNamed(
+                                '/recommendation',
+                                arguments: productModel,
+                              );
+                            },
                           );
                         },
                       ),
