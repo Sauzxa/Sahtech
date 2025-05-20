@@ -15,6 +15,8 @@ import 'package:sahtech/core/auth/auth_check.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sahtech/core/services/storage_service.dart';
+import 'package:sahtech/presentation/home/HistoriqueScannedProducts.dart';
+import 'package:sahtech/core/CustomWidgets/HistoRecommandationPage.dart';
 
 // Device preview removed as requested
 // first
@@ -157,6 +159,8 @@ class _MainState extends State<Main> {
               '/profile1': (context) => const ChoiceScreen(),
               '/login': (context) =>
                   SigninUser(userData: UserModel(userType: 'USER')),
+              '/historique': (context) => const HistoriqueScannedProducts(),
+              '/recommendation': (context) => const HistoRecommandationPage(),
             },
             // Handle navigation to home screen with user data
             onGenerateRoute: (settings) {

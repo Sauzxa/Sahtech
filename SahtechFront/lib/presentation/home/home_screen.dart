@@ -789,6 +789,9 @@ class _HomeScreenState extends State<HomeScreen> {
               builder: (context) => ContactNutri(userData: widget.userData),
             ),
           );
+        } else if (index == 1) {
+          // History tab - Navigate to HistoriqueScannedProducts
+          Navigator.pushNamed(context, '/historique');
         } else {
           setState(() => _currentIndex = index);
         }
