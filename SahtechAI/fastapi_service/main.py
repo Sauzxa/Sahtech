@@ -111,7 +111,7 @@ else:
         client = None
 
 # Spring Boot API endpoint
-SPRING_BOOT_API = os.environ.get("SPRING_BOOT_API", "http://192.168.137.15:8080/API/Sahtech")
+SPRING_BOOT_API = os.environ.get("SPRING_BOOT_API", "http://192.168.1.69:8080/API/Sahtech")
 
 # Initialize the httpx AsyncClient for making HTTP requests
 async_client = httpx.AsyncClient(timeout=10.0)
