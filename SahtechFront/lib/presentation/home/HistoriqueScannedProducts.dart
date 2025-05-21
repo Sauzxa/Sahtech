@@ -225,15 +225,18 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
         backgroundColor: const Color(0xFFE6F4E1), // Light green background
         elevation: 0,
         title: const Text(
-          'Historique de scan',
+          'Historique de scan :',
           style: TextStyle(
             color: Colors.black,
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
-        centerTitle: true,
-        automaticallyImplyLeading: true, // back button
+        titleSpacing: 24.0, // Add left spacing to move title to the left
+        toolbarHeight: 65.0, // Increase height to add more top spacing
+
+        centerTitle: false,
+        automaticallyImplyLeading: false, // back button
       ),
       body: Column(
         children: [
