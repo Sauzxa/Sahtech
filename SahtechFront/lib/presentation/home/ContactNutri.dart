@@ -4,7 +4,7 @@ import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/nutritionist_model.dart';
 import 'package:sahtech/core/CustomWidgets/nutritionist_card.dart';
 import 'package:sahtech/core/services/mock_api_service.dart';
-import 'package:sahtech/presentation/profile/UserProfileSettings.dart';
+import 'package:sahtech/presentation/home/UserProfileSettings.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sahtech/core/services/storage_service.dart';

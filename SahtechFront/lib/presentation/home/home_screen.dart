@@ -8,7 +8,7 @@ import 'package:sahtech/core/services/mock_api_service.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 import 'package:sahtech/presentation/scan/camera_access_screen.dart';
-import 'package:sahtech/presentation/profile/UserProfileSettings.dart';
+import 'package:sahtech/presentation/home/UserProfileSettings.dart';
 import 'package:sahtech/core/services/auth_service.dart';
 import 'package:sahtech/core/CustomWidgets/nutritionist_card.dart';
 import 'package:sahtech/presentation/home/ContactNutri.dart';
