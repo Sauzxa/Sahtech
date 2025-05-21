@@ -181,7 +181,7 @@ class NutritionistCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8.r),
                           ),
                           child: Icon(
-                            Icons.arrow_forward,
+                            Icons.bookmark_outline,
                             color: Colors.black,
                             size: 14.sp,
                           ),
