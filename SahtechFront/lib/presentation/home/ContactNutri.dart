@@ -546,7 +546,7 @@ class _ContactNutriState extends State<ContactNutri> {
                   'Historique', false),
               _buildScanButton(),
               _buildNavItem(
-                  3, Icons.contacts_outlined, Icons.contacts, 'Contacts', true),
+                  3, Icons.bookmark_outline, Icons.bookmark, 'Favoris', true),
               _buildNavItem(
                   4, Icons.person_outline, Icons.person, 'Profil', false),
             ],

@@ -752,7 +752,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     1, Icons.history_outlined, Icons.history, 'Historique'),
                 _buildNavScanItem(),
                 _buildNavItem(
-                    3, Icons.contacts_outlined, Icons.contacts, 'Contacts'),
+                    3, Icons.bookmark_outline, Icons.bookmark, 'Favoris'),
                 _buildNavItem(4, Icons.person_outline, Icons.person, 'Profil'),
               ],
             ),
