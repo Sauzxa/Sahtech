@@ -566,6 +566,13 @@ class _ContactNutriState extends State<ContactNutri> {
         if (index == 0) {
           // Navigate back to home - use popUntil to avoid stacking
           Navigator.of(context).popUntil((route) => route.isFirst);
+        } else if (index == 1) {
+          // Navigate to History
+          Navigator.pushNamed(
+            context,
+            '/historique',
+            arguments: widget.userData,
+          );
         } else if (index == 4) {
           // Navigate to profile
           _navigateToProfile();

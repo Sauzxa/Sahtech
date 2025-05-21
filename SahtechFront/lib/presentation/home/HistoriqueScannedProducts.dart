@@ -9,6 +9,8 @@ import '../../core/theme/colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/utils/models/user_model.dart';
 import '../../core/services/storage_service.dart';
+import 'ContactNutri.dart';
+import 'UserProfileSettings.dart';
 
 class HistoriqueScannedProducts extends StatefulWidget {
   final UserModel? userData;
@@ -447,11 +449,41 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
             _getUserDataAndNavigateHome();
           }
         } else if (index == 3) {
-          // Contacts tab
-          // TODO: Implement navigation to contacts
+          // Contacts tab - Navigate to ContactNutri
+          if (_currentUser != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ContactNutri(userData: _currentUser),
+              ),
+            );
+          } else {
+            // Show error if no user data available
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Données utilisateur non disponibles'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         } else if (index == 4) {
-          // Profile tab
-          // TODO: Implement navigation to profile
+          // Profile tab - Navigate to UserProfileSettings
+          if (_currentUser != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UserProfileSettings(user: _currentUser!),
+              ),
+            );
+          } else {
+            // Show error if no user data available
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Données utilisateur non disponibles'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         } else {
           setState(() => _currentIndex = index);
         }

@@ -44,6 +44,13 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
           builder: (context) => HomeScreen(userData: widget.user),
         ),
       );
+    } else if (index == 1) {
+      // Navigate to History
+      Navigator.pushNamed(
+        context,
+        '/historique',
+        arguments: widget.user,
+      );
     } else if (index == 2) {
       // Navigate to Scan with permission checking
       _navigateToScanScreen();
