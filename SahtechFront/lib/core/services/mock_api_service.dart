@@ -50,7 +50,25 @@ class MockApiService {
   /// Get auth token from shared preferences
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('auth_token');
+    // Try different possible keys for auth token
+    String? token = prefs.getString('auth_token');
+
+    if (token == null || token.isEmpty) {
+      token = prefs.getString('token');
+    }
+
+    if (token == null || token.isEmpty) {
+      token = prefs.getString('jwt_token');
+    }
+
+    // If token starts with 'Bearer ', remove it
+    if (token != null && token.startsWith('Bearer ')) {
+      token = token.substring(7);
+    }
+
+    print(
+        'Auth token retrieved: ${token != null ? 'Yes (length: ${token.length})' : 'No'}');
+    return token;
   }
 
   // Helper method to simulate network delay
@@ -720,89 +738,84 @@ class MockApiService {
     print('===== USER SCANNED PRODUCTS REQUEST =====');
     print('Fetching scanned products for user: $userId');
 
-    await _simulateNetworkDelay();
-    _maybeThrowError();
-
-    // Construct the API URL for the new endpoint
+    // Construct the API URL for the endpoint
     final String url = '$_baseUrl/HistoriqueScan/utilisateur/$userId';
-    print('Would fetch from: $url (using mock data for now)');
+    print('Fetching data from: $url');
 
-    // Return direct mock data that matches the API response format
-    final List<Map<String, dynamic>> mockApiResponse = [
-      {
-        "productId": "1001",
-        "productName": "Nestlé Corn Flakes",
-        "productImageUrl":
-            "https://images.openfoodfacts.org/images/products/761/303/361/7155/front_fr.119.400.jpg",
-        "scanDate":
-            DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
-        "brand": "Nestlé",
-        "category": "Céréales"
-      },
-      {
-        "productId": "1002",
-        "productName": "Activia Yogurt",
-        "productImageUrl":
-            "https://images.openfoodfacts.org/images/products/306/400/809/0267/front_fr.225.400.jpg",
-        "scanDate":
-            DateTime.now().subtract(const Duration(days: 4)).toIso8601String(),
-        "brand": "Danone",
-        "category": "Produits laitiers"
-      },
-      {
-        "productId": "1003",
-        "productName": "Nutella Chocolate Spread",
-        "productImageUrl":
-            "https://images.openfoodfacts.org/images/products/301/762/042/9484/front_fr.366.400.jpg",
-        "scanDate":
-            DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
-        "brand": "Ferrero",
-        "category": "Pâtes à tartiner"
-      },
-      {
-        "productId": "1004",
-        "productName": "Coca-Cola Original",
-        "productImageUrl":
-            "https://images.openfoodfacts.org/images/products/544/900/024/6301/front_en.166.400.jpg",
-        "scanDate":
-            DateTime.now().subtract(const Duration(days: 7)).toIso8601String(),
-        "brand": "Coca-Cola",
-        "category": "Boissons"
-      },
-      {
-        "productId": "1005",
-        "productName": "Lay's Nature Chips",
-        "productImageUrl":
-            "https://images.openfoodfacts.org/images/products/312/617/120/8157/front_fr.140.400.jpg",
-        "scanDate":
-            DateTime.now().subtract(const Duration(days: 5)).toIso8601String(),
-        "brand": "Lay's",
-        "category": "Snacks"
+    try {
+      // Get authentication token
+      final token = await _getToken();
+
+      // Prepare headers with auth token if available
+      final headers = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+        print('Including authentication token in request');
+      } else {
+        print('WARNING: No authentication token available');
       }
-    ];
 
-    // For test_user, always return the mock data
-    if (userId == "test_user") {
-      print(
-          'Returning ${mockApiResponse.length} scanned products for user $userId');
-      print('===== END USER SCANNED PRODUCTS REQUEST =====');
-      return mockApiResponse;
-    }
+      // Make the API request
+      print('Sending GET request to: $url');
+      final response = await http
+          .get(
+            Uri.parse(url),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 10));
 
-    // For empty_user, return empty list to test that case
-    if (userId == "empty_user") {
-      print('Returning empty list for empty_user');
-      print('===== END USER SCANNED PRODUCTS REQUEST =====');
+      print('API response status: ${response.statusCode}');
+      print('API response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = json.decode(response.body);
+        print('Successfully fetched ${jsonData.length} scan history records');
+
+        if (jsonData.isEmpty) {
+          print('Response contained an empty list');
+          return [];
+        }
+
+        try {
+          // Convert list of dynamic to list of Map<String, dynamic>
+          final List<Map<String, dynamic>> productsList =
+              jsonData.map((item) => item as Map<String, dynamic>).toList();
+
+          // Log the first item to verify structure
+          if (productsList.isNotEmpty) {
+            print('First item structure: ${productsList.first.keys.toList()}');
+            if (productsList.first.containsKey('produit')) {
+              print('Produit field found in first item');
+            } else {
+              print('WARNING: No produit field in data structure');
+            }
+          }
+
+          print('===== END USER SCANNED PRODUCTS REQUEST =====');
+          return productsList;
+        } catch (e) {
+          print('Error parsing json data: $e');
+          return [];
+        }
+      } else {
+        print('Error response: ${response.statusCode}');
+        print('Response body: ${response.body}');
+
+        // For empty responses or errors, return empty list
+        print('===== END USER SCANNED PRODUCTS REQUEST (ERROR) =====');
+        return [];
+      }
+    } catch (e) {
+      print('Exception while fetching scan history: $e');
+      print('Exception details: ${e.toString()}');
+
+      print('===== END USER SCANNED PRODUCTS REQUEST (EXCEPTION) =====');
+      // Return empty list on exception
       return [];
     }
-
-    // For any other userId, return a subset of the mock data (first 3 items)
-    final List<Map<String, dynamic>> subsetResponse =
-        mockApiResponse.sublist(0, 3);
-    print(
-        'Returning ${subsetResponse.length} scanned products for user $userId');
-    print('===== END USER SCANNED PRODUCTS REQUEST =====');
-    return subsetResponse;
   }
 
   // Debug method to check if a barcode exists in the database

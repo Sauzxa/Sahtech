@@ -790,8 +790,12 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         } else if (index == 1) {
-          // History tab - Navigate to HistoriqueScannedProducts
-          Navigator.pushNamed(context, '/historique');
+          // History tab - Navigate to HistoriqueScannedProducts with user data
+          Navigator.pushNamed(
+            context,
+            '/historique',
+            arguments: widget.userData,
+          );
         } else {
           setState(() => _currentIndex = index);
         }

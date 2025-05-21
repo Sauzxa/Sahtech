@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import '../utils/models/product_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/models/user_model.dart';
+import '../services/storage_service.dart';
 
 class HistoRecommandationPage extends StatelessWidget {
-  const HistoRecommandationPage({Key? key}) : super(key: key);
+  final ProductModel product;
+  final StorageService _storageService = StorageService();
+
+  HistoRecommandationPage({Key? key, required this.product}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +20,7 @@ class HistoRecommandationPage extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            // TODO: Navigate back
+            Navigator.pop(context);
           },
         ),
         title: const Text(
@@ -30,7 +37,7 @@ class HistoRecommandationPage extends StatelessWidget {
             child: IconButton(
               icon: const Icon(Icons.qr_code_scanner, color: Colors.black),
               onPressed: () {
-                // TODO: Handle scan action
+                _getUserDataAndNavigateToScanner(context);
               },
             ),
           ),
@@ -65,11 +72,19 @@ class HistoRecommandationPage extends StatelessWidget {
                       width: 80,
                       height: 80,
                       color: Colors.grey[200],
-                      // TODO: Replace with actual product image
-                      // Image.network(data.productImage)
-                      child: const Center(
-                        child: Icon(Icons.image, color: Colors.grey),
-                      ),
+                      child: product.imageUrl.isNotEmpty
+                          ? Image.network(
+                              product.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Center(
+                                  child: Icon(Icons.image, color: Colors.grey),
+                                );
+                              },
+                            )
+                          : const Center(
+                              child: Icon(Icons.image, color: Colors.grey),
+                            ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -78,19 +93,17 @@ class HistoRecommandationPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // TODO: data.category
                         Text(
-                          "Fromage",
+                          product.category,
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 14,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        // TODO: data.title
-                        const Text(
-                          "Soumam plaisirs",
-                          style: TextStyle(
+                        Text(
+                          product.name,
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -98,31 +111,31 @@ class HistoRecommandationPage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // Nutri-Score
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6BB324), // Green for score A
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // TODO: data.nutriScore
-                        Text(
-                          'A',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                  // Nutri-Score if available
+                  if (product.healthScore > 0 || _getNutriScore() != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getNutriScoreColor(),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _getNutriScore() ?? 'N/A',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -133,7 +146,7 @@ class HistoRecommandationPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
-                color: const Color(0xFFE6F4E1), // Light green background
+                color: _getRecommendationColor(),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -150,23 +163,17 @@ class HistoRecommandationPage extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Icon(
-                        Icons.check_circle,
-                        color: Colors.green[700],
+                        _getRecommendationIcon(),
+                        color: _getRecommendationIconColor(),
                         size: 20,
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // TODO: data.recommendation
-                  const Text(
-                    "Même si vous avez des troubles digestifs légers, "
-                    "régulation inexacte/lâe de/ischémier une réaction "
-                    "allergique en raison de votre sensibilité décalée. Pour "
-                    "une alternative plus adaptée à votre régime, nous vous "
-                    "recommandons d'opter pour Soumam Taeffela, "
-                    "qui est exempt des allergènes connes en plus de "
-                    "ceux votre conssommation.",
-                    style: TextStyle(
+                  Text(
+                    product.aiRecommendation ??
+                        "Aucune recommandation disponible pour ce produit.",
+                    style: const TextStyle(
                       fontSize: 14,
                       height: 1.5,
                     ),
@@ -183,11 +190,17 @@ class HistoRecommandationPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // TODO: data.ingredients - Map each ingredient
-                  _buildIngredientItem('Lait reconstitué écrémé'),
-                  _buildIngredientItem('Crème fraîche'),
-                  _buildIngredientItem('Ferments lactiques'),
-                  _buildIngredientItem('Présure'),
+                  if (product.ingredients.isEmpty)
+                    const Text(
+                      "Pas d'ingrédients disponibles",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    )
+                  else
+                    ...product.ingredients
+                        .map((ingredient) => _buildIngredientItem(ingredient)),
 
                   const SizedBox(height: 24),
 
@@ -200,13 +213,29 @@ class HistoRecommandationPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // TODO: data.additives - Map each additive
-                  _buildAdditiveItem(
-                      'E330', 'Acide citrique', 'Régulateur d\'acidité'),
-                  _buildAdditiveItem(
-                      'E202', 'Sorbate de potassium', 'Conservateur'),
-                  _buildAdditiveItem('E410', 'Gomme de caroube',
-                      'Stabilisant pour la texture'),
+                  if (_getAdditives().isEmpty)
+                    const Text(
+                      "Pas d'additifs disponibles",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    )
+                  else
+                    ..._getAdditives().map((additive) {
+                      // Split code and description if available
+                      final parts = additive.split(':');
+                      final code = parts[0].trim();
+                      final description =
+                          parts.length > 1 ? parts[1].trim() : '';
+
+                      return _buildAdditiveItem(
+                          code,
+                          description.isNotEmpty
+                              ? description
+                              : 'Additif alimentaire',
+                          '');
+                    }),
                 ],
               ),
             ),
@@ -241,10 +270,99 @@ class HistoRecommandationPage extends StatelessWidget {
           ),
         ],
         onTap: (index) {
-          // TODO: Handle navigation
+          if (index == 0) {
+            _getUserDataAndNavigateHome(context);
+          } else if (index == 1) {
+            _getUserDataAndNavigateToHistory(context);
+          } else if (index == 2) {
+            _getUserDataAndNavigateToScanner(context);
+          }
+          // TODO: Handle other navigation
         },
       ),
     );
+  }
+
+  // Get nutriScore from product data
+  String? _getNutriScore() {
+    // Use the valeurNutriScore field from the API if available
+    if (product.nutritionFacts.containsKey('valeurNutriScore')) {
+      return product.nutritionFacts['valeurNutriScore'];
+    }
+    return null;
+  }
+
+  // Get color based on nutriScore or recommendation type
+  Color _getNutriScoreColor() {
+    final score = _getNutriScore();
+    if (score == null) {
+      return Colors.grey;
+    }
+
+    switch (score.toUpperCase()) {
+      case 'A':
+        return const Color(0xFF6BB324); // Green
+      case 'B':
+        return const Color(0xFF99C140); // Light green
+      case 'C':
+        return const Color(0xFFFFC234); // Yellow
+      case 'D':
+        return const Color(0xFFFF9800); // Orange
+      case 'E':
+        return const Color(0xFFE63946); // Red
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Get color based on recommendation type
+  Color _getRecommendationColor() {
+    final type = product.recommendationType?.toLowerCase() ?? '';
+
+    if (type.contains('avoid') || type == 'avoid') {
+      return const Color(0xFFFADEDF); // Light red
+    } else if (type.contains('caution') || type == 'caution') {
+      return const Color(0xFFFFF3CD); // Light yellow
+    } else if (type.contains('recommended') || type == 'recommended') {
+      return const Color(0xFFE6F4E1); // Light green
+    } else {
+      return const Color(0xFFE6F4E1); // Default light green
+    }
+  }
+
+  // Get icon based on recommendation type
+  IconData _getRecommendationIcon() {
+    final type = product.recommendationType?.toLowerCase() ?? '';
+
+    if (type.contains('avoid') || type == 'avoid') {
+      return Icons.cancel;
+    } else if (type.contains('caution') || type == 'caution') {
+      return Icons.warning;
+    } else {
+      return Icons.check_circle;
+    }
+  }
+
+  // Get icon color based on recommendation type
+  Color _getRecommendationIconColor() {
+    final type = product.recommendationType?.toLowerCase() ?? '';
+
+    if (type.contains('avoid') || type == 'avoid') {
+      return Colors.red[700]!;
+    } else if (type.contains('caution') || type == 'caution') {
+      return Colors.orange[700]!;
+    } else {
+      return Colors.green[700]!;
+    }
+  }
+
+  // Get additives from product data
+  List<String> _getAdditives() {
+    if (product.nutritionFacts.containsKey('nomAdditif') &&
+        product.nutritionFacts['nomAdditif'] is List) {
+      return List<String>.from(product.nutritionFacts['nomAdditif']);
+    }
+    return [];
   }
 
   Widget _buildIngredientItem(String name) {
@@ -272,12 +390,78 @@ class HistoRecommandationPage extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              '($name): $description',
+              description.isEmpty ? name : '($name): $description',
               style: const TextStyle(fontSize: 14),
             ),
           ),
         ],
       ),
     );
+  }
+
+  // Get user data and navigate to home
+  Future<void> _getUserDataAndNavigateHome(BuildContext context) async {
+    try {
+      final userId = await _storageService.getUserId();
+      final userType = await _storageService.getUserType();
+
+      if (userId != null && userType != null) {
+        final user = UserModel(
+          userId: userId,
+          userType: userType,
+        );
+
+        Navigator.of(context).pushReplacementNamed('/home', arguments: user);
+      } else {
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
+    } catch (e) {
+      print('Error getting user data: $e');
+      Navigator.of(context).pushReplacementNamed('/home');
+    }
+  }
+
+  // Get user data and navigate to scanner
+  Future<void> _getUserDataAndNavigateToScanner(BuildContext context) async {
+    try {
+      final userId = await _storageService.getUserId();
+      final userType = await _storageService.getUserType();
+
+      if (userId != null && userType != null) {
+        final user = UserModel(
+          userId: userId,
+          userType: userType,
+        );
+
+        Navigator.pushNamed(context, '/scanner', arguments: user);
+      } else {
+        Navigator.pushNamed(context, '/scanner');
+      }
+    } catch (e) {
+      print('Error getting user data: $e');
+      Navigator.pushNamed(context, '/scanner');
+    }
+  }
+
+  // Get user data and navigate to history
+  Future<void> _getUserDataAndNavigateToHistory(BuildContext context) async {
+    try {
+      final userId = await _storageService.getUserId();
+      final userType = await _storageService.getUserType();
+
+      if (userId != null && userType != null) {
+        final user = UserModel(
+          userId: userId,
+          userType: userType,
+        );
+
+        Navigator.of(context).pushReplacementNamed('/history', arguments: user);
+      } else {
+        Navigator.of(context).pushReplacementNamed('/history');
+      }
+    } catch (e) {
+      print('Error getting user data: $e');
+      Navigator.of(context).pushReplacementNamed('/history');
+    }
   }
 }

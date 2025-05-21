@@ -17,6 +17,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:sahtech/core/services/storage_service.dart';
 import 'package:sahtech/presentation/home/HistoriqueScannedProducts.dart';
 import 'package:sahtech/core/CustomWidgets/HistoRecommandationPage.dart';
+import 'package:sahtech/core/utils/models/product_model.dart';
+import 'package:sahtech/presentation/scan/product_scanner_screen.dart';
 
 // Device preview removed as requested
 // first
@@ -160,9 +162,8 @@ class _MainState extends State<Main> {
               '/login': (context) =>
                   SigninUser(userData: UserModel(userType: 'USER')),
               '/historique': (context) => const HistoriqueScannedProducts(),
-              '/recommendation': (context) => const HistoRecommandationPage(),
             },
-            // Handle navigation to home screen with user data
+            // Handle navigation for routes that need arguments
             onGenerateRoute: (settings) {
               print('Navigating to: ${settings.name}');
 
@@ -187,6 +188,73 @@ class _MainState extends State<Main> {
                 return MaterialPageRoute(
                   builder: (context) => HomeScreen(userData: finalUserData),
                 );
+              } else if (settings.name == '/recommendation') {
+                // Extract the data from the arguments
+                try {
+                  if (settings.arguments is ProductModel) {
+                    // Handle legacy style arguments (just ProductModel)
+                    final productData = settings.arguments as ProductModel;
+                    print(
+                        'Navigating to recommendation for product: ${productData.name}');
+                    return MaterialPageRoute(
+                      builder: (context) =>
+                          HistoRecommandationPage(product: productData),
+                    );
+                  } else if (settings.arguments is Map) {
+                    // Handle combined arguments with both product and user data
+                    final args = settings.arguments as Map;
+                    final productData = args['product'] as ProductModel?;
+
+                    if (productData == null) {
+                      print(
+                          'Warning: No product data in recommendation arguments');
+                      return MaterialPageRoute(
+                        builder: (context) => const HistoriqueScannedProducts(),
+                      );
+                    }
+
+                    print(
+                        'Navigating to recommendation for product: ${productData.name}');
+                    return MaterialPageRoute(
+                      builder: (context) =>
+                          HistoRecommandationPage(product: productData),
+                    );
+                  } else {
+                    print('Warning: Invalid arguments type for recommendation');
+                    return MaterialPageRoute(
+                      builder: (context) => const HistoriqueScannedProducts(),
+                    );
+                  }
+                } catch (e) {
+                  print('Error processing recommendation arguments: $e');
+                  return MaterialPageRoute(
+                    builder: (context) => const HistoriqueScannedProducts(),
+                  );
+                }
+              } else if (settings.name == '/scanner') {
+                // ProductScannerScreen doesn't accept userData parameter
+                print('Navigating to scanner');
+                return MaterialPageRoute(
+                  builder: (context) => const ProductScannerScreen(),
+                );
+              } else if (settings.name == '/history' ||
+                  settings.name == '/historique') {
+                // Navigate to history with preserved user data if available
+                final userData = settings.arguments as UserModel?;
+
+                if (userData != null) {
+                  print(
+                      'Navigating to history with user ID: ${userData.userId}');
+                  return MaterialPageRoute(
+                    builder: (context) =>
+                        HistoriqueScannedProducts(userData: userData),
+                  );
+                } else {
+                  print('Navigating to history without user data');
+                  return MaterialPageRoute(
+                    builder: (context) => const HistoriqueScannedProducts(),
+                  );
+                }
               }
               return null;
             },

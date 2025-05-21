@@ -6,9 +6,14 @@ import 'package:http/http.dart' as http;
 import '../../core/utils/models/product_model.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../core/theme/colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/utils/models/user_model.dart';
+import '../../core/services/storage_service.dart';
 
 class HistoriqueScannedProducts extends StatefulWidget {
-  const HistoriqueScannedProducts({Key? key}) : super(key: key);
+  final UserModel? userData;
+
+  const HistoriqueScannedProducts({Key? key, this.userData}) : super(key: key);
 
   @override
   State<HistoriqueScannedProducts> createState() =>
@@ -26,16 +31,37 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
   // Mock API service instance
   final MockApiService _apiService = MockApiService();
 
+  // Storage service for user authentication
+  final StorageService _storageService = StorageService();
+
   // Data for products
   List<Map<String, dynamic>> _scannedProducts = [];
   List<Map<String, dynamic>> _filteredProducts = [];
   bool _isLoading = true;
 
+  // Current user data
+  UserModel? _currentUser;
+
   @override
   void initState() {
     super.initState();
+    // Test API connection
+    _testApiConnection();
+
     // Load products
     _loadProducts();
+
+    // Set current user from widget if available
+    if (widget.userData != null) {
+      setState(() {
+        _currentUser = widget.userData;
+      });
+      print(
+          'Using userData from widget: ID=${widget.userData!.userId}, Type=${widget.userData!.userType}');
+    } else {
+      // Load user data from SharedPreferences if not passed
+      _loadUserData();
+    }
 
     // Add listener to search controller
     _searchController.addListener(_onSearchChanged);
@@ -55,12 +81,18 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
     });
   }
 
+  // Add refresh method for when user returns to this screen
+  void _refreshUserData() {
+    _loadUserData();
+  }
+
   void _filterProducts() {
     if (_searchQuery.isEmpty) {
       _filteredProducts = List.from(_scannedProducts);
     } else {
       _filteredProducts = _scannedProducts
-          .where((product) => product["productName"]
+          .where((product) => product["produit"]["nom"]
+              .toString()
               .toLowerCase()
               .contains(_searchQuery.toLowerCase()))
           .toList();
@@ -76,9 +108,22 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
     });
 
     try {
-      // For testing purposes, using a hardcoded user ID
-      // In a real app, this would come from authentication
-      String userId = "test_user"; // Replace with actual user ID from auth
+      // Get user ID from current user if available, otherwise from SharedPreferences
+      String userId = _currentUser?.userId ?? '';
+
+      // If userId is still empty, try to get it from SharedPreferences directly
+      if (userId.isEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        userId = prefs.getString('user_id') ?? '';
+        print("Getting userId from SharedPreferences: $userId");
+      }
+
+      // If still no userId, use a default for testing
+      if (userId.isEmpty) {
+        userId =
+            "6823359d013a9a33dabaafe0"; // Use the userId from the sample data
+        print("Using default test userId: $userId");
+      }
 
       print("===== DEBUG: LOADING PRODUCTS FROM NEW ENDPOINT =====");
       print("Fetching scanned products for user: $userId");
@@ -90,21 +135,9 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
       if (products.isEmpty) {
         print("WARNING: Received empty products list");
       } else {
-        print("First product: ${products.first["productName"]}");
-        print("Sample product image URL: ${products.first["productImageUrl"]}");
-
-        // Check if all required fields are present in the first product
-        final firstProduct = products.first;
-        final requiredFields = [
-          "productId",
-          "productName",
-          "productImageUrl",
-          "category"
-        ];
-        for (final field in requiredFields) {
-          print("Field '$field' exists: ${firstProduct.containsKey(field)}");
-          print("Field '$field' value: ${firstProduct[field]}");
-        }
+        print("First product ID: ${products.first["id"] ?? 'No ID found'}");
+        print("First product data structure: ${products.first.keys.toList()}");
+        print("Complete first product data: ${products.first}");
       }
 
       if (!mounted) return;
@@ -133,26 +166,72 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
     }
   }
 
+  // Load user data from SharedPreferences
+  Future<void> _loadUserData() async {
+    try {
+      final userId = await _storageService.getUserId();
+      final userType = await _storageService.getUserType();
+
+      if (userId != null && userType != null) {
+        setState(() {
+          _currentUser = UserModel(
+            userId: userId,
+            userType: userType,
+          );
+        });
+        print('Loaded user data: ID=$userId, Type=$userType');
+      } else {
+        print('Warning: Could not load user data from storage');
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
+  }
+
+  // Test API connection by making a simple request
+  Future<void> _testApiConnection() async {
+    try {
+      const String baseUrl =
+          'http://192.168.1.69:8080/API/Sahtech'; // Same as in MockApiService
+      final url = Uri.parse('$baseUrl/ping');
+      print('Testing API connection to: $url');
+
+      final response = await http.get(url).timeout(const Duration(seconds: 5),
+          onTimeout: () => http.Response('Timeout', 408));
+
+      print('API test response: ${response.statusCode} - ${response.body}');
+
+      if (response.statusCode == 408) {
+        print(
+            'WARNING: API connection timed out - check server status and IP address');
+      } else if (response.statusCode != 200) {
+        print(
+            'WARNING: API returned non-200 status code: ${response.statusCode}');
+      } else {
+        print('API connection successful');
+      }
+    } catch (e) {
+      print('ERROR: API connection test failed: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: const Color(0xFFE6F4E1), // Light green background
         elevation: 0,
-        title: Container(
-          margin: EdgeInsets.only(top: 25.h),
-          child: const Text(
-            'Historique de scan',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 25,
-              fontWeight: FontWeight.bold,
-            ),
+        title: const Text(
+          'Historique de scan',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        centerTitle: false,
-        automaticallyImplyLeading: true, //  back button
+        centerTitle: true,
+        automaticallyImplyLeading: true, // back button
       ),
       body: Column(
         children: [
@@ -162,12 +241,11 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
             decoration: const BoxDecoration(
               color: Color(0xFFE6F4E1),
               borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(0),
-                bottomRight: Radius.circular(0),
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(16),
               ),
             ),
             child: Container(
-              margin: EdgeInsets.only(top: 20.h),
               height: 40.h,
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -186,13 +264,13 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
                   suffixIcon: Container(
                     margin: EdgeInsets.all(5.r),
                     decoration: const BoxDecoration(
-                      color: AppColors.lightTeal,
+                      color: Color(0xFF9FE870),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.search,
                       color: Colors.white,
-                      size: 20.sp,
+                      size: 18.sp,
                     ),
                   ),
                   contentPadding:
@@ -250,36 +328,65 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
                         itemCount: _filteredProducts.length,
                         itemBuilder: (context, index) {
                           final product = _filteredProducts[index];
+                          final productData = product["produit"];
+                          final category =
+                              productData["categorie"] ?? "Non classé";
+                          final name = productData["nom"] ?? "Produit sans nom";
+                          final imageUrl = productData["imageUrl"] ?? "";
+                          final recommendationType =
+                              product["recommendationType"];
+
                           print(
-                              'Building product card for: ${product["productName"]}');
+                              'Building product card for: $name, Category: $category, Recommendation: $recommendationType');
 
                           return ProductRecoCard(
-                            imageUrl: product["productImageUrl"],
-                            productName: product["productName"],
-                            productType: product["category"] ?? "Non classé",
+                            imageUrl: imageUrl,
+                            productName: name,
+                            productType: category,
+                            recommendationType: recommendationType,
                             onViewPressed: () {
-                              // Create a simple product model to pass to recommendation screen
-                              print(
-                                  'Viewing product details for: ${product["productName"]}');
+                              // Navigate to recommendation page with this product data
+                              print('Viewing product details for: $name');
+
+                              // Create a ProductModel to pass to recommendation screen
+                              final Map<String, dynamic> nutritionFacts = {
+                                // Include nutriscore if available
+                                'valeurNutriScore':
+                                    productData["valeurNutriScore"],
+                                // Include additives if available
+                                'nomAdditif': productData["nomAdditif"],
+                              };
+
                               final productModel = ProductModel(
-                                id: product["productId"] ?? "",
-                                name: product["productName"],
-                                imageUrl: product["productImageUrl"],
-                                brand: product["brand"] ?? "",
-                                category: product["category"] ?? "Non classé",
-                                barcode: BigInt.parse("0"), // Default value
-                                nutritionFacts: {}, // Empty map for required parameter
-                                ingredients: [], // Empty list for required parameter
-                                allergens: [], // Empty list for required parameter
+                                id: productData["id"] ?? "",
+                                name: name,
+                                imageUrl: imageUrl,
+                                brand: productData["marque"] ?? "",
+                                category: category,
+                                barcode: BigInt.tryParse(
+                                        productData["codeBarre"]?.toString() ??
+                                            "0") ??
+                                    BigInt.zero,
+                                nutritionFacts: nutritionFacts,
+                                ingredients: _extractIngredients(
+                                    productData["ingredients"]),
+                                allergens: [], // Default empty list
                                 healthScore: 0.0, // Default value
-                                scanDate: product["scanDate"] != null
-                                    ? DateTime.parse(product["scanDate"])
+                                scanDate: product["dateScan"] != null
+                                    ? DateTime.parse(product["dateScan"])
                                     : DateTime.now(),
+                                aiRecommendation: product["recommandationIA"],
+                                recommendationType:
+                                    product["recommendationType"],
                               );
 
+                              // Pass both product and user data to maintain session
                               Navigator.of(context).pushNamed(
                                 '/recommendation',
-                                arguments: productModel,
+                                arguments: {
+                                  'product': productModel,
+                                  'userData': _currentUser,
+                                },
                               );
                             },
                           );
@@ -330,8 +437,15 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
     return InkWell(
       onTap: () {
         if (index == 0) {
-          // Navigate back to home screen
-          Navigator.of(context).pushReplacementNamed('/home');
+          // Navigate back to home screen with user data
+          if (_currentUser != null) {
+            print('Navigating to home with user ID: ${_currentUser!.userId}');
+            Navigator.of(context)
+                .pushReplacementNamed('/home', arguments: _currentUser);
+          } else {
+            // Fallback - try to get user data from storage directly
+            _getUserDataAndNavigateHome();
+          }
         } else if (index == 3) {
           // Contacts tab
           // TODO: Implement navigation to contacts
@@ -368,12 +482,46 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
     );
   }
 
+  // Get user data from storage and navigate to home
+  Future<void> _getUserDataAndNavigateHome() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('user_id');
+      final userType = prefs.getString('user_type');
+
+      if (userId != null && userType != null) {
+        final user = UserModel(
+          userId: userId,
+          userType: userType,
+        );
+
+        print(
+            'Retrieved user data from SharedPreferences: ID=$userId, Type=$userType');
+        Navigator.of(context).pushReplacementNamed('/home', arguments: user);
+      } else {
+        print('Warning: No user data available in SharedPreferences');
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
+    } catch (e) {
+      print('Error getting user data: $e');
+      Navigator.of(context).pushReplacementNamed('/home');
+    }
+  }
+
   // Build the special scan button in the middle
   Widget _buildNavScanItem() {
     return GestureDetector(
       onTap: () {
-        // Navigate to scanner
-        Navigator.pushNamed(context, '/scanner');
+        // Navigate to scanner with user data if available
+        if (_currentUser != null) {
+          Navigator.pushNamed(
+            context,
+            '/scanner',
+            arguments: _currentUser,
+          );
+        } else {
+          Navigator.pushNamed(context, '/scanner');
+        }
       },
       child: Container(
         decoration: const BoxDecoration(
@@ -394,5 +542,19 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
         ),
       ),
     );
+  }
+
+  // Add helper method to extract ingredients
+  List<String> _extractIngredients(List<dynamic>? ingredientsList) {
+    if (ingredientsList == null) return [];
+
+    return ingredientsList.map((ingredient) {
+      if (ingredient is Map<String, dynamic>) {
+        final name = ingredient["nomIngrediant"] ?? "";
+        final quantity = ingredient["quantite"] ?? "";
+        return "$name: $quantity";
+      }
+      return ingredient.toString();
+    }).toList();
   }
 }
