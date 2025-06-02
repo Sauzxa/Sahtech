@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import '../utils/models/nutritionist_model.dart';
 
 /// A service to manage nutritionist data persistence, registration, and loading
 class NutritionistService extends ChangeNotifier {
@@ -202,7 +201,7 @@ class NutritionistService extends ChangeNotifier {
   }
 
   // Fetch all available nutritionists
-  static Future<List<NutritionistModel>> getAvailableNutritionists() async {
+  static Future<List<NutritionisteModel>> getAvailableNutritionists() async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/nutritionists/available'),
@@ -214,7 +213,7 @@ class NutritionistService extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        return data.map((json) => NutritionistModel.fromMap(json)).toList();
+        return data.map((json) => NutritionisteModel.fromMap(json)).toList();
       } else {
         print('Error fetching nutritionists: ${response.statusCode}');
         return [];
@@ -222,12 +221,12 @@ class NutritionistService extends ChangeNotifier {
     } catch (e) {
       print('Exception when fetching nutritionists: $e');
       // For development, return mock nutritionists
-      return getMockNutritionists();
+      return [];
     }
   }
 
   // Get nutritionist details by ID
-  static Future<NutritionistModel?> getNutritionistDetails(String id) async {
+  static Future<NutritionisteModel?> getNutritionistDetails(String id) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/nutritionists/$id'),
@@ -239,16 +238,15 @@ class NutritionistService extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return NutritionistModel.fromMap(data);
+        return NutritionisteModel.fromMap(data);
       } else {
         print('Error fetching nutritionist details: ${response.statusCode}');
         return null;
       }
     } catch (e) {
       print('Exception when fetching nutritionist details: $e');
-      // For development, return a mock nutritionist
-      return getMockNutritionists().firstWhere((n) => n.id == id,
-          orElse: () => getMockNutritionists().first);
+      // For development, return null
+      return null;
     }
   }
 

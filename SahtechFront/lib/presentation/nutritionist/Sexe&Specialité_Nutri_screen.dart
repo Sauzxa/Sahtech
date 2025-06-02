@@ -6,6 +6,7 @@ import 'package:sahtech/core/services/translation_service.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/core/CustomWidgets/language_selector.dart';
 import 'package:sahtech/presentation/nutritionist/Attest_nutri_screnn.dart';
+import 'package:sahtech/presentation/nutritionist/proveAttestation.dart';
 
 class SexespecialiteNutriScreen extends StatefulWidget {
   final NutritionisteModel nutritionistData;
@@ -155,8 +156,10 @@ class _SexespecialiteNutriScreenState extends State<SexespecialiteNutriScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Nutritioniste3(
+        builder: (context) => ProveAttestationScreen(
           nutritionistData: widget.nutritionistData,
+          currentStep: 2,
+          totalSteps: 5,
         ),
       ),
     );
@@ -295,7 +298,7 @@ class _SexespecialiteNutriScreenState extends State<SexespecialiteNutriScreen> {
                               maxHeight: 240.h,
                             ),
 
-                            SizedBox(height: 80.h),
+                            SizedBox(height: 150.h),
 
                             // Suivant button
                             Container(

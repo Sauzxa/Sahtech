@@ -23,5 +23,5 @@ def check_fastapi_service(url="http://192.168.1.69:8000"):
 
 if __name__ == "__main__":
     # Use custom URL if provided as command line argument
-    url = sys.argv[1] if len(sys.argv) > 1 else "http://192.168.1.69:8000"
+    url = sys.argv[1] if len(sys.argv) > 1 else "http://192.168.1.76:8000"
     check_fastapi_service(url) 

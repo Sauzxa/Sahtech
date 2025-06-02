@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:sahtech/core/services/translation_service.dart';
+import 'package:sahtech/core/config/maps_config.dart';
 import 'package:provider/provider.dart';
-import 'dart:math';
+import 'dart:async';
 import 'package:sahtech/presentation/nutritionist/nutritioniste_phone.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class NutritionisteMap extends StatefulWidget {
   final NutritionisteModel nutritionistData;
@@ -31,22 +35,32 @@ class NutritionisteMap extends StatefulWidget {
 class _NutritionisteMapState extends State<NutritionisteMap> {
   late TranslationService _translationService;
   bool _isLoading = false;
-  final MapController _mapController = MapController();
+  final Completer<GoogleMapController> _controller =
+      Completer<GoogleMapController>();
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
   final TextEditingController _latitudeController = TextEditingController();
 
   LatLng? _selectedLocation;
-  LatLng _initialCenter = LatLng(36.7538, 3.0588); // Algiers default
+  static const CameraPosition _initialCenter = CameraPosition(
+    target: LatLng(36.7538, 3.0588), // Algiers default
+    zoom: 12.0,
+  );
   bool _showAddLocationDialog = false;
-  bool _isLocationConfirmed = false; // Added for confirmation tracking
+  bool _isLocationConfirmed = false;
   String? _selectedLocationAddress;
-  List<Marker> _markers = [];
-  double _currentZoom =
-      12.0; // Changed to zoom level 12.0 for better initial view
+  Set<Marker> _markers = {};
   final FocusNode _searchFocusNode = FocusNode();
   final FocusNode _latitudeFocusNode = FocusNode();
   final FocusNode _longitudeFocusNode = FocusNode();
+
+  // Add new variables for location preview
+  String? _locationPreviewUrl;
+  bool _isPreviewVisible = false;
+  bool _isLoadingPreview = false;
+  static const double _previewHeight = 180.0;
+  String? _placeId;
+  String? _previewType; // 'place', 'streetview', or 'map'
 
   // Translations
   Map<String, String> _translations = {
@@ -67,7 +81,14 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
     'search_error': 'Aucun résultat trouvé',
     'try_again': 'Veuillez réessayer',
     'is_this_your_cabinet': 'Est-ce votre cabinet?',
+    'view_street_view': 'View Street View',
+    'no_preview': 'No preview available',
   };
+
+  WebViewController? _webViewController;
+  bool _isWebViewVisible = false;
+
+  // Use headers from MapsConfig
 
   @override
   void initState() {
@@ -76,14 +97,13 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
         Provider.of<TranslationService>(context, listen: false);
     _loadTranslations();
     _initializeLocation();
+    _requestPermissions();
   }
 
-  // Load translations based on current language
   Future<void> _loadTranslations() async {
     setState(() => _isLoading = true);
 
     try {
-      // Only translate if not French (default language)
       if (_translationService.currentLanguageCode != 'fr') {
         final translatedStrings =
             await _translationService.translateMap(_translations);
@@ -107,17 +127,16 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
     }
   }
 
-  // Initialize location
   Future<void> _initializeLocation() async {
     setState(() => _isLoading = true);
 
     try {
-      // If the user already has a saved location, use it
       if (widget.nutritionistData.latitude != null &&
           widget.nutritionistData.longitude != null) {
-        _selectedLocation = LatLng(widget.nutritionistData.latitude!,
-            widget.nutritionistData.longitude!);
-        _initialCenter = _selectedLocation!;
+        _selectedLocation = LatLng(
+          widget.nutritionistData.latitude!,
+          widget.nutritionistData.longitude!,
+        );
         _setMarker(_selectedLocation!);
         _updateCoordinateControllers(_selectedLocation!);
 
@@ -126,34 +145,43 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
         } else {
           await _getAddressFromLatLng(_selectedLocation!);
         }
-      }
-      // If location is enabled, try to get current location
-      else if (widget.locationEnabled) {
+
+        final GoogleMapController controller = await _controller.future;
+        await controller.animateCamera(CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: _selectedLocation!,
+            zoom: 15.0,
+          ),
+        ));
+      } else if (widget.locationEnabled) {
         bool serviceEnabled;
         LocationPermission permission;
 
-        // Check if location services are enabled
         serviceEnabled = await Geolocator.isLocationServiceEnabled();
         if (!serviceEnabled) {
           debugPrint('Location services are disabled');
-          // Keep default location if services are disabled
         } else {
           permission = await Geolocator.checkPermission();
           if (permission == LocationPermission.denied ||
               permission == LocationPermission.deniedForever) {
             debugPrint('Location permissions are denied');
-            // Keep default location if permissions are denied
           } else {
             try {
               Position position = await Geolocator.getCurrentPosition(
                 desiredAccuracy: LocationAccuracy.high,
               );
 
-              _initialCenter = LatLng(position.latitude, position.longitude);
-              // We don't set this as selected location yet, just center the map here
+              final currentLocation =
+                  LatLng(position.latitude, position.longitude);
+              final GoogleMapController controller = await _controller.future;
+              await controller.animateCamera(CameraUpdate.newCameraPosition(
+                CameraPosition(
+                  target: currentLocation,
+                  zoom: 15.0,
+                ),
+              ));
             } catch (e) {
               debugPrint('Error getting current location: $e');
-              // Keep default location if there's an error
             }
           }
         }
@@ -167,47 +195,42 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
     }
   }
 
-  // Set marker at the selected location
-  void _setMarker(LatLng position) {
-    setState(() {
-      _markers = [
-        Marker(
-          width: 50.0,
-          height: 50.0,
-          point: position,
-          child: GestureDetector(
-            onTap: () {
-              // Show the dialog when the marker is tapped
-              if (mounted) {
-                _showLocationConfirmationDialog();
-              }
-            },
-            child: Container(
-              padding: EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.7),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.location_on,
-                color: AppColors.lightTeal,
-                size: 44.0,
-                shadows: [
-                  Shadow(
-                    offset: Offset(0, 2),
-                    blurRadius: 4.0,
-                    color: Colors.black.withOpacity(0.4),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ];
-    });
+  Future<void> _requestPermissions() async {
+    try {
+      // Request location permission
+      LocationPermission locationPermission =
+          await Geolocator.requestPermission();
+      if (locationPermission == LocationPermission.denied ||
+          locationPermission == LocationPermission.deniedForever) {
+        debugPrint('Location permission denied');
+      }
+
+      // Request camera permission if needed
+      if (await Permission.camera.status.isDenied) {
+        await Permission.camera.request();
+      }
+    } catch (e) {
+      debugPrint('Error requesting permissions: $e');
+    }
   }
 
-  // Get address from LatLng
+  void _setMarker(LatLng position) {
+    setState(() {
+      _markers = {
+        Marker(
+          markerId: const MarkerId('selected_location'),
+          position: position,
+          infoWindow: InfoWindow(
+            title: _translations['cabinet_location'],
+            snippet: _selectedLocationAddress ?? '',
+          ),
+          onTap: _showLocationConfirmationDialog,
+        ),
+      };
+    });
+    _updateLocationPreview(position);
+  }
+
   Future<void> _getAddressFromLatLng(LatLng latLng) async {
     try {
       List<Placemark> placemarks = await placemarkFromCoordinates(
@@ -230,7 +253,6 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
     }
   }
 
-  // Search for a location
   Future<void> _searchLocation(String query) async {
     if (query.isEmpty) return;
 
@@ -243,37 +265,37 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
         Location location = locations.first;
         LatLng newLocation = LatLng(location.latitude, location.longitude);
 
-        // Clear any existing markers first
         setState(() {
-          _markers = [];
+          _markers.clear();
         });
 
-        // Get the address before showing the marker
+        _selectedLocation = newLocation;
+        _setMarker(newLocation);
         await _getAddressFromLatLng(newLocation);
 
-        // Now set the marker and update the state
-        setState(() {
-          _selectedLocation = newLocation;
-          _updateCoordinateControllers(newLocation);
-          _isLocationConfirmed = false;
-        });
+        final GoogleMapController controller = await _controller.future;
+        await controller.animateCamera(CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: newLocation,
+            zoom: 15.0,
+          ),
+        ));
 
-        // Set the marker
-        _setMarker(newLocation);
-
-        // Set a zoom level for search results and animate to the location
-        _currentZoom = 16.0;
-        _mapController.move(newLocation, _currentZoom);
-
-        // No confirmation dialog here - user must tap on marker to see it
+        _updateCoordinateControllers(newLocation);
       } else {
-        _showErrorMessage(
-            '${_translations['search_error']} - ${_translations['try_again']}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(_translations['search_error']!)),
+          );
+        }
       }
     } catch (e) {
       debugPrint('Search error: $e');
-      _showErrorMessage(
-          '${_translations['search_error']} - ${_translations['try_again']}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_translations['try_again']!)),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -281,103 +303,200 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
     }
   }
 
-  // Show error message
-  void _showErrorMessage(String message) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  // Handle manual coordinate input
-  void _handleCoordinateInput() {
-    try {
-      double latitude = double.parse(_latitudeController.text.trim());
-      double longitude = double.parse(_longitudeController.text.trim());
-
-      // Basic validation
-      if (latitude >= -90 &&
-          latitude <= 90 &&
-          longitude >= -180 &&
-          longitude <= 180) {
-        LatLng newLocation = LatLng(latitude, longitude);
-        _mapController.move(newLocation, _currentZoom);
-        _selectLocation(newLocation);
-      } else {
-        _showErrorMessage(_translations['location_error']!);
-      }
-    } catch (e) {
-      debugPrint('Coordinate input error: $e');
-      _showErrorMessage(_translations['location_error']!);
-    }
-  }
-
-  // Update coordinate text controllers
   void _updateCoordinateControllers(LatLng location) {
     _latitudeController.text = location.latitude.toStringAsFixed(6);
     _longitudeController.text = location.longitude.toStringAsFixed(6);
   }
 
-  // Select a location on the map
-  void _selectLocation(LatLng location) async {
-    // Clear existing markers first
-    setState(() {
-      _markers = [];
-      _selectedLocation = location;
-      _updateCoordinateControllers(location);
-      _isLocationConfirmed =
-          false; // Reset confirmation when new location is selected
-    });
-
-    // Get the address for the selected location
-    await _getAddressFromLatLng(location);
-
-    // Set the marker
-    _setMarker(location);
-
-    // Animate to the selected location with zoom
-    _mapController.move(location, 16.0);
-
-    // Show confirmation dialog with a slight delay to allow animation to complete
-    Future.delayed(Duration(milliseconds: 200), () {
-      if (mounted) {
-        _showLocationConfirmationDialog();
-      }
-    });
-  }
-
-  // Save location data and continue to next screen
-  void _saveLocationAndContinue() {
-    // Make sure both conditions are met: location is selected AND confirmed
-    if (_selectedLocation == null || !_isLocationConfirmed) {
-      // Show error message if trying to save without confirming
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_translations['location_error'] ?? 'Please confirm your location first'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 2),
+  void _showLocationConfirmationDialog() {
+    if (_selectedLocation != null) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(_translations['is_this_your_cabinet']!),
+          content: Text(_selectedLocationAddress ?? ''),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                setState(() => _isLocationConfirmed = false);
+              },
+              child: Text(_translations['refuse']!),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                setState(() => _isLocationConfirmed = true);
+              },
+              child: Text(_translations['confirm']!),
+            ),
+          ],
         ),
       );
-      return;
     }
-    
-    // Set loading state to indicate processing
+  }
+
+  void _useStaticMapFallback(LatLng position) {
+    // Use Google Maps Static API with minimal parameters
+    final String markers =
+        "markers=color:red%7C${position.latitude},${position.longitude}";
+    _locationPreviewUrl = "https://maps.googleapis.com/maps/api/staticmap"
+        "?center=${position.latitude},${position.longitude}"
+        "&zoom=17"
+        "&size=800x400"
+        "&scale=2"
+        "&$markers"
+        "&key=${MapsConfig.apiKey}";
+    _previewType = 'map';
+  }
+
+  Future<void> _updateLocationPreview(LatLng position) async {
     setState(() {
-      _isLoading = true;
+      _isLoadingPreview = true;
+      _isPreviewVisible = true;
     });
-    
+
     try {
-      // Update location data in the nutritionist model
+      // Try to get nearby place photos first
+      final placesUrl = Uri.parse(
+              'https://maps.googleapis.com/maps/api/place/nearbysearch/json')
+          .replace(queryParameters: {
+        'location': '${position.latitude},${position.longitude}',
+        'radius': '100',
+        'key': MapsConfig.apiKey,
+      });
+
+      final placesResponse =
+          await http.get(placesUrl, headers: MapsConfig.apiHeaders);
+      debugPrint('Places API response: ${placesResponse.body}');
+
+      if (placesResponse.statusCode == 200) {
+        final placesData = json.decode(placesResponse.body);
+
+        if (placesData['status'] == 'OK' &&
+            placesData['results'] != null &&
+            placesData['results'].isNotEmpty) {
+          // Get the first place that has photos
+          for (var place in placesData['results']) {
+            if (place['photos'] != null && place['photos'].isNotEmpty) {
+              final photoReference = place['photos'][0]['photo_reference'];
+              final photoUrl =
+                  Uri.parse('https://maps.googleapis.com/maps/api/place/photo')
+                      .replace(queryParameters: {
+                'maxwidth': '800',
+                'maxheight': '400',
+                'photo_reference': photoReference,
+                'key': MapsConfig.apiKey,
+              });
+
+              final photoResponse =
+                  await http.get(photoUrl, headers: MapsConfig.apiHeaders);
+
+              if (photoResponse.statusCode == 200) {
+                _locationPreviewUrl = photoUrl.toString();
+                _previewType = 'place';
+                setState(() {});
+                return;
+              }
+            }
+          }
+        }
+      }
+
+      // If no place photos found, try Street View
+      final streetViewUrl =
+          Uri.parse('https://maps.googleapis.com/maps/api/streetview')
+              .replace(queryParameters: {
+        'location': '${position.latitude},${position.longitude}',
+        'fov': '90',
+        'heading': '0',
+        'pitch': '0',
+        'key': MapsConfig.apiKey,
+      });
+
+      final streetViewResponse =
+          await http.get(streetViewUrl, headers: MapsConfig.apiHeaders);
+      debugPrint('Street View status: ${streetViewResponse.statusCode}');
+
+      if (streetViewResponse.statusCode == 200 &&
+          streetViewResponse.bodyBytes.length > 0) {
+        _locationPreviewUrl = streetViewUrl.toString();
+        _previewType = 'streetview';
+        setState(() {});
+      } else {
+        debugPrint('Street View error: ${streetViewResponse.statusCode}');
+
+        // Use static map as final fallback
+        final staticMapUrl =
+            Uri.parse('https://maps.googleapis.com/maps/api/staticmap')
+                .replace(queryParameters: {
+          'center': '${position.latitude},${position.longitude}',
+          'zoom': '17',
+          'size': '800x400',
+          'scale': '2',
+          'markers': 'color:red|${position.latitude},${position.longitude}',
+          'key': MapsConfig.apiKey,
+        });
+
+        final staticMapResponse =
+            await http.get(staticMapUrl, headers: MapsConfig.apiHeaders);
+        debugPrint('Static Map status: ${staticMapResponse.statusCode}');
+
+        if (staticMapResponse.statusCode == 200) {
+          _locationPreviewUrl = staticMapUrl.toString();
+          _previewType = 'map';
+          setState(() {});
+        } else {
+          debugPrint('Static Map error: ${staticMapResponse.statusCode}');
+          throw Exception('Failed to load any preview image');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting location preview: $e');
+      setState(() {
+        _locationPreviewUrl = null;
+        _previewType = null;
+        _isLoadingPreview = false;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingPreview = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildMapPreview() {
+    return SizedBox(
+      height: _previewHeight,
+      width: double.infinity,
+      child: GoogleMap(
+        mapType: MapType.normal,
+        initialCameraPosition: CameraPosition(
+          target: _selectedLocation!,
+          zoom: 17,
+        ),
+        markers: _markers,
+        zoomControlsEnabled: false,
+        mapToolbarEnabled: false,
+        myLocationButtonEnabled: false,
+        rotateGesturesEnabled: false,
+        scrollGesturesEnabled: false,
+        zoomGesturesEnabled: false,
+        tiltGesturesEnabled: false,
+      ),
+    );
+  }
+
+  void _saveLocationAndNavigate() {
+    if (_selectedLocation != null) {
+      // Update the nutritionist model with location data
       widget.nutritionistData.latitude = _selectedLocation!.latitude;
       widget.nutritionistData.longitude = _selectedLocation!.longitude;
       widget.nutritionistData.cabinetAddress = _selectedLocationAddress;
 
-      // Show success message before navigation
+      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_translations['location_saved']!),
@@ -386,9 +505,8 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
         ),
       );
 
-      // Navigate to phone number screen after a brief delay to show the success message
+      // Navigate to phone screen after a brief delay
       Future.delayed(const Duration(milliseconds: 1200), () {
-        // Use push instead of pushReplacement to maintain back navigation capability if needed
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -398,192 +516,300 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
           ),
         );
       });
-    } catch (e) {
-      // Reset loading state if there's an error
-      setState(() {
-        _isLoading = false;
-      });
-      
-      // Show error message
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Navigation error: ${e.toString()}'),
+          content: Text(_translations['location_error']!),
           backgroundColor: Colors.red,
-          duration: const Duration(seconds: 2),
         ),
       );
     }
   }
 
-  // Show success message
-  void _showSuccessMessage(String message) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 1),
+  void _showStreetView(LatLng location) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          children: [
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height,
+              child: WebViewWidget(
+                controller: WebViewController()
+                  ..setJavaScriptMode(JavaScriptMode.unrestricted)
+                  ..setBackgroundColor(const Color(0x00000000))
+                  ..loadRequest(
+                    Uri.parse(
+                        'https://www.google.com/maps/@${location.latitude},${location.longitude},14z/data=!3m1!1e3!4m2!3m1!1e1'),
+                  ),
+              ),
+            ),
+            Positioned(
+              top: 16,
+              right: 16,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 32),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // Discard selected location
-  void _discardLocation() {
-    setState(() {
-      _selectedLocation = null;
-      _selectedLocationAddress = null;
-      _markers = [];
-      _showAddLocationDialog = false;
-      _latitudeController.clear();
-      _longitudeController.clear();
-    });
-  }
-
-  // Location confirmation dialog
-  void _showLocationConfirmationDialog() {
-    // Only show the dialog if we have a valid location
-    if (_selectedLocation == null) {
-      return;
-    }
-
-    // Make sure we have an address
-    _selectedLocationAddress ??= 'Cabinet à ${_selectedLocation!.latitude.toStringAsFixed(4)}, ${_selectedLocation!.longitude.toStringAsFixed(4)}';
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_translations['title']!),
+        backgroundColor: AppColors.lightTeal,
+      ),
+      body: Stack(
+        children: [
+          GoogleMap(
+            mapType: MapType.normal,
+            initialCameraPosition: _initialCenter,
+            onMapCreated: (GoogleMapController controller) {
+              _controller.complete(controller);
+            },
+            markers: _markers,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: true,
+            onTap: (LatLng position) {
+              setState(() {
+                _selectedLocation = position;
+                _setMarker(position);
+                _updateCoordinateControllers(position);
+                _getAddressFromLatLng(position);
+                _updateLocationPreview(position);
+              });
+            },
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Image section at the top
-              Container(
-                height: 180,
-                decoration: BoxDecoration(
-                  color: Color(0xFFB4DE7D).withOpacity(0.2),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                width: double.infinity,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Location pin icon
-                    Icon(
-                      Icons.location_on,
-                      color: Color(0xFF8BC34A),
-                      size: 80,
-                    ),
-                    // Close button
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: InkWell(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: Container(
-                          padding: EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.8),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.close, size: 20),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Content section
-              Padding(
-                padding: EdgeInsets.all(20),
+          if (_isLoading)
+            const Center(
+              child: CircularProgressIndicator(),
+            ),
+          Positioned(
+            top: 16,
+            left: 16,
+            right: 16,
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
                 child: Column(
                   children: [
-                    Text(
-                      _translations['is_this_your_cabinet']!,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
+                    TextField(
+                      controller: _searchController,
+                      focusNode: _searchFocusNode,
+                      decoration: InputDecoration(
+                        hintText: _translations['search_hint'],
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.search),
+                          onPressed: () =>
+                              _searchLocation(_searchController.text),
+                        ),
                       ),
+                      onSubmitted: _searchLocation,
                     ),
-                    SizedBox(height: 12),
-                    Text(
-                      _selectedLocationAddress!,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16, color: Colors.black54),
-                    ),
-                    SizedBox(height: 24),
-
-                    // Confirm button - Green
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            _isLocationConfirmed = true;
-                          });
-                          Navigator.of(context).pop();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFF8BC34A),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _latitudeController,
+                            focusNode: _latitudeFocusNode,
+                            decoration: InputDecoration(
+                              labelText: _translations['latitude'],
+                            ),
+                            keyboardType: TextInputType.number,
                           ),
                         ),
-                        child: Text(
-                          _translations['confirm']!,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: _longitudeController,
+                            focusNode: _longitudeFocusNode,
+                            decoration: InputDecoration(
+                              labelText: _translations['longitude'],
+                            ),
+                            keyboardType: TextInputType.number,
                           ),
                         ),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-
-                    // Refuse button - Orange/Red
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedLocation = null;
-                          _selectedLocationAddress = null;
-                          _markers = [];
-                          _isLocationConfirmed = false;
-                        });
-                        Navigator.of(context).pop();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFFF5722),
-                        foregroundColor: Colors.white,
-                        minimumSize: Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                      ),
-                      child: Text(
-                        _translations['refuse']!,
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
+                      ],
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
+          _buildPreviewCard(),
+        ],
+      ),
+      floatingActionButton: _selectedLocation != null
+          ? FloatingActionButton.extended(
+              onPressed: _saveLocationAndNavigate,
+              label: Text(_translations['save_location']!),
+              icon: const Icon(Icons.save),
+              backgroundColor: AppColors.lightTeal,
+            )
+          : null,
+    );
+  }
+
+  Widget _buildPreviewCard() {
+    if (!_isPreviewVisible) return const SizedBox.shrink();
+
+    return Positioned(
+      left: 16,
+      right: 16,
+      bottom: 80,
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(12),
+                  ),
+                  child: _isLoadingPreview
+                      ? Container(
+                          height: _previewHeight,
+                          width: double.infinity,
+                          color: Colors.grey[200],
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
+                      : _locationPreviewUrl != null
+                          ? Stack(
+                              children: [
+                                Image.network(
+                                  _locationPreviewUrl!,
+                                  height: _previewHeight,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  headers: MapsConfig.apiHeaders,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    debugPrint(
+                                        'Error loading preview image: $error');
+                                    return Container(
+                                      height: _previewHeight,
+                                      width: double.infinity,
+                                      color: Colors.grey[200],
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.image_not_supported,
+                                              color: Colors.grey[400],
+                                              size: 32,
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              _translations['no_preview'] ??
+                                                  'No preview available',
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                if (_previewType == 'streetview')
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () => _selectedLocation != null
+                                          ? _showStreetView(_selectedLocation!)
+                                          : null,
+                                      icon: const Icon(Icons.streetview,
+                                          size: 16),
+                                      label: Text(
+                                        _translations['view_street_view'] ??
+                                            'View Street View',
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: Colors.black87,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            )
+                          : Container(
+                              height: _previewHeight,
+                              width: double.infinity,
+                              color: Colors.grey[200],
+                              child: Center(
+                                child: Text(
+                                  _translations['no_preview'] ??
+                                      'No preview available',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ),
+                ),
+                if (_selectedLocationAddress != null && !_isLoadingPreview)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.7),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _selectedLocationAddress!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -592,449 +818,12 @@ class _NutritionisteMapState extends State<NutritionisteMap> {
   @override
   void dispose() {
     _searchController.dispose();
-    _latitudeController.dispose();
     _longitudeController.dispose();
+    _latitudeController.dispose();
     _searchFocusNode.dispose();
     _latitudeFocusNode.dispose();
     _longitudeFocusNode.dispose();
+    // WebViewController doesn't need to be disposed in newer versions
     super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final height = size.height;
-    final width = size.width;
-
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: AppColors.lightTeal))
-          : Stack(
-              children: [
-                // Main map
-                FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: _initialCenter,
-                    initialZoom: _currentZoom,
-                    interactionOptions: InteractionOptions(
-                      flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                    ),
-                    onTap: (_, point) {
-                      // Check if we tapped on a marker first
-                      bool tappedOnMarker = false;
-                      if (_markers.isNotEmpty) {
-                        final marker = _markers[0];
-                        final markerPoint = marker.point;
-                        // Calculate distance between tap point and marker point
-                        final distance = _calculateDistance(point, markerPoint);
-                        // If the distance is small enough, consider it a tap on the marker
-                        if (distance < 0.0005) {
-                          // Roughly 50 meters at equator
-                          tappedOnMarker = true;
-                          _showLocationConfirmationDialog();
-                        }
-                      }
-
-                      // If not tapped on a marker, select a new location
-                      if (!tappedOnMarker) {
-                        _selectLocation(point);
-                      }
-                    },
-                    onPositionChanged: (position, hasGesture) {
-                      _currentZoom = position.zoom;
-                                        },
-                    minZoom: 2.0,
-                    maxZoom: 19.0,
-                    keepAlive: true,
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.de/{z}/{x}/{y}.png',
-                      maxZoom: 19,
-                      minZoom: 2,
-                      userAgentPackageName: 'com.example.sahtech',
-                      tileProvider: NetworkTileProvider(),
-                    ),
-                    // Display markers
-                    MarkerLayer(markers: _markers),
-                  ],
-                ),
-
-                // Search and coordinate input section at the top
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    color: Colors.white,
-                    padding: EdgeInsets.only(
-                      left: 16,
-                      right: 16,
-                      top: 20,
-                      bottom: 10,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Search bar
-                        Container(
-                          margin: EdgeInsets.only(top: 25),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 5,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: TextField(
-                            controller: _searchController,
-                            focusNode: _searchFocusNode,
-                            decoration: InputDecoration(
-                              hintText: _translations['search_hint'],
-                              prefixIcon:
-                                  Icon(Icons.search, color: Colors.grey),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 15,
-                                horizontal: 20,
-                              ),
-                            ),
-                            onSubmitted: (value) {
-                              if (value.isNotEmpty) {
-                                // Clear focus and hide keyboard
-                                FocusScope.of(context).unfocus();
-                                // Perform the search
-                                _searchLocation(value);
-                              }
-                            },
-                            textInputAction: TextInputAction.done,
-                          ),
-                        ),
-
-                        SizedBox(height: 10),
-
-                        // Coordinate inputs
-                        ExpansionTile(
-                          title: Text(
-                            _translations['enter_coordinates']!,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          collapsedBackgroundColor: Colors.white,
-                          backgroundColor: Colors.white,
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              child: Row(
-                                children: [
-                                  // Latitude input
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _latitudeController,
-                                      focusNode: _latitudeFocusNode,
-                                      keyboardType:
-                                          TextInputType.numberWithOptions(
-                                        decimal: true,
-                                        signed: true,
-                                      ),
-                                      decoration: InputDecoration(
-                                        labelText: _translations['latitude'],
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        contentPadding: EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 10,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-
-                                  SizedBox(width: 10),
-
-                                  // Longitude input
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _longitudeController,
-                                      focusNode: _longitudeFocusNode,
-                                      keyboardType:
-                                          TextInputType.numberWithOptions(
-                                        decimal: true,
-                                        signed: true,
-                                      ),
-                                      decoration: InputDecoration(
-                                        labelText: _translations['longitude'],
-                                        border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        contentPadding: EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 10,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-
-                                  SizedBox(width: 10),
-
-                                  // Apply coordinates button
-                                  ElevatedButton(
-                                    onPressed: _handleCoordinateInput,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.lightTeal,
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: 12,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                    child: Icon(Icons.check),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Discard button (visible when marker is placed)
-                if (_markers.isNotEmpty)
-                  Positioned(
-                    left: 16,
-                    bottom: height * 0.15,
-                    child: FloatingActionButton(
-                      onPressed: _discardLocation,
-                      backgroundColor: Colors.white,
-                      child: Icon(
-                        Icons.close,
-                        color: Colors.red,
-                      ),
-                      mini: true,
-                    ),
-                  ),
-
-                // Zoom controls
-                Positioned(
-                  right: 16,
-                  bottom: height * 0.2,
-                  child: Column(
-                    children: [
-                      FloatingActionButton(
-                        onPressed: () {
-                          double newZoom = _currentZoom + 1;
-                          if (newZoom > 19) newZoom = 19;
-                          _mapController.move(
-                            _mapController.camera.center,
-                            newZoom,
-                          );
-                        },
-                        backgroundColor: Colors.white,
-                        child: Icon(
-                          Icons.add,
-                          color: Colors.black87,
-                        ),
-                        mini: true,
-                      ),
-                      SizedBox(height: 8),
-                      FloatingActionButton(
-                        onPressed: () {
-                          double newZoom = _currentZoom - 1;
-                          if (newZoom < 2) newZoom = 2;
-                          _mapController.move(
-                            _mapController.camera.center,
-                            newZoom,
-                          );
-                        },
-                        backgroundColor: Colors.white,
-                        child: Icon(
-                          Icons.remove,
-                          color: Colors.black87,
-                        ),
-                        mini: true,
-                      ),
-                      SizedBox(height: 8),
-                      // World button - zoom out to see the whole world
-                      FloatingActionButton(
-                        onPressed: () {
-                          _mapController.move(
-                            LatLng(30, 0), // Center of the world map roughly
-                            2, // Very zoomed out to see most of the world
-                          );
-                        },
-                        backgroundColor: Colors.white,
-                        child: Icon(
-                          Icons.public,
-                          color: Colors.black87,
-                        ),
-                        mini: true,
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Bottom Save Location button
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    color: Colors.white,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_selectedLocationAddress != null)
-                          Padding(
-                            padding: EdgeInsets.only(bottom: 8),
-                            child: Text(
-                              _selectedLocationAddress!,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: _isLocationConfirmed
-                                ? _saveLocationAndContinue
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.lightTeal,
-                              foregroundColor: Colors.black,
-                              disabledForegroundColor:
-                                  Colors.grey.withOpacity(0.38),
-                              disabledBackgroundColor:
-                                  Colors.grey.withOpacity(0.12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: Text(
-                              _translations['confirm']!,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Location confirmation dialog
-                if (_showAddLocationDialog)
-                  Positioned.fill(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _showAddLocationDialog = false;
-                        });
-                      },
-                      child: Container(
-                        color: Colors.black.withOpacity(0.5),
-                        child: Center(
-                          child: Container(
-                            margin: EdgeInsets.symmetric(horizontal: 24),
-                            padding: EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 60,
-                                  height: 60,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.lightTeal.withOpacity(0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.map,
-                                    color: AppColors.lightTeal,
-                                    size: 30,
-                                  ),
-                                ),
-                                SizedBox(height: 16),
-                                Text(
-                                  _translations['add_location']!,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                SizedBox(height: 16),
-                                if (_selectedLocationAddress != null)
-                                  Text(
-                                    _selectedLocationAddress!,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey.shade700,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                SizedBox(height: 24),
-                                ElevatedButton(
-                                  onPressed: _showLocationConfirmationDialog,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.lightTeal,
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 32,
-                                      vertical: 12,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
-                                  ),
-                                  child: Text(_translations['continue']!),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-    );
-  }
-
-  // Calculate distance between two LatLng points
-  double _calculateDistance(LatLng point1, LatLng point2) {
-    return sqrt(pow(point1.latitude - point2.latitude, 2) +
-        pow(point1.longitude - point2.longitude, 2));
   }
 }

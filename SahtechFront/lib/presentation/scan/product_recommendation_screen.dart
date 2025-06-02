@@ -4,6 +4,12 @@ import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/product_model.dart';
 import 'package:sahtech/core/services/mock_api_service.dart';
 import 'dart:math';
+import 'package:sahtech/presentation/scan/product_scanner_screen.dart';
+import 'package:sahtech/presentation/home/ContactNutri.dart';
+import 'package:sahtech/presentation/home/UserProfileSettings.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:sahtech/core/services/storage_service.dart';
+import 'package:sahtech/core/utils/models/user_model.dart';
 
 class ProductRecommendationScreen extends StatefulWidget {
   final ProductModel product;
@@ -616,39 +622,265 @@ class _ProductRecommendationScreenState
                 ],
               ),
             ),
+            
+            // Extra space for bottom navigation bar
+            SizedBox(height: 70.h),
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 2, // Scanner tab
-        selectedItemColor: AppColors.lightTeal,
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Accueil',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Historique',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code_scanner),
-            label: 'Scanner',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.phone_outlined),
-            label: 'Consulter',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profil',
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+  
+  // Build the custom bottom navigation bar
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            spreadRadius: 0,
+            offset: Offset(0, -5),
           ),
         ],
       ),
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(0, Icons.home_outlined, Icons.home, 'Accueil', false),
+              _buildNavItem(1, Icons.history_outlined, Icons.history, 'Historique', false),
+              _buildScanButton(true),
+              _buildNavItem(3, Icons.bookmark_outline, Icons.bookmark, 'Favoris', false),
+              _buildNavItem(4, Icons.person_outline, Icons.person, 'Profil', false),
+            ],
+          ),
+        ),
+      ),
     );
+  }
+
+  // Build a navigation item
+  Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label, bool isSelected) {
+    return InkWell(
+      onTap: () {
+        if (index == 0) {
+          // Navigate back to home - use popUntil to avoid stacking
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } else if (index == 1) {
+          // Navigate to History using named route that exists
+          Navigator.pushNamed(
+            context,
+            '/historique',
+          );
+        } else if (index == 3) {
+          // Navigate to Contacts/Favorites with direct navigation
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ContactNutri(
+                userData: UserModel(userType: 'USER'),
+              ),
+            ),
+          );
+        } else if (index == 4) {
+          // Navigate to profile
+          _navigateToProfile();
+        }
+      },
+      borderRadius: BorderRadius.circular(12.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 12.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? activeIcon : icon,
+              color: isSelected ? AppColors.lightTeal : Colors.grey,
+              size: 24.sp,
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.sp,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected ? AppColors.lightTeal : Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Build the special scan button in the middle
+  Widget _buildScanButton([bool isActive = false]) {
+    return GestureDetector(
+      onTap: _navigateToScanScreen,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
+        child: Container(
+          padding: EdgeInsets.all(12.w),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.lightTeal : AppColors.lightTeal.withOpacity(0.8),
+            shape: BoxShape.circle,
+            boxShadow: isActive ? [
+              BoxShadow(
+                color: AppColors.lightTeal.withOpacity(0.3),
+                blurRadius: 8,
+                spreadRadius: 2,
+                offset: Offset(0, 0),
+              ),
+            ] : [],
+          ),
+          child: Icon(
+            Icons.qr_code_scanner,
+            color: Colors.white,
+            size: 26.sp,
+          ),
+        ),
+      ),
+    );
+  }
+  
+  // Navigate to profile settings
+  void _navigateToProfile() {
+    // Since we don't have user data in ProductModel, we'll just navigate to UserProfileSettings
+    // with a default user model
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserProfileSettings(
+          user: UserModel(userType: 'USER'),
+        ),
+      ),
+    );
+  }
+  
+  // Navigate to scan screen
+  Future<void> _navigateToScanScreen() async {
+    final storageService = StorageService();
+    final hasRequested = await storageService.getCameraPermissionRequested();
+    final status = await Permission.camera.status;
+
+    if (status.isGranted) {
+      // Permission already granted, go directly to scanner
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ProductScannerScreen(),
+        ),
+      );
+    } else if (!hasRequested) {
+      // First time requesting permission
+      final result = await Permission.camera.request();
+      await storageService.setCameraPermissionRequested(true);
+
+      if (result.isGranted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ProductScannerScreen(),
+          ),
+        );
+      } else {
+        // Permission denied, show message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'L\'accès à la caméra est nécessaire pour scanner des produits.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'Paramètres',
+              textColor: Colors.white,
+              onPressed: () {
+                openAppSettings();
+              },
+            ),
+          ),
+        );
+      }
+    } else {
+      // Permission was previously denied
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+              'Autorisation caméra requise. Ouvrez les paramètres pour l\'activer.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: 'Paramètres',
+            textColor: Colors.white,
+            onPressed: () {
+              openAppSettings();
+            },
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    // Unregister from direct recommendations
+    MockApiService.unregisterDirectRecommendationCallback();
+    print('Unregistered from direct recommendations');
+    super.dispose();
+  }
+
+  // Handle direct recommendation from FastAPI
+  void _handleDirectRecommendation(Map<String, dynamic> recommendationData) {
+    print('Received direct recommendation in ProductRecommendationScreen');
+
+    // Check if this recommendation is for the current product
+    final String? productId = recommendationData['product_id'] as String?;
+    if (productId != widget.product.id) {
+      print('Ignoring recommendation for different product: $productId');
+      return;
+    }
+
+    // Extract the recommendation data
+    final String? recText = recommendationData['recommendation'] as String?;
+    final String? recType =
+        recommendationData['recommendation_type'] as String?;
+
+    if (recText != null && recText.isNotEmpty) {
+      print('Updating recommendation with direct data from FastAPI');
+
+      // Update the state
+      setState(() {
+        // Update the product model
+        widget.product.aiRecommendation = recText;
+        widget.product.recommendationType = recType ?? 'caution';
+
+        // Update the displayed recommendation
+        recommendation = _formatAiRecommendation(recText);
+      });
+
+      // Show a snackbar to inform the user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Recommandation mise à jour!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      print('Recommendation updated successfully');
+    } else {
+      print('Received empty recommendation from direct callback');
+    }
   }
 
   bool _hasAlternatives() {
@@ -751,57 +983,5 @@ class _ProductRecommendationScreenState
         },
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    // Unregister from direct recommendations
-    MockApiService.unregisterDirectRecommendationCallback();
-    print('Unregistered from direct recommendations');
-    super.dispose();
-  }
-
-  // Handle direct recommendation from FastAPI
-  void _handleDirectRecommendation(Map<String, dynamic> recommendationData) {
-    print('Received direct recommendation in ProductRecommendationScreen');
-
-    // Check if this recommendation is for the current product
-    final String? productId = recommendationData['product_id'] as String?;
-    if (productId != widget.product.id) {
-      print('Ignoring recommendation for different product: $productId');
-      return;
-    }
-
-    // Extract the recommendation data
-    final String? recText = recommendationData['recommendation'] as String?;
-    final String? recType =
-        recommendationData['recommendation_type'] as String?;
-
-    if (recText != null && recText.isNotEmpty) {
-      print('Updating recommendation with direct data from FastAPI');
-
-      // Update the state
-      setState(() {
-        // Update the product model
-        widget.product.aiRecommendation = recText;
-        widget.product.recommendationType = recType ?? 'caution';
-
-        // Update the displayed recommendation
-        recommendation = _formatAiRecommendation(recText);
-      });
-
-      // Show a snackbar to inform the user
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Recommandation mise à jour!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
-
-      print('Recommendation updated successfully');
-    } else {
-      print('Received empty recommendation from direct callback');
-    }
   }
 }

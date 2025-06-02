@@ -81,6 +81,63 @@ class UserModel {
       print('No profile image URL found in data from server');
     }
 
+    // Debug chronic conditions mapping
+    print('========= USER MODEL FROM MAP - DISEASE DEBUG =========');
+    print('Raw map: $map');
+    print('Has maladies field: ${map.containsKey('maladies')}');
+    if (map.containsKey('maladies')) {
+      print('Maladies type: ${map['maladies'].runtimeType}');
+      print('Maladies value: ${map['maladies']}');
+    }
+    
+    print('Has chronicConditions field: ${map.containsKey('chronicConditions')}');
+    if (map.containsKey('chronicConditions')) {
+      print('ChronicConditions type: ${map['chronicConditions'].runtimeType}');
+      print('ChronicConditions value: ${map['chronicConditions']}');
+    }
+    
+    // Prepare chronic conditions list with detailed logging
+    List<String> chronicConditions = [];
+    if (map['maladies'] != null) {
+      try {
+        var maladies = map['maladies'];
+        if (maladies is List) {
+          for (var item in maladies) {
+            if (item is String) {
+              chronicConditions.add(item);
+              print('Added disease from maladies: $item');
+            } else {
+              print('Non-string maladies item: $item (${item.runtimeType})');
+            }
+          }
+        } else {
+          print('Maladies is not a List: $maladies (${maladies.runtimeType})');
+        }
+      } catch (e) {
+        print('Error processing maladies: $e');
+      }
+    } else if (map['chronicConditions'] != null) {
+      try {
+        var conditions = map['chronicConditions'];
+        if (conditions is List) {
+          for (var item in conditions) {
+            if (item is String) {
+              chronicConditions.add(item);
+              print('Added disease from chronicConditions: $item');
+            } else {
+              print('Non-string chronicConditions item: $item (${item.runtimeType})');
+            }
+          }
+        } else {
+          print('ChronicConditions is not a List: $conditions (${conditions.runtimeType})');
+        }
+      } catch (e) {
+        print('Error processing chronicConditions: $e');
+      }
+    }
+    print('Final chronicConditions list: $chronicConditions');
+    print('====================================================');
+
     return UserModel(
       userType: map['userType'] ?? 'user',
       name: (map['prenom'] != null && map['nom'] != null)
@@ -92,12 +149,8 @@ class UserModel {
       userId: map['id']?.toString() ??
           map['_id']?.toString(), // Support both MongoDB ID formats
       hasChronicDisease: map['hasChronicDisease'],
-      // Handle both array formats and single value format for backward compatibility
-      chronicConditions: map['maladies'] != null
-          ? List<String>.from(map['maladies'])
-          : (map['chronicConditions'] != null
-              ? List<String>.from(map['chronicConditions'])
-              : []),
+      // Use our prepared chronic conditions list
+      chronicConditions: chronicConditions,
       preferredLanguage: map['preferredLanguage'],
       doesExercise: map['doesExercise'],
       healthGoals: map['objectives'] != null

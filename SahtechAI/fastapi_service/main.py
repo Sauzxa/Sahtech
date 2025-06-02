@@ -14,6 +14,8 @@ from fastapi.responses import Response
 from starlette.requests import Request
 from datetime import datetime
 import httpx
+import requests
+from bs4 import BeautifulSoup
 # we gonna detailled the prompt more
 # Load environment variables from .env file
 load_dotenv()
@@ -48,6 +50,11 @@ async def normalize_response_middleware(request: Request, call_next):
     # Check if response is JSON
     if response.headers.get("content-type") == "application/json":
         try:
+            # Check if it's a streaming response (which doesn't have a body attribute)
+            if "_StreamingResponse" in str(type(response)):
+                logger.info("Skipping normalization for streaming response")
+                return response
+                
             # Get response body
             body = await response.body()
             
@@ -267,8 +274,24 @@ def format_system_prompt(user_data: UserData, product_data: ProductData) -> str:
     health_conditions_str = ", ".join(user_data.health_conditions) if user_data.health_conditions else "None"
     allergies_str = ", ".join(user_data.allergies) if user_data.allergies else "None"
     
+    # Get additives information from web sources
+    try:
+        additives_info_1 = get_additive_data("https://www.additifs-alimentaires.net/additifs.php")
+        additives_info_2 = get_additive_data("https://www.quechoisir.org/comparatif-additifs-alimentaires-n56877/")
+        logger.info(f"Retrieved {len(additives_info_1)} additives from source 1 and {len(additives_info_2)} from source 2")
+    except Exception as e:
+        logger.error(f"Error retrieving additives information: {str(e)}")
+        additives_info_1 = []
+        additives_info_2 = []
+    
+    # Enhanced prompt with ReAct framework and additives information
     prompt = f"""
-    You are an intelligent nutrition and health advisor tasked with providing personalized product recommendations based on individual health profiles.
+    You are an AI agent acting as a virtual nutritionist or doctor within the Sahtech health application.
+
+    Your purpose is to help users determine whether scanned food products are safe and suitable for them, based on their health profile and toxicity of additives.
+
+    You operate in a loop using the ReAct framework:
+    Thought → Action → Observation → Final Recommendation
 
     USER HEALTH PROFILE:
     - Age: {user_data.age if user_data.age else "Not specified"}
@@ -285,6 +308,16 @@ def format_system_prompt(user_data: UserData, product_data: ProductData) -> str:
     - Nutri-Score: {product_data.nutri_score if product_data.nutri_score else "Not available"}
     - Ingredients: {ingredients_str}
     - Additives: {", ".join(product_data.additives) if product_data.additives else "None listed"}
+
+    ADDITIVES INFORMATION:
+    We have consulted reliable sources about food additives and their potential health impacts. 
+    Consider this information when evaluating the product's additives.
+
+    BEHAVIOR:
+    - Think like a smart and responsible medical expert
+    - Be empathetic and clear – users aren't doctors
+    - Always explain your reasoning step by step
+    - If a product is not suitable, clearly explain why it is harmful based on the user's health profile
 
     Based on this information, provide a personalized analysis of whether this product is suitable for this user. 
     Start your response with one of these indicators:
@@ -362,12 +395,24 @@ def generate_ai_recommendation(user_data: UserData, product_data: ProductData) -
             logger.warning("Using mock recommendation because Groq client is not available")
             return mock_recommendation(user_data, product_data)
         
+        # Get system prompt with enhanced additives information
         system_prompt = format_system_prompt(user_data, product_data)
+        
+        # Create a user message that includes specific instructions for the ReAct framework
+        user_message = """
+        Please analyze this product for this user and provide a recommendation.
+        
+        Follow the ReAct framework:
+        1. First, think about the product ingredients and additives in relation to the user's health profile
+        2. Consider any potential risks or benefits
+        3. Make observations about specific ingredients or additives that may be concerning
+        4. Provide your final recommendation with clear reasoning
+        """
         
         completion = client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": "Please analyze this product for this user and provide a recommendation."}
+                {"role": "user", "content": user_message.strip()}
             ],
             model="llama-3.3-70b-versatile",
             temperature=0.3,
@@ -383,6 +428,32 @@ def generate_ai_recommendation(user_data: UserData, product_data: ProductData) -
         # Use mock response when API fails
         logger.info("Falling back to mock recommendation")
         return mock_recommendation(user_data, product_data)
+
+# Web scraping function for additives information
+def get_additive_data(url):
+    """
+    Scrape a website for additives information
+    
+    Args:
+        url (str): URL to scrape for additives information
+        
+    Returns:
+        list: List of additives found on the page
+    """
+    try:
+        logger.info(f"Scraping additives data from {url}")
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        additives = []
+        for item in soup.find_all('li'):  # Change this based on the HTML structure
+            additives.append(item.text)
+        
+        logger.info(f"Successfully scraped {len(additives)} additives from {url}")
+        return additives
+    except Exception as e:
+        logger.error(f"Error scraping additives from {url}: {str(e)}")
+        return []
 
 # Endpoints
 @app.get("/")
@@ -549,6 +620,35 @@ async def predict(request: RecommendationRequest, background_tasks: BackgroundTa
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process recommendation: {str(e)}"
+        )
+
+@app.get("/test-additives", dependencies=[Depends(verify_api_key)])
+async def test_additives_scraping():
+    """Test endpoint to verify the web scraping functionality for additives information"""
+    try:
+        # Scrape additives data from the two sources
+        additives_1 = get_additive_data("https://www.additifs-alimentaires.net/additifs.php")
+        additives_2 = get_additive_data("https://www.quechoisir.org/comparatif-additifs-alimentaires-n56877/")
+        
+        # Return the results
+        return {
+            "status": "success",
+            "source_1": {
+                "url": "https://www.additifs-alimentaires.net/additifs.php",
+                "count": len(additives_1),
+                "sample": additives_1[:10] if len(additives_1) > 10 else additives_1
+            },
+            "source_2": {
+                "url": "https://www.quechoisir.org/comparatif-additifs-alimentaires-n56877/",
+                "count": len(additives_2),
+                "sample": additives_2[:10] if len(additives_2) > 10 else additives_2
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error testing additives scraping: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to test additives scraping: {str(e)}"
         )
 
 if __name__ == "__main__":

@@ -19,9 +19,11 @@ import 'package:sahtech/presentation/home/HistoriqueScannedProducts.dart';
 import 'package:sahtech/core/CustomWidgets/HistoRecommandationPage.dart';
 import 'package:sahtech/core/utils/models/product_model.dart';
 import 'package:sahtech/presentation/scan/product_scanner_screen.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 // Device preview removed as requested
-// first
+// f
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -149,6 +151,14 @@ class _MainState extends State<Main> {
             ),
             // Set locale for the app
             locale: Locale(_translationService.currentLanguageCode),
+            // Add localization delegates
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: AppLocalizations.supportedLocales,
             // Use AuthCheck as initial widget instead of SplashScreen
             home: const AuthCheck(),
             // Routes for the app

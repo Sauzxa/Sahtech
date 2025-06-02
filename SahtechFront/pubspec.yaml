@@ -36,6 +36,7 @@ dependencies:
   shared_preferences: ^2.2.2
   provider: ^6.1.4
   image_picker: ^1.1.2
+  http_parser: ^4.0.2
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
   path: ^1.8.3
@@ -49,6 +50,8 @@ dependencies:
   qr_code_scanner: ^1.0.1
   mobile_scanner: ^6.0.10
   connectivity_plus: ^4.0.2
+  google_maps_flutter: ^2.10.1
+  webview_flutter: ^4.7.0
 
 dev_dependencies:
   flutter_test:

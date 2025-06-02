@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
-import 'package:sahtech/core/utils/models/nutritionist_model.dart';
+import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/utils/models/ad_model.dart';
 import 'package:sahtech/core/services/mock_api_service.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:sahtech/presentation/scan/camera_access_screen.dart';
 import 'package:sahtech/presentation/home/UserProfileSettings.dart';
 import 'package:sahtech/core/services/auth_service.dart';
@@ -16,6 +18,7 @@ import 'package:sahtech/presentation/home/NutriDisponible.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sahtech/core/services/storage_service.dart';
 import 'package:sahtech/presentation/scan/product_scanner_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   final UserModel userData;
@@ -34,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   // Data for the home screen
-  List<NutritionistModel> _nutritionists = [];
+  List<NutritionisteModel> _nutritionists = [];
   List<AdModel> _ads = [];
   int _scannedProductsCount = 0;
   bool _isLoading = true;
@@ -128,8 +131,52 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Load nutritionists from mock API
-      final nutritionists = await _apiService.getNutritionists();
+      // Load nutritionists from API endpoint
+      List<NutritionisteModel> nutritionists = [];
+      try {
+        // Get the authentication token
+        final StorageService storageService = StorageService();
+        final String? token = await storageService.getToken();
+        
+        print('Fetching nutritionists with auth token: ${token != null ? 'Yes (length: ${token.length})' : 'No token available'}');
+        
+        final response = await http.get(
+          Uri.parse('http://192.168.1.69:8080/API/Sahtech/Nutrisionistes/All'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+        );
+
+        print('Nutritionists API response status: ${response.statusCode}');
+        
+        if (response.statusCode == 200) {
+          final List<dynamic> nutritionistsJson = json.decode(response.body);
+          print('API Response: ${response.body}');
+          nutritionists = nutritionistsJson.map((json) => NutritionisteModel.fromMap(json)).toList();
+          print('Fetched ${nutritionists.length} nutritionists from API');
+          
+          // Debug each nutritionist
+          for (var i = 0; i < nutritionists.length; i++) {
+            print('Nutritionist $i:');
+            print('  ID: ${nutritionists[i].id}');
+            print('  Name: ${nutritionists[i].name}');
+            print('  Photo URL: ${nutritionists[i].photoUrl}');
+            print('  Specialite: ${nutritionists[i].specialite}');
+            print('  Cabinet Address: ${nutritionists[i].cabinetAddress}');
+            print('  Phone: ${nutritionists[i].phoneNumber} (${nutritionists[i].numTelephone})');
+          }
+        } else {
+          print('Error fetching nutritionists: ${response.statusCode}');
+          print('Error response body: ${response.body}');
+          // Fallback to mock API if the server request fails
+          nutritionists = await _apiService.getNutritionists();
+        }
+      } catch (e) {
+        print('Exception when fetching nutritionists: $e');
+        // Fallback to mock API if the server request fails
+        nutritionists = await _apiService.getNutritionists();
+      }
 
       // Load ads from mock API
       final ads = await _apiService.getActiveAds();
@@ -298,25 +345,71 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Call nutritionist
-  void _callNutritionist(NutritionistModel nutritionist) {
-    // Call the mock API
-    _apiService.contactNutritionist(nutritionist.id).then((_) {
-      // Show success message
+  void _callNutritionist(NutritionisteModel nutritionist) async {
+    // Get the phone number from the nutritionist model
+    String? phoneNumber;
+    
+    // Try to get phone number from different possible fields
+    if (nutritionist.phoneNumber != null && nutritionist.phoneNumber!.isNotEmpty) {
+      phoneNumber = nutritionist.phoneNumber;
+    } else if (nutritionist.numTelephone != null) {
+      // Convert integer to string if needed
+      phoneNumber = nutritionist.numTelephone.toString();
+    }
+    
+    if (phoneNumber == null || phoneNumber.isEmpty) {
+      // Show error message if no phone number is available
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Appel à ${nutritionist.name}'),
-        backgroundColor: AppColors.lightTeal,
-      ));
-    }).catchError((error) {
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Erreur lors de l\'appel: $error'),
+        content: Text('Numéro de téléphone non disponible'),
         backgroundColor: Colors.red,
       ));
-    });
+      return;
+    }
+    
+    // Format the phone number for dialing
+    String formattedNumber = phoneNumber;
+    if (!formattedNumber.startsWith('+')) {
+      // Add country code if not present
+      formattedNumber = '+213$formattedNumber';
+    }
+    
+    // Create the URI for launching the phone dialer
+    final Uri phoneUri = Uri(scheme: 'tel', path: formattedNumber);
+    
+    try {
+      // Try to launch the phone dialer
+      if (await canLaunchUrl(phoneUri)) {
+        await launchUrl(phoneUri);
+        print('Launched phone dialer with number: $formattedNumber');
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Appel à ${nutritionist.name}'),
+          backgroundColor: AppColors.lightTeal,
+        ));
+      } else {
+        // If dialer can't be launched, show a message
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Impossible d\'ouvrir l\'application téléphone'),
+          backgroundColor: Colors.red,
+        ));
+        print('Could not launch phone dialer: $phoneUri');
+      }
+    } catch (e) {
+      // Handle any errors
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Erreur lors de l\'appel: $e'),
+        backgroundColor: Colors.red,
+      ));
+      print('Error launching phone dialer: $e');
+    }
   }
 
   // Navigate to nutritionist details
-  void _navigateToNutritionistDetails(NutritionistModel nutritionist) {
+  void _navigateToNutritionistDetails(NutritionisteModel nutritionist) {
+    // Get the nutritionist ID
+    final nutritionistId = nutritionist.userId ?? nutritionist.id;
+    
     // For now, just show a snackbar
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text('Détails de ${nutritionist.name}'),
@@ -327,14 +420,47 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Open ad link
-  void _openAdLink(AdModel ad) {
-    // For now, just show a snackbar
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('Ouverture de la publicité: ${ad.title}'),
-      backgroundColor: AppColors.lightTeal,
-    ));
+  void _openAdLink(AdModel ad) async {
+    try {
+      // Check if we have a valid link
+      if (ad.link.isNotEmpty) {
+        // Prepare URL - ensure it has a scheme
+        String url = ad.link;
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          url = 'https://$url';
+        }
 
-    // TODO: Implement ad link opening
+        // Parse the URL
+        final Uri uri = Uri.parse(url);
+        
+        // Try to launch the URL
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          print('Opened ad link: $url');
+        } else {
+          // If link can't be opened, show a message
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Impossible d\'ouvrir le lien: ${ad.title}'),
+            backgroundColor: Colors.red,
+          ));
+          print('Could not launch URL: $url');
+        }
+      } else {
+        // If no link is available, just show the ad title
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Publicité: ${ad.title}'),
+          backgroundColor: AppColors.lightTeal,
+        ));
+        print('No link available for ad: ${ad.title}');
+      }
+    } catch (e) {
+      // Handle any errors
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Erreur lors de l\'ouverture du lien: $e'),
+        backgroundColor: Colors.red,
+      ));
+      print('Error opening ad link: $e');
+    }
   }
 
   // Build the app header with greeting and profile photo
@@ -708,10 +834,82 @@ class _HomeScreenState extends State<HomeScreen> {
                                       decoration: BoxDecoration(
                                         borderRadius:
                                             BorderRadius.circular(16.r),
-                                        image: DecorationImage(
-                                          image: NetworkImage(ad.imageUrl),
-                                          fit: BoxFit.cover,
-                                        ),
+                                      ),
+                                      child: Stack(
+                                        children: [
+                                          // Ad image with error handling
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(16.r),
+                                            child: Image.network(
+                                              ad.imageUrl,
+                                              width: 280.w,
+                                              height: 130.h,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error, stackTrace) {
+                                                print('Error loading ad image: $error');
+                                                return Container(
+                                                  width: 280.w,
+                                                  height: 130.h,
+                                                  color: Colors.grey[300],
+                                                  child: Center(
+                                                    child: Icon(
+                                                      Icons.image_not_supported,
+                                                      size: 40.sp,
+                                                      color: Colors.grey[500],
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              loadingBuilder: (context, child, loadingProgress) {
+                                                if (loadingProgress == null) return child;
+                                                return Container(
+                                                  width: 280.w,
+                                                  height: 130.h,
+                                                  color: Colors.grey[200],
+                                                  child: Center(
+                                                    child: CircularProgressIndicator(
+                                                      color: AppColors.lightTeal,
+                                                      value: loadingProgress.expectedTotalBytes != null
+                                                          ? loadingProgress.cumulativeBytesLoaded /
+                                                              loadingProgress.expectedTotalBytes!
+                                                          : null,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                          // Title overlay at the bottom
+                                          if (ad.title.isNotEmpty)
+                                            Positioned(
+                                              bottom: 0,
+                                              left: 0,
+                                              right: 0,
+                                              child: Container(
+                                                padding: EdgeInsets.symmetric(
+                                                  vertical: 8.h,
+                                                  horizontal: 12.w,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.black.withOpacity(0.5),
+                                                  borderRadius: BorderRadius.only(
+                                                    bottomLeft: Radius.circular(16.r),
+                                                    bottomRight: Radius.circular(16.r),
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  ad.title,
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 14.sp,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
                                       ),
                                     ),
                                   );

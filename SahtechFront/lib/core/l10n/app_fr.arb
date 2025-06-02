@@ -7,5 +7,11 @@
   "next": "suivant",
   "selectLanguage": "Choisir une langue",
   "pleaseSelectOption": "Veuillez sélectionner une option",
-  "informationSaved": "Informations enregistrées avec succès!"
+  "informationSaved": "Informations enregistrées avec succès!",
+  "selectProofTitle": "Sélection une preuve de votre métier ! 🎓",
+  "selectProofSubtitle": "Veuillez sélectionner une preuve contenant votre diplôme. Cette étape est obligatoire.",
+  "chooseProofHint": "Choisissez une preuve de votre métier",
+  "diploma": "Diplôme",
+  "workAttestation": "Attestation de travail",
+  "trainingAttestation": "Attestation de formation"
 } 

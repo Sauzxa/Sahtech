@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/theme/colors.dart';
-import 'package:sahtech/core/utils/models/nutritionist_model.dart';
+import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 
 class NutritionistCard extends StatelessWidget {
-  final NutritionistModel nutritionist;
+  final NutritionisteModel nutritionist;
   final VoidCallback onCallTap;
   final VoidCallback onDetailsTap;
 
@@ -17,6 +17,12 @@ class NutritionistCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Debug the nutritionist data
+    print('Building card for nutritionist:');
+    print('  Name: ${nutritionist.name}');
+    print('  Photo URL: ${nutritionist.photoUrl}');
+    print('  Specialite: ${nutritionist.specialite}');
+    
     return Container(
       width: 260.w,
       margin: EdgeInsets.only(right: 12.w),
@@ -45,11 +51,12 @@ class NutritionistCard extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12.r),
               child: Image.network(
-                nutritionist.profileImageUrl,
+                nutritionist.photoUrl ?? nutritionist.profileImageUrl ?? 'https://picsum.photos/200',
                 width: 80.w,
                 height: 98.h,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
+                  print('Error loading nutritionist image: $error');
                   return Container(
                     width: 80.w,
                     height: 98.h,
@@ -90,7 +97,7 @@ class NutritionistCard extends StatelessWidget {
                       ),
                       SizedBox(width: 2.w),
                       Text(
-                        nutritionist.rating.toString(),
+                        '4.9',
                         style: TextStyle(
                           color: Colors.black87,
                           fontWeight: FontWeight.bold,
@@ -102,7 +109,7 @@ class NutritionistCard extends StatelessWidget {
 
                   // Name
                   Text(
-                    nutritionist.name,
+                    nutritionist.name ?? 'Nutritionist',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14.sp,
@@ -114,7 +121,7 @@ class NutritionistCard extends StatelessWidget {
 
                   // Specialization
                   Text(
-                    nutritionist.specialization,
+                    nutritionist.specialite ?? 'Nutritionist',
                     style: TextStyle(
                       fontSize: 12.sp,
                       color: Colors.grey[700],
@@ -134,7 +141,7 @@ class NutritionistCard extends StatelessWidget {
                       SizedBox(width: 2.w),
                       Expanded(
                         child: Text(
-                          nutritionist.location,
+                          nutritionist.address ?? nutritionist.cabinetAddress ?? 'Location',
                           style: TextStyle(
                             fontSize: 11.sp,
                             color: Colors.grey[600],

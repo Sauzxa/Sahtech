@@ -7,5 +7,11 @@
   "next": "Next",
   "selectLanguage": "Choose a language",
   "pleaseSelectOption": "Please select an option",
-  "informationSaved": "Information saved successfully!"
+  "informationSaved": "Information saved successfully!",
+  "selectProofTitle": "Select a proof of your profession! 🎓",
+  "selectProofSubtitle": "Please select a proof containing your diploma. This step is mandatory.",
+  "chooseProofHint": "Choose a proof of your profession",
+  "diploma": "Diploma",
+  "workAttestation": "Work attestation",
+  "trainingAttestation": "Training attestation"
 } 

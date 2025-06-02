@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/theme/colors.dart';
+import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
-import 'package:http/http.dart' as http;
+
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sahtech/core/services/api_service.dart';
@@ -51,19 +52,91 @@ class _EditUserDataState extends State<EditUserData> {
   late TextEditingController _heightController;
   late TextEditingController _weightController;
 
+  // Disease dropdown variables
+  String? _selectedDisease; // Currently selected disease
+  final List<String> _allDiseases = [
+    'DIABETIQUE',
+    'HYPERTENSION',
+    'OBESITE',
+    'ASTHME',
+    'DEPRESSION',
+    'ANXIETE',
+    'GASTRITE',
+    'CARIES_DENTAIRES',
+    'CONJONCTIVITE',
+    'MALADIE_COELIAQUE',
+    'ARTHROSE',
+    'ALLERGIE',
+    'MALADIE_DE_CROHN',
+    'FIBROMYALGIE',
+    'HYPOTHYROIDIE',
+    'HYPERTHYROIDIE',
+    'LUPUS',
+    'SCLEROSE_EN_PLAQUES',
+    'POLYARTHRITE_RHUMATOIDE',
+    'PSORIASIS',
+    'ENDOMETRIOSE',
+    'GLAUCOME',
+  ]; // List of all possible diseases
+
+  // Map for display names - used for UI display only
+  final Map<String, String> _diseaseDisplayNames = {
+    'DIABETIQUE': 'Diabète',
+    'HYPERTENSION': 'Hypertension artérielle',
+    'OBESITE': 'Obésité',
+    'ASTHME': 'Asthme',
+    'DEPRESSION': 'Dépression',
+    'ANXIETE': 'Anxiété',
+    'GASTRITE': 'Gastrite',
+    'CARIES_DENTAIRES': 'Caries dentaires',
+    'CONJONCTIVITE': 'Conjonctivite',
+    'MALADIE_COELIAQUE': 'Maladie coeliaque',
+    'ARTHROSE': 'Arthrose',
+    'ALLERGIE': 'Allergie',
+    'MALADIE_DE_CROHN': 'Maladie de Crohn',
+    'FIBROMYALGIE': 'Fibromyalgie',
+    'HYPOTHYROIDIE': 'Hypothyroïdie',
+    'HYPERTHYROIDIE': 'Hyperthyroïdie',
+    'LUPUS': 'Lupus',
+    'SCLEROSE_EN_PLAQUES': 'Sclérose en plaques',
+    'POLYARTHRITE_RHUMATOIDE': 'Polyarthrite rhumatoïde',
+    'PSORIASIS': 'Psoriasis',
+    'ENDOMETRIOSE': 'Endométriose',
+    'GLAUCOME': 'Glaucome',
+  };
+
+  // Store selected diseases with a Map for O(1) lookup
+  Map<String, bool> _selectedDiseases = {};
+
   // Image picker
   final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
+    
+    print('====== EDIT USER DATA INITIALIZATION PERFORMANCE ======');
+    final initStartTime = DateTime.now();
+    print('EditUserData initState started: $initStartTime');
+    
     _userData = widget.user;
 
     // Initialize with user data from the API
-    _fetchUserData();
+    _fetchUserData().then((_) {
+      final fetchEndTime = DateTime.now();
+      final fetchDuration = fetchEndTime.difference(initStartTime);
+      print('_fetchUserData completed: $fetchEndTime');
+      print('_fetchUserData duration: ${fetchDuration.inMilliseconds} ms');
+    });
 
     // Initialize controllers with initial data (will be updated after API fetch)
     _initializeControllers();
+    
+    final initEndTime = DateTime.now();
+    final initDuration = initEndTime.difference(initStartTime);
+    print('initState completed: $initEndTime');
+    print('initState sync operations duration: ${initDuration.inMilliseconds} ms');
+    print('====== END INITIALIZATION PERFORMANCE ======');
   }
 
   void _initializeControllers() {
@@ -98,6 +171,10 @@ class _EditUserDataState extends State<EditUserData> {
 
   // Fetch user data directly from API
   Future<void> _fetchUserData() async {
+    print('===== FETCH USER DATA PERFORMANCE =====');
+    final fetchStart = DateTime.now();
+    print('_fetchUserData started: $fetchStart');
+    
     if (mounted) {
       setState(() {
         _isLoadingUserData = true;
@@ -105,108 +182,214 @@ class _EditUserDataState extends State<EditUserData> {
     }
 
     try {
+      final prefsStart = DateTime.now();
       SharedPreferences prefs = await SharedPreferences.getInstance();
       final String? token = prefs.getString('auth_token');
       final String? userId = prefs.getString('user_id');
+      final prefsEnd = DateTime.now();
+      print('SharedPreferences access time: ${prefsEnd.difference(prefsStart).inMilliseconds} ms');
 
       if (token == null || userId == null) {
         throw Exception("Authentication data missing");
       }
 
-      final response = await http.get(
-        Uri.parse('http://192.168.1.69:8080/API/Sahtech/Utilisateurs/$userId'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      // Use ApiService instead of direct http calls with hardcoded URLs
+      try {
+        final apiCallStart = DateTime.now();
+        print('API call started: $apiCallStart');
+        
+        // Use ApiService to get user data
+        final userData = await _apiService.get('Utilisateurs/$userId');
+        
+        final apiCallEnd = DateTime.now();
+        final apiCallDuration = apiCallEnd.difference(apiCallStart);
+        print('API call completed: $apiCallEnd');
+        print('API call duration: ${apiCallDuration.inMilliseconds} ms');
+        
+        if (userData != null) {
+          final processingStart = DateTime.now();
+          print('Data processing started: $processingStart');
+          
+          // Debug: Log the raw data we received from MongoDB
+          print('----------------------------------------');
+          print('RAW USER DATA FROM MONGODB:');
+          print('ID: ${userData["id"] ?? userData["_id"]}');
+          print('Name: ${userData["prenom"]} ${userData["nom"]}');
+          print('Email: ${userData["email"]}');
+          print('Has chronic disease: ${userData["hasChronicDisease"]}');
 
-      // Debug: log response for debugging
-      print('Fetch user data response status: ${response.statusCode}');
-      print('Fetch user data raw response body: ${response.body}');
+          // Check what format the maladies are in and log them
+          if (userData["maladies"] != null) {
+            print('----------------------------------------');
+            print('DETAILED MALADIES DEBUG:');
+            print('Maladies type: ${userData["maladies"].runtimeType}');
+            print('Raw maladies: ${userData["maladies"]}');
+            
+            if (userData["maladies"] is List) {
+              List maladiesList = userData["maladies"] as List;
+              for (int i = 0; i < maladiesList.length; i++) {
+                var item = maladiesList[i];
+                print('Maladie $i: $item (${item.runtimeType})');
+              }
+            }
+            print('----------------------------------------');
+          } else {
+            print('No maladies field found in data');
+          }
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> userData = json.decode(response.body);
+          print('Objectives: ${userData["objectives"]}');
+          print('Height: ${userData["taille"] ?? userData["height"]}');
+          print('Weight: ${userData["poids"] ?? userData["weight"]}');
+          print('----------------------------------------');
 
-        // Debug: Log the raw data we received from MongoDB
-        print('----------------------------------------');
-        print('RAW USER DATA FROM MONGODB:');
-        print('ID: ${userData["id"] ?? userData["_id"]}');
-        print('Name: ${userData["prenom"]} ${userData["nom"]}');
-        print('Email: ${userData["email"]}');
-        print('Has chronic disease: ${userData["hasChronicDisease"]}');
+          _userData = UserModel.fromMap(userData);
 
-        // Check what format the maladies are in and log them
-        if (userData["maladies"] != null) {
-          print('Maladies raw format: ${userData["maladies"].runtimeType}');
-          print('Maladies raw data: ${userData["maladies"]}');
+          // Debug: Log parsed user data
+          print('PARSED USER MODEL:');
+          print('Name: ${_userData.name}');
+          print('Email: ${_userData.email}');
+          print('Chronic conditions: ${_userData.chronicConditions}');
+          print('Health goals: ${_userData.healthGoals}');
+          print('Has chronic disease: ${_userData.hasChronicDisease}');
+          print('Height: ${_userData.height}');
+          print('Weight: ${_userData.weight}');
+          print('----------------------------------------');
 
-          // Handle different possible formats from MongoDB
-          List<String> diseases = [];
-          if (userData["maladies"] is List) {
-            for (var item in userData["maladies"]) {
+          // Set the selected disease from the user data
+          _selectedDiseases = {}; // Reset selected diseases map
+          
+          // Replace the API response processing code for maladies with simpler direct matching
+          // Also try direct access to maladies from the raw API response
+          if (userData["maladies"] != null && userData["maladies"] is List && (userData["maladies"] as List).isNotEmpty) {
+            var maladiesList = userData["maladies"] as List;
+            print('Processing raw maladies from API: $maladiesList');
+            
+            for (var item in maladiesList) {
+              print('Processing raw maladie item: $item (${item.runtimeType})');
+              String? diseaseName;
+              
               if (item is String) {
-                diseases.add(item);
+                diseaseName = item;
+                print('String maladie: $diseaseName');
               } else if (item is Map) {
-                // If it's a complex type, try to extract the name or value
-                diseases.add(item["name"] ?? item["value"] ?? item.toString());
+                diseaseName = item["name"] ?? item["value"];
+                print('Map maladie with name/value: $diseaseName');
+              }
+              
+              if (diseaseName != null) {
+                print('Trying to match disease: "$diseaseName"');
+                
+                // Direct matching with the _allDiseases list
+                if (_allDiseases.contains(diseaseName)) {
+                  _selectedDiseases[diseaseName] = true;
+                  print('✅ Direct match found in _allDiseases: $diseaseName');
+                } else {
+                  // Try case-insensitive matching
+                  String diseaseUpper = diseaseName.toUpperCase();
+                  for (var disease in _allDiseases) {
+                    if (disease.toUpperCase() == diseaseUpper) {
+                      _selectedDiseases[disease] = true;
+                      print('✅ Case-insensitive match found: $diseaseName -> $disease');
+                      break;
+                    }
+                  }
+                  
+                  if (!_selectedDiseases.containsKey(diseaseName)) {
+                    print('❌ Could not match disease: $diseaseName');
+                  }
+                }
+              }
+            }
+          } else {
+            print('No maladies list in API response or it is empty');
+          }
+          
+          if (_selectedDiseases.isEmpty) {
+            print('No diseases found in user data');
+          } else {
+            print('SELECTED DISEASES AFTER PROCESSING: ${_selectedDiseases.keys.toList()}');
+          }
+          print('----------------------------------------');
+
+          // Process chronic conditions from the user model
+          print('Processing chronic conditions from user model');
+          print('User chronic conditions from model: ${_userData.chronicConditions}');
+          if (_userData.chronicConditions != null && _userData.chronicConditions.isNotEmpty) {
+            print('Processing chronic conditions: ${_userData.chronicConditions}');
+            for (var condition in _userData.chronicConditions) {
+              print('Processing condition: "$condition" (${condition.runtimeType})');
+              
+              // Direct match against _allDiseases which now contains backend enum values
+              if (_allDiseases.contains(condition)) {
+                _selectedDiseases[condition] = true;
+                print('✅ Direct match found in _allDiseases: $condition');
               } else {
-                diseases.add(item.toString());
+                // Try case-insensitive comparison as fallback
+                String conditionUpper = condition.toUpperCase();
+                for (var disease in _allDiseases) {
+                  if (disease.toUpperCase() == conditionUpper) {
+                    _selectedDiseases[disease] = true;
+                    print('✅ Case-insensitive match found: $condition -> $disease');
+                    break;
+                  }
+                }
+                
+                if (!_selectedDiseases.containsKey(condition)) {
+                  print('❌ Could not match disease from chronicConditions: $condition');
+                }
               }
             }
           }
-          print('Extracted maladies list: $diseases');
-        } else {
-          print('No maladies field found in data');
+          
+          if (_selectedDiseases.isEmpty) {
+            print('No diseases found in user data');
+          } else {
+            print('SELECTED DISEASES AFTER PROCESSING: ${_selectedDiseases.keys.toList()}');
+          }
+          print('----------------------------------------');
+
+          final processingEnd = DateTime.now();
+          print('Data processing completed: $processingEnd');
+          print('Data processing duration: ${processingEnd.difference(processingStart).inMilliseconds} ms');
+
+          // Update controllers with fresh data
+          // Check if widget is still mounted before calling setState
+          if (mounted) {
+            final uiUpdateStart = DateTime.now();
+            print('UI update started: $uiUpdateStart');
+            
+            setState(() {
+              _firstNameController.text =
+                  _userData.name != null && _userData.name!.contains(" ")
+                      ? _userData.name!.split(" ")[0]
+                      : _userData.name ?? '';
+
+              _lastNameController.text =
+                  _userData.name != null && _userData.name!.contains(" ")
+                      ? _userData.name!.split(" ").length > 1
+                          ? _userData.name!.split(" ")[1]
+                          : ""
+                      : "";
+
+              _emailController.text = _userData.email ?? '';
+              _heightController.text =
+                  _userData.height != null ? '${_userData.height}' : '';
+              _weightController.text =
+                  _userData.weight != null ? '${_userData.weight}' : '';
+
+              // Reset the changes flag since we just loaded fresh data
+              _hasChanges = false;
+              _isLoadingUserData = false;
+            });
+            
+            final uiUpdateEnd = DateTime.now();
+            print('UI update completed: $uiUpdateEnd');
+            print('UI update duration: ${uiUpdateEnd.difference(uiUpdateStart).inMilliseconds} ms');
+          }
         }
-
-        print('Objectives: ${userData["objectives"]}');
-        print('Height: ${userData["taille"] ?? userData["height"]}');
-        print('Weight: ${userData["poids"] ?? userData["weight"]}');
-        print('----------------------------------------');
-
-        _userData = UserModel.fromMap(userData);
-
-        // Debug: Log parsed user data
-        print('PARSED USER MODEL:');
-        print('Name: ${_userData.name}');
-        print('Email: ${_userData.email}');
-        print('Chronic conditions: ${_userData.chronicConditions}');
-        print('Health goals: ${_userData.healthGoals}');
-        print('Has chronic disease: ${_userData.hasChronicDisease}');
-        print('Height: ${_userData.height}');
-        print('Weight: ${_userData.weight}');
-        print('----------------------------------------');
-
-        // Update controllers with fresh data
-        // Check if widget is still mounted before calling setState
-        if (mounted) {
-          setState(() {
-            _firstNameController.text =
-                _userData.name != null && _userData.name!.contains(" ")
-                    ? _userData.name!.split(" ")[0]
-                    : _userData.name ?? '';
-
-            _lastNameController.text =
-                _userData.name != null && _userData.name!.contains(" ")
-                    ? _userData.name!.split(" ").length > 1
-                        ? _userData.name!.split(" ")[1]
-                        : ""
-                    : "";
-
-            _emailController.text = _userData.email ?? '';
-            _heightController.text =
-                _userData.height != null ? '${_userData.height}' : '';
-            _weightController.text =
-                _userData.weight != null ? '${_userData.weight}' : '';
-
-            // Reset the changes flag since we just loaded fresh data
-            _hasChanges = false;
-            _isLoadingUserData = false;
-          });
-        }
-      } else {
-        throw Exception('Failed to load user data: ${response.statusCode}');
+      } catch (apiError) {
+        print('Error calling API service: $apiError');
+        throw apiError;
       }
     } catch (e) {
       print('Error fetching user data: $e');
@@ -218,6 +401,12 @@ class _EditUserDataState extends State<EditUserData> {
           _isLoadingUserData = false;
         });
       }
+    } finally {
+      final fetchEnd = DateTime.now();
+      final totalDuration = fetchEnd.difference(fetchStart);
+      print('_fetchUserData completed: $fetchEnd');
+      print('Total _fetchUserData duration: ${totalDuration.inMilliseconds} ms');
+      print('===== END FETCH USER DATA PERFORMANCE =====');
     }
   }
 
@@ -255,6 +444,52 @@ class _EditUserDataState extends State<EditUserData> {
 
     final bool weightChanged = _weightController.text !=
         (_userData.weight != null ? '${_userData.weight}' : '');
+        
+    // Add debugging for disease change detection:
+    // Check if disease selection has changed
+    bool diseaseChanged = false;
+    
+    // Debug disease change detection
+    print('------ DISEASE CHANGE DETECTION ------');
+    print('Original diseases in userData: ${_userData.chronicConditions}');
+    print('Current selected diseases: ${_selectedDiseases.keys.toList()}');
+    
+    // Convert chronicConditions list to a map for easier comparison
+    Map<String, bool> originalDiseases = {};
+    if (_userData.chronicConditions != null) {
+      for (var disease in _userData.chronicConditions) {
+        originalDiseases[disease] = true;
+      }
+    }
+    
+    // Check if the selections are different
+    if (originalDiseases.length != _selectedDiseases.length) {
+      diseaseChanged = true;
+      print('Disease change detected: Different count - Original: ${originalDiseases.length}, New: ${_selectedDiseases.length}');
+    } else {
+      // Check if every disease in originalDiseases is also in _selectedDiseases
+      for (var disease in originalDiseases.keys) {
+        if (!_selectedDiseases.containsKey(disease)) {
+          diseaseChanged = true;
+          print('Disease change detected: Original has "$disease" which is missing in new selection');
+          break;
+        }
+      }
+      
+      // Check if every disease in _selectedDiseases is also in originalDiseases
+      for (var disease in _selectedDiseases.keys) {
+        if (!originalDiseases.containsKey(disease)) {
+          diseaseChanged = true;
+          print('Disease change detected: New selection has "$disease" which was not in original');
+          break;
+        }
+      }
+    }
+    
+    if (!diseaseChanged) {
+      print('No disease changes detected - selections are the same');
+    }
+    print('------------------------------------');
 
     // Update the _hasChanges flag if any field has changed or if we have a pending image
     setState(() {
@@ -263,10 +498,16 @@ class _EditUserDataState extends State<EditUserData> {
           emailChanged ||
           heightChanged ||
           weightChanged ||
+          diseaseChanged ||
           _pendingImageFile != null;
 
       // Debug info
       print('Form has changes: $_hasChanges');
+      if (diseaseChanged) {
+        print('Disease selection changed:');
+        print('Original diseases: ${originalDiseases.keys.toList()}');
+        print('New diseases: ${_selectedDiseases.keys.toList()}');
+      }
     });
   }
 
@@ -368,8 +609,8 @@ class _EditUserDataState extends State<EditUserData> {
         weightUnit: _userData.weightUnit,
         heightUnit: _userData.heightUnit,
         dateOfBirth: _userData.dateOfBirth,
-        hasChronicDisease: false,
-        chronicConditions: [],
+        hasChronicDisease: _selectedDiseases.isNotEmpty,
+        chronicConditions: _selectedDiseases.keys.toList(),
       );
 
       // Update height and weight if provided
@@ -396,6 +637,13 @@ class _EditUserDataState extends State<EditUserData> {
       print('Profile Image URL: ${updatedUser.photoUrl}');
       print('----------------------------------------');
 
+      // Debug chronic conditions specifically
+      print('----------------------------------------');
+      print('CHRONIC CONDITIONS DEBUG:');
+      print('Current selected diseases: ${_selectedDiseases.keys.toList()}');
+      print('Setting updatedUser chronicConditions to: ${_selectedDiseases.keys.toList()}');
+      print('----------------------------------------');
+
       // Create JSON data for the API request - Using our helper function
       final userData = _prepareUserDataForAPI(updatedUser);
 
@@ -417,34 +665,33 @@ class _EditUserDataState extends State<EditUserData> {
           'Final request contains photoUrl: ${userData.containsKey('photoUrl')}');
       print('photoUrl value: ${userData['photoUrl']}');
 
-      // Store user token and details
+      // Get user ID from shared preferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      final String? token = prefs.getString('auth_token');
       final String? userId = prefs.getString('user_id');
 
-      if (token == null || userId == null) {
-        throw Exception("Authentication data missing");
+      if (userId == null) {
+        throw Exception("User ID is missing");
       }
+      
+      // Add extensive PUT request debugging
+      print('========== PUT REQUEST DEBUG ==========');
+      print('PUT endpoint: Utilisateurs/$userId');
+      print('PUT request body: ${json.encode(userData)}');
+      print('Checking maladies in request: ${userData.containsKey('maladies')}');
+      if (userData.containsKey('maladies')) {
+        print('Maladies in request: ${userData['maladies']}');
+      }
+      print('Checking chronicConditions in request: ${userData.containsKey('chronicConditions')}');
+      if (userData.containsKey('chronicConditions')) {
+        print('ChronicConditions in request: ${userData['chronicConditions']}');
+      }
+      print('hasChronicDisease in request: ${userData['hasChronicDisease']}');
+      print('=====================================');
 
-      // Make API call
-      final response = await http.put(
-        Uri.parse('http://192.168.1.69:8080/API/Sahtech/Utilisateurs/$userId'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode(userData),
-      );
-
-      // Debug: Log response for debugging
-      print('Update response status: ${response.statusCode}');
-      print('Update response body: ${response.body}');
-
-      // Check if update was successful
-      if (response.statusCode == 200) {
-        // Parse the response to get the updated user data
-        final responseData = json.decode(response.body);
-
+      // Use ApiService to update user data
+      try {
+        final responseData = await _apiService.put('Utilisateurs/$userId', userData);
+        
         // Debug: Log the raw response data
         print('----------------------------------------');
         print('UPDATE RESPONSE DATA:');
@@ -458,6 +705,44 @@ class _EditUserDataState extends State<EditUserData> {
           print('PhotoUrl in response: ${responseData['photoUrl']}');
         } else {
           print('WARNING: No photoUrl found in response!');
+        }
+
+        // Log the complete response data
+        print('======== COMPLETE API RESPONSE ========');
+        print(json.encode(responseData));
+        print('====================================');
+        
+        // Debug the response data specifically for diseases
+        print('======== DISEASE UPDATE DEBUG ========');
+        print('Response contains maladies: ${responseData.containsKey('maladies')}');
+        if (responseData.containsKey('maladies')) {
+          print('Maladies in response: ${responseData['maladies']}');
+        }
+        print('Response contains chronicConditions: ${responseData.containsKey('chronicConditions')}');
+        if (responseData.containsKey('chronicConditions')) {
+          print('ChronicConditions in response: ${responseData['chronicConditions']}');
+        }
+        print('Response contains hasChronicDisease: ${responseData.containsKey('hasChronicDisease')}');
+        if (responseData.containsKey('hasChronicDisease')) {
+          print('HasChronicDisease in response: ${responseData['hasChronicDisease']}');
+        }
+        print('====================================');
+        
+        // PRESERVE DISEASES: If the response doesn't include diseases but we sent them,
+        // manually add them to responseData before creating the UserModel
+        if (!responseData.containsKey('maladies') && userData.containsKey('maladies')) {
+          print('⚠️ API response missing maladies! Adding them from request data');
+          responseData['maladies'] = userData['maladies'];
+        }
+        
+        if (!responseData.containsKey('chronicConditions') && userData.containsKey('chronicConditions')) {
+          print('⚠️ API response missing chronicConditions! Adding them from request data');
+          responseData['chronicConditions'] = userData['chronicConditions'];
+        }
+        
+        if (!responseData.containsKey('hasChronicDisease') && userData.containsKey('hasChronicDisease')) {
+          print('⚠️ API response missing hasChronicDisease! Adding it from request data');
+          responseData['hasChronicDisease'] = userData['hasChronicDisease'];
         }
 
         // Update the local user model with the response data
@@ -478,6 +763,27 @@ class _EditUserDataState extends State<EditUserData> {
         }
         print('Final profileImageUrl value: ${_userData.photoUrl}');
         print('----------------------------------------');
+
+        // After the _userData gets updated from the response, add this:
+        // Log how diseases were mapped into the UserModel
+        print('======== USER MODEL DISEASE MAPPING ========');
+        print('Updated _userData.chronicConditions: ${_userData.chronicConditions}');
+        print('Updated _userData.hasChronicDisease: ${_userData.hasChronicDisease}');
+        print('_selectedDiseases before reset: ${_selectedDiseases.keys.toList()}');
+        
+        // IMPORTANT: After the API call, update _selectedDiseases based on the updated _userData
+        // This ensures the UI reflects what's actually saved in the database
+        _selectedDiseases.clear(); // Reset selected diseases
+        if (_userData.chronicConditions != null && _userData.chronicConditions.isNotEmpty) {
+          for (var disease in _userData.chronicConditions) {
+            if (_allDiseases.contains(disease)) {
+              _selectedDiseases[disease] = true;
+              print('Restored disease selection from response: $disease');
+            }
+          }
+        }
+        print('_selectedDiseases after reset: ${_selectedDiseases.keys.toList()}');
+        print('=========================================');
 
         // Update UI without requiring reconnection
         setState(() {
@@ -514,9 +820,9 @@ class _EditUserDataState extends State<EditUserData> {
           // Ensure we pass back the updated user data with the profile image URL
           Navigator.pop(context, _userData);
         });
-      } else {
-        throw Exception(
-            'Erreur lors de la mise à jour du profil: ${response.statusCode}');
+      } catch (apiError) {
+        print('Error updating user data via API: $apiError');
+        throw Exception('Erreur lors de la mise à jour du profil: $apiError');
       }
     } catch (e) {
       print('Error updating profile: $e');
@@ -567,6 +873,12 @@ class _EditUserDataState extends State<EditUserData> {
 
   // Function to ensure proper formatting of user data before sending to API
   Map<String, dynamic> _prepareUserDataForAPI(UserModel userData) {
+    print('----------------------------------------');
+    print('PREPARING USER DATA FOR API - MALADIES CHECK');
+    print('updatedUser.chronicConditions: ${userData.chronicConditions}');
+    print('Current _selectedDiseases: ${_selectedDiseases.keys.toList()}');
+    print('----------------------------------------');
+
     // Create a base map from the user model
     final Map<String, dynamic> formattedData = userData.toMap();
 
@@ -582,15 +894,36 @@ class _EditUserDataState extends State<EditUserData> {
     print('Profile Image URL: ${userData.photoUrl}');
     print('----------------------------------------');
 
-    // Ensure all array fields are properly formatted as non-null arrays
-    // For maladies, send the exact selection strings from the UI
-    formattedData['maladies'] = [];
+    // Since we're now using the same enum values as the backend, we can send them directly
+    // No mapping needed, we already have the correct values
+    List<String> serverFormattedDiseases = _selectedDiseases.keys.toList();
+    
+    // Log what we're sending
+    print('FINAL FORMATTED DISEASES: $serverFormattedDiseases');
+    
+    formattedData['maladies'] = serverFormattedDiseases;
 
     // Make extra sure the maladies field is correctly sent in the format expected by MongoDB
     print('MALADIES being sent to API: ${formattedData['maladies']}');
 
-    // Also add chronicConditions field for API flexibility
-    formattedData['chronicConditions'] = [];
+    // Also add chronicConditions field for API flexibility (use same format)
+    formattedData['chronicConditions'] = serverFormattedDiseases;
+    
+    // Make sure hasChronicDisease is explicitly set to true when there are diseases
+    if (_selectedDiseases.isNotEmpty) {
+      formattedData['hasChronicDisease'] = true;
+      print('Explicitly setting hasChronicDisease to TRUE since there are diseases');
+    } else {
+      formattedData['hasChronicDisease'] = false;
+      print('Explicitly setting hasChronicDisease to FALSE since there are no diseases');
+      
+      // Explicitly set empty arrays for maladies and chronicConditions
+      // This ensures the server receives empty lists rather than null
+      formattedData['maladies'] = [];
+      formattedData['chronicConditions'] = [];
+      print('Explicitly sending empty arrays for maladies and chronicConditions');
+      print('These empty arrays should be preserved in MongoDB and not removed from the document');
+    }
 
     formattedData['allergies'] =
         userData.allergies.isNotEmpty ? userData.allergies : [];
@@ -599,7 +932,6 @@ class _EditUserDataState extends State<EditUserData> {
         userData.healthGoals.isNotEmpty ? userData.healthGoals : [];
 
     // Ensure boolean flags are explicitly set
-    formattedData['hasChronicDisease'] = false;
     formattedData['hasAllergies'] = userData.hasAllergies ?? false;
     formattedData['doesExercise'] = userData.doesExercise ?? false;
 
@@ -927,32 +1259,23 @@ class _EditUserDataState extends State<EditUserData> {
   Future<void> _testDirectPhotoUrlSetting(String photoUrl) async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      final String? token = prefs.getString('auth_token');
       final String? userId = prefs.getString('user_id');
 
-      if (token == null || userId == null) {
-        throw Exception("Authentication data missing");
+      if (userId == null) {
+        throw Exception("User ID is missing");
       }
 
       print('Testing direct photoUrl setting...');
       print('User ID: $userId');
       print('PhotoUrl to set: $photoUrl');
 
-      final response = await http.put(
-        Uri.parse(
-            'http://192.168.1.69:8080/API/Sahtech/Utilisateurs/$userId/setPhotoUrlDirect'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: json.encode({'photoUrl': photoUrl}),
-      );
-
-      print('Direct photoUrl setting response status: ${response.statusCode}');
-      print('Direct photoUrl setting response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
+      // Use ApiService for the direct photoUrl setting
+      try {
+        final responseData = await _apiService.put(
+          'Utilisateurs/$userId/setPhotoUrlDirect',
+          {'photoUrl': photoUrl}
+        );
+        
         print('PhotoUrl set successfully: ${responseData['photoUrl']}');
 
         // Update local user model
@@ -961,8 +1284,9 @@ class _EditUserDataState extends State<EditUserData> {
         });
 
         _showCustomSnackBar('PhotoUrl set successfully');
-      } else {
-        throw Exception('Failed to set photoUrl: ${response.statusCode}');
+      } catch (apiError) {
+        print('Error setting photoUrl via API: $apiError');
+        throw Exception('Failed to set photoUrl: $apiError');
       }
     } catch (e) {
       print('Error setting photoUrl directly: $e');
@@ -1167,6 +1491,7 @@ class _EditUserDataState extends State<EditUserData> {
                                         child: TextFormField(
                                           controller: _firstNameController,
                                           decoration: InputDecoration(
+                                            fillColor:Colors.green,
                                             hintText: 'Votre prénom',
                                             contentPadding:
                                                 EdgeInsets.symmetric(
@@ -1293,6 +1618,86 @@ class _EditUserDataState extends State<EditUserData> {
                                             }
                                             return null;
                                           },
+                                        ),
+                                      ),
+                                      SizedBox(height: 24.h),
+
+                                      // Maladie Label
+                                      Text(
+                                        'Maladie',
+                                        style: TextStyle(
+                                          fontSize: 14.sp,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      SizedBox(height: 8.h),
+
+                                      // Maladie dropdown
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color:Colors.grey.shade50, // Light green background
+                                          borderRadius: BorderRadius.circular(12.r),
+                                        ),
+                                        child: ExpansionTile(
+                                          title: Text(
+                                            'Maladies',
+                                            style: TextStyle(
+                                                 fontSize: 16.sp,
+                                            color: Colors.black87,
+                                            ),
+                                          ),
+                                          trailing: Icon(
+                                            Icons.keyboard_arrow_down,
+                                            color: Colors.grey.shade700,
+                                          ),
+                                          children: [
+                                            Container(
+                                              color: Colors.white,
+                                              child: ListView.builder(
+                                                shrinkWrap: true,
+                                                physics: NeverScrollableScrollPhysics(),
+                                                itemCount: _allDiseases.length,
+                                                itemBuilder: (context, index) {
+                                                  final disease = _allDiseases[index];
+                                                  final isSelected = _selectedDiseases[disease] ?? false;
+                                                  
+                                                  return CheckboxListTile(
+                                                    title: Text(
+                                                      _diseaseDisplayNames[disease] ?? disease, // Use display name if available, otherwise the enum value
+                                                      style: TextStyle(
+                                                        fontSize: 16.sp,
+                                                        fontWeight: FontWeight.w400,
+                                                        color: Colors.black87,
+                                                      ),
+                                                    ),
+                                                    value: isSelected,
+                                                    activeColor: Color(0xFF9FE870), // Green checkbox when selected
+                                                    checkColor: Colors.white,
+                                                    controlAffinity: ListTileControlAffinity.leading,
+                                                    onChanged: (bool? value) {
+                                                      setState(() {
+                                                        print('Disease checkbox changed: $disease (${_diseaseDisplayNames[disease]}) -> $value');
+                                                        if (value == true) {
+                                                          _selectedDiseases[disease] = true;
+                                                          print('Added disease: $disease, _selectedDiseases: ${_selectedDiseases.keys.toList()}');
+                                                        } else {
+                                                          _selectedDiseases.remove(disease);
+                                                          print('Removed disease: $disease, _selectedDiseases: ${_selectedDiseases.keys.toList()}');
+                                                          
+                                                          // Check if all diseases were unchecked
+                                                          if (_selectedDiseases.isEmpty) {
+                                                            print('⚠️ ALL DISEASES UNCHECKED - This should result in empty arrays sent to server');
+                                                          }
+                                                        }
+                                                        _onFieldChanged(); // Track changes
+                                                      });
+                                                    },
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                       SizedBox(height: 24.h),

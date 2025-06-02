@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/auth/ChangePassword.dart';
 import 'package:sahtech/core/theme/colors.dart';
-import 'package:sahtech/core/utils/models/nutritionist_model.dart';
+import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/presentation/home/home_screen.dart';
 import 'package:sahtech/presentation/scan/product_scanner_screen.dart';
@@ -144,12 +144,24 @@ class _UserProfileSettingsState extends State<UserProfileSettings> {
   }
 
   void _navigateToEditProfile() async {
+    // Start performance measurement
+    print('====== PERFORMANCE MEASUREMENT ======');
+    final startTime = DateTime.now();
+    print('Starting navigation to EditUserData: $startTime');
+    
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditUserData(user: widget.user),
       ),
     );
+
+    // End performance measurement
+    final endTime = DateTime.now();
+    final duration = endTime.difference(startTime);
+    print('Returned from EditUserData: $endTime');
+    print('Total navigation round trip time: ${duration.inMilliseconds} ms');
+    print('====== END PERFORMANCE MEASUREMENT ======');
 
     // If returned with updated user data, refresh the UI
     if (result != null && result is UserModel) {

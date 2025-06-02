@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/theme/colors.dart';
-import 'package:sahtech/core/utils/models/nutritionist_model.dart';
+import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/CustomWidgets/nutritionist_card.dart';
 import 'package:sahtech/core/services/mock_api_service.dart';
 import 'package:sahtech/presentation/home/UserProfileSettings.dart';
@@ -12,7 +12,7 @@ import 'package:sahtech/presentation/scan/product_scanner_screen.dart';
 
 // Widget for displaying nutritionist cards in a vertical list
 class VerticalNutritionistCard extends StatelessWidget {
-  final NutritionistModel nutritionist;
+  final NutritionisteModel nutritionist;
   final VoidCallback onCallTap;
   final VoidCallback onDetailsTap;
 
@@ -49,7 +49,7 @@ class VerticalNutritionistCard extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12.r),
               child: Image.network(
-                nutritionist.profileImageUrl,
+                nutritionist.profileImageUrl ?? 'https://picsum.photos/200',
                 width: 80.w,
                 height: 98.h,
                 fit: BoxFit.cover,
@@ -90,7 +90,7 @@ class VerticalNutritionistCard extends StatelessWidget {
                       ),
                       SizedBox(width: 2.w),
                       Text(
-                        nutritionist.rating.toString(),
+                        '4.9',
                         style: TextStyle(
                           color: Colors.black87,
                           fontWeight: FontWeight.bold,
@@ -102,7 +102,7 @@ class VerticalNutritionistCard extends StatelessWidget {
 
                   // Name
                   Text(
-                    nutritionist.name,
+                    nutritionist.name ?? 'Nutritionist',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14.sp,
@@ -114,7 +114,7 @@ class VerticalNutritionistCard extends StatelessWidget {
 
                   // Specialization
                   Text(
-                    nutritionist.specialization,
+                    nutritionist.specialite ?? 'Nutritionist',
                     style: TextStyle(
                       fontSize: 12.sp,
                       color: Colors.grey[700],
@@ -134,7 +134,7 @@ class VerticalNutritionistCard extends StatelessWidget {
                       SizedBox(width: 2.w),
                       Expanded(
                         child: Text(
-                          nutritionist.location,
+                          nutritionist.address ?? 'Location',
                           style: TextStyle(
                             fontSize: 11.sp,
                             color: Colors.grey[600],
@@ -212,8 +212,8 @@ class _ContactNutriState extends State<ContactNutri> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearching = false;
-  List<NutritionistModel> _nutritionists = [];
-  List<NutritionistModel> _filteredNutritionists = [];
+  List<NutritionisteModel> _nutritionists = [];
+  List<NutritionisteModel> _filteredNutritionists = [];
   bool _isLoading = true;
 
   @override
@@ -232,9 +232,8 @@ class _ContactNutriState extends State<ContactNutri> {
   Future<void> _loadNutritionists() async {
     setState(() => _isLoading = true);
     try {
-      // For initial implementation, use mock data
-      final MockApiService apiService = MockApiService();
-      final nutritionists = await apiService.getNutritionists();
+      // Create empty list for now since we've removed the mock data
+      final List<NutritionisteModel> nutritionists = [];
 
       if (mounted) {
         setState(() {
@@ -248,8 +247,8 @@ class _ContactNutriState extends State<ContactNutri> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          // Fallback to mock data if API fails
-          _nutritionists = getMockNutritionists();
+          // Create empty list since we've removed the mock data
+          _nutritionists = [];
           _filteredNutritionists = _nutritionists;
         });
       }
@@ -267,13 +266,15 @@ class _ContactNutriState extends State<ContactNutri> {
     final lowercaseQuery = query.toLowerCase();
     setState(() {
       _filteredNutritionists = _nutritionists.where((nutritionist) {
-        return nutritionist.name.toLowerCase().contains(lowercaseQuery) ||
-            nutritionist.specialization.toLowerCase().contains(lowercaseQuery);
+        return (nutritionist.name?.toLowerCase()?.contains(lowercaseQuery) ??
+                false) ||
+            (nutritionist.specialite?.toLowerCase()?.contains(lowercaseQuery) ??
+                false);
       }).toList();
     });
   }
 
-  void _callNutritionist(NutritionistModel nutritionist) {
+  void _callNutritionist(NutritionisteModel nutritionist) {
     // Implement call functionality
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -283,7 +284,7 @@ class _ContactNutriState extends State<ContactNutri> {
     );
   }
 
-  void _navigateToNutritionistDetails(NutritionistModel nutritionist) {
+  void _navigateToNutritionistDetails(NutritionisteModel nutritionist) {
     // Implement navigation to nutritionist details
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

@@ -3,16 +3,20 @@ class NutritionisteModel {
   String? name;
   String? email;
   String? phoneNumber;
+  dynamic numTelephone; // Can be int or String from API
   String? password; // Added for authentication
   String? profileImageUrl;
+  String? photoUrl; // Direct photoUrl from API response
   String preferredLanguage;
   String? gender; // Added to store gender information
   String? userId; // ID from the backend
+  String? id; // Direct ID from API response
   String? sexe; // Gender field from backend
   String? specialite; // Specialization field from backend
   String? localisationId; // Location ID from backend
   bool? hasAllergies; // Whether user has allergies
   String? activityLevel; // User's activity level
+  List<String> proveAttestationType = [];
   List<String> physicalActivities = []; // User's physical activities
   List<String> dailyActivities = []; // User's daily activities
   double? weight; // User's weight
@@ -68,15 +72,19 @@ class NutritionisteModel {
   String? diplomaImagePath; // Path to the diploma image file on the device
 
   NutritionisteModel({
+    List<String>? proveAttestationType,
     required this.userType,
     this.name,
     this.email,
     this.phoneNumber,
+    this.numTelephone,
     this.password,
     this.profileImageUrl,
+    this.photoUrl,
     required this.preferredLanguage,
     this.gender,
     this.userId,
+    this.id,
     this.sexe,
     this.specialite,
     this.localisationId,
@@ -128,19 +136,26 @@ class NutritionisteModel {
     this.languagesSpoken = languagesSpoken ?? [];
     this.physicalActivities = physicalActivities ?? [];
     this.dailyActivities = dailyActivities ?? [];
+    this.proveAttestationType = proveAttestationType ?? [];
   }
 
   // Factory method to create a user from a map
   factory NutritionisteModel.fromMap(Map<String, dynamic> map) {
+    // Debug the incoming map
+    print('Creating NutritionisteModel from: $map');
+    
     return NutritionisteModel(
       userType: 'nutritionist',
       userId: map['id']?.toString() ?? map['_id']?.toString(),
+      id: map['id']?.toString(),
       name: (map['prenom'] != null && map['nom'] != null)
           ? '${map['prenom']} ${map['nom']}'
           : map['name'],
       email: map['email'],
+      numTelephone: map['numTelephone'],
       phoneNumber: map['numTelephone']?.toString() ?? map['phoneNumber'],
       profileImageUrl: map['profileImageUrl'],
+      photoUrl: map['photoUrl'],
       sexe: map['sexe'],
       specialite: map['specialite'],
       isVerified: map['estVerifie'] ?? false,
@@ -179,6 +194,10 @@ class NutritionisteModel {
       dateDeNaissance: map['dateDeNaissance'] != null
           ? DateTime.parse(map['dateDeNaissance'])
           : null,
+      latitude: map['latitude']?.toDouble(),
+      longitude: map['longitude']?.toDouble(),
+      cabinetAddress: map['cabinetAddress'],
+      address: map['cabinetAddress'], // Use cabinetAddress as fallback for address
     );
   }
 
@@ -190,47 +209,70 @@ class NutritionisteModel {
     if (name != null && name!.isNotEmpty) {
       List<String> nameParts = name!.split(' ');
       firstName = nameParts.first;
-      lastName = nameParts.length > 1 ? nameParts.last : '';
+      lastName = nameParts.length > 1 ? nameParts.skip(1).join(' ') : '';
     }
 
-    return {
-      'userType': 'NUTRITIONIST',
-      'specialite': specialite,
-      'name': name, // Keep for frontend compatibility
-      'prenom': firstName, // Add for backend compatibility
-      'nom': lastName, // Add for backend compatibility
-      'email': email,
-      'phoneNumber': phoneNumber, // Keep for frontend compatibility
+    // Make sure we have a date of birth
+    final dateOfBirth = dateDeNaissance ??
+        DateTime.now().subtract(const Duration(days: 365 * 30));
+
+    // Create map with exact field names matching the Java backend entity
+    final Map<String, dynamic> map = {
+      // Fields from Utilisateurs class
+      'type':
+          'NUTRITIONIST', // This is how the type is set in Nutrisioniste constructor
+      'userType': 'NUTRITIONIST', // Add this field as the server expects it
+      'nom': lastName,
+      'prenom': firstName,
       'numTelephone': phoneNumber != null
-          ? int.tryParse(phoneNumber!)
-          : null, // Add for backend
-      'profileImageUrl': profileImageUrl,
-      'sexe': sexe,
-      'estVerifie': isVerified,
-      'localisationId': localisationId,
-      'hasChronicDisease': hasChronicDisease,
-      'chronicConditions': chronicConditions, // Keep for frontend compatibility
-      'maladies': chronicConditions, // Add for backend compatibility
+          ? int.tryParse(phoneNumber!.replaceAll('+', ''))
+          : null,
+      'telephone': phoneNumber, // Add explicit telephone field for backend
+      'email': email,
+      'dateDeNaissance': dateOfBirth.toIso8601String(),
+      'maladies': chronicConditions, // Maps to List<Maladie> in Java
+      'poids': weight,
+      'taille': height,
+      'sport': doesExercise,
+      'sexe': sexe ?? gender,
+      'allergies': allergies ?? [],
+      'password': password,
+      // 'objectif': null, // This is a single Objectif enum in Java
+      'objectives': healthGoals, // Maps to List<String> objectives in Java
+      'provider': 'LOCAL',
+      'hasChronicDisease': hasChronicDisease ?? false,
+      'hasAllergies': hasAllergies ?? false,
       'preferredLanguage': preferredLanguage,
-      'doesExercise': doesExercise,
-      'activityLevel': activityLevel,
       'physicalActivities': physicalActivities,
       'dailyActivities': dailyActivities,
-      'healthGoals': healthGoals, // Keep for frontend compatibility
-      'objectives': healthGoals, // Add for backend compatibility
-      'hasAllergies': hasAllergies,
-      'allergies': allergies,
-      'allergyYear': allergyYear,
-      'allergyMonth': allergyMonth,
-      'allergyDay': allergyDay,
-      'weight': weight, // Keep for frontend compatibility
-      'poids': weight, // Add for backend compatibility
-      'weightUnit': weightUnit,
-      'height': height, // Keep for frontend compatibility
-      'taille': height, // Add for backend compatibility
-      'heightUnit': heightUnit,
-      'dateDeNaissance': dateDeNaissance?.toIso8601String(),
+      'healthGoals': healthGoals, // Maps to List<String> healthGoals in Java
+      'photoUrl': profileImageUrl, // Maps to @Field("photoUrl") in Java
+
+      // Fields from Nutrisioniste class
+      'specialite': specialite ?? specialization,
+      'localisationId': localisationId,
+      'estVerifie': isVerified ?? false,
+      'photoUrlDiplome':
+          diplomaImagePath, // Maps to photoUrlDiplome in Nutrisioniste
     };
+
+    // Add these fields for frontend compatibility only
+    map['name'] = name;
+    map['phoneNumber'] = phoneNumber;
+    map['gender'] = gender ?? sexe;
+    map['chronicConditions'] = chronicConditions;
+    map['weightUnit'] = weightUnit;
+    map['heightUnit'] = heightUnit;
+    map['activityLevel'] = activityLevel;
+    map['allergyYear'] = allergyYear;
+    map['allergyMonth'] = allergyMonth;
+    map['allergyDay'] = allergyDay;
+    map['latitude'] = latitude;
+    map['longitude'] = longitude;
+    map['cabinetAddress'] = cabinetAddress;
+    map['proveAttestationType'] = proveAttestationType;
+
+    return map;
   }
 
   // Create a copy of the current instance with optional field updates
@@ -239,8 +281,10 @@ class NutritionisteModel {
     String? name,
     String? email,
     String? phoneNumber,
+    dynamic numTelephone,
     String? password,
     String? profileImageUrl,
+    String? photoUrl,
     String? preferredLanguage,
     String? gender,
     String? userId,
@@ -296,8 +340,10 @@ class NutritionisteModel {
       name: name ?? this.name,
       email: email ?? this.email,
       phoneNumber: phoneNumber ?? this.phoneNumber,
+      numTelephone: numTelephone ?? this.numTelephone,
       password: password ?? this.password,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      photoUrl: photoUrl ?? this.photoUrl,
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
       gender: gender ?? this.gender,
       userId: userId ?? this.userId,
@@ -361,8 +407,10 @@ class NutritionisteModel {
       'name': name,
       'email': email,
       'phoneNumber': phoneNumber,
+      'numTelephone': numTelephone,
       'password': password,
       'profileImageUrl': profileImageUrl,
+      'photoUrl': photoUrl,
       'preferredLanguage': preferredLanguage,
       'gender': gender,
       'userId': userId,
@@ -422,8 +470,10 @@ class NutritionisteModel {
       name: json['name'] ?? '',
       email: json['email'] ?? '',
       phoneNumber: json['phoneNumber'] ?? '',
+      numTelephone: json['numTelephone'],
       password: json['password'] ?? '',
       profileImageUrl: json['profileImageUrl'] ?? '',
+      photoUrl: json['photoUrl'] ?? '',
       preferredLanguage: json['preferredLanguage'] ?? '',
       gender: json['gender'] ?? '',
       userId: json['userId'] ?? '',

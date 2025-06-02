@@ -31,8 +31,14 @@
 
   <title>sahtech</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Add CSP meta tag to allow Google Maps API requests -->
+  <meta http-equiv="Content-Security-Policy" 
+        content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval' data: blob:; 
+                 img-src 'self' https: data: blob:;">
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDwJ12dH-PHu6mcIWPk6aIy1L3yaJnwtbA&libraries=places,streetview,geometry&v=weekly"></script>
 </body>
 </html>

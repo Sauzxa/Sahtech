@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
-import 'package:sahtech/core/utils/models/nutritionist_model.dart';
+import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/utils/models/ad_model.dart';
 import 'package:sahtech/core/utils/models/product_model.dart';
 import 'package:sahtech/core/services/api_error_handler.dart';
@@ -17,7 +17,10 @@ class MockApiService {
 
   factory MockApiService() => _instance;
 
-  MockApiService._internal();
+  MockApiService._internal() {
+    // Initialize mock data
+    _initializeMockNutritionists();
+  }
 
   // Random generator for simulating network conditions
   final Random _random = Random();
@@ -30,9 +33,48 @@ class MockApiService {
   final int _maxDelay = 2000; // Maximum delay in ms
 
   // In-memory database for CRUD operations
-  final List<NutritionistModel> _nutritionists = getMockNutritionists();
+  final List<NutritionisteModel> _nutritionists = [];
   final List<AdModel> _ads = _getMockAds();
   final List<ProductModel> _products = _getMockProducts();
+
+  // Initialize mock nutritionists
+  void _initializeMockNutritionists() {
+    _nutritionists.addAll([
+      NutritionisteModel(
+        userType: 'nutritionist',
+        userId: '1',
+        name: 'Dr. Hamza Tariq',
+        profileImageUrl: 'https://picsum.photos/id/64/300/300',
+        address: 'Cité Douzi, Ben Arous',
+        phoneNumber: '+216 22 345 678',
+        specialite: 'Nutritionniste générale',
+        preferredLanguage: 'fr',
+        isVerified: true,
+      ),
+      NutritionisteModel(
+        userType: 'nutritionist',
+        userId: '2',
+        name: 'Dr. Amira Ben Salem',
+        profileImageUrl: 'https://picsum.photos/id/1027/300/300',
+        address: 'La Marsa, Tunis',
+        phoneNumber: '+216 55 789 012',
+        specialite: 'Nutritionniste Pédiatrique',
+        preferredLanguage: 'fr',
+        isVerified: true,
+      ),
+      NutritionisteModel(
+        userType: 'nutritionist',
+        userId: '3',
+        name: 'Dr. Ahmed Kouki',
+        profileImageUrl: 'https://picsum.photos/id/1074/300/300',
+        address: 'Sousse Centre',
+        phoneNumber: '+216 98 567 432',
+        specialite: 'Nutritionniste Sportif',
+        preferredLanguage: 'fr',
+        isVerified: true,
+      ),
+    ]);
+  }
 
   // Map to store user-specific products
   final Map<String, List<ProductModel>> _userProductsMap = {};
@@ -87,7 +129,7 @@ class MockApiService {
   // NUTRITIONIST API
 
   /// Get all available nutritionists
-  Future<List<NutritionistModel>> getNutritionists() async {
+  Future<List<NutritionisteModel>> getNutritionists() async {
     await _simulateNetworkDelay();
     _maybeThrowError();
 
@@ -96,12 +138,12 @@ class MockApiService {
   }
 
   /// Get nutritionist by ID
-  Future<NutritionistModel?> getNutritionistById(String id) async {
+  Future<NutritionisteModel?> getNutritionistById(String id) async {
     await _simulateNetworkDelay();
     _maybeThrowError();
 
     return _nutritionists.firstWhere(
-      (nutritionist) => nutritionist.id == id,
+      (nutritionist) => nutritionist.userId == id,
       orElse: () => throw Exception('Nutritionist not found'),
     );
   }
@@ -119,6 +161,18 @@ class MockApiService {
 
   /// Get all active ads
   Future<List<AdModel>> getActiveAds() async {
+    try {
+      // First try to get ads from the server
+      final List<AdModel> serverAds = await getAdsFromServer();
+      if (serverAds.isNotEmpty) {
+        print('Using ${serverAds.length} ads from server');
+        return serverAds;
+      }
+    } catch (e) {
+      print('Error fetching ads from server, using mock data: $e');
+    }
+
+    // If server request fails or returns empty, use mock data
     await _simulateNetworkDelay();
     _maybeThrowError();
 
@@ -136,6 +190,80 @@ class MockApiService {
       (ad) => ad.id == id,
       orElse: () => throw Exception('Ad not found'),
     );
+  }
+
+  /// Get ads from the server endpoint
+  Future<List<AdModel>> getAdsFromServer() async {
+    try {
+      print('===== ADS API REQUEST =====');
+      print('Fetching ads from server');
+
+      final String adsUrl = '$_baseUrl/Publicites';
+      print('Fetching ads from: $adsUrl');
+
+      // Get the authentication token
+      final token = await _getToken();
+
+      // Prepare headers with authentication token if available
+      final headers = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+        print('Including authentication token in ads request');
+      } else {
+        print('Warning: No authentication token available for ads request');
+      }
+
+      // Make the API request
+      final response = await http.get(
+        Uri.parse(adsUrl),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+
+      print('Ads API response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = json.decode(response.body);
+        print('Successfully fetched ${jsonData.length} ads from server');
+
+        // Convert JSON data to AdModel objects
+        final List<AdModel> ads = jsonData.map((data) {
+          // Map server data to AdModel
+          return AdModel(
+            id: data['id'] ?? '',
+            companyName: data['partenaire'] ?? data['titre'] ?? '',
+            imageUrl: data['imageUrl'] ?? '',
+            title: data['titre'] ?? '',
+            description: data['description'] ?? '',
+            link: data['lienRedirection'] ?? '',
+            isActive: data['etatPublicite'] == 'PUBLIEE',
+            startDate: data['dateDebut'] != null 
+                ? DateTime.parse(data['dateDebut'])
+                : DateTime.now(),
+            endDate: data['dateFin'] != null
+                ? DateTime.parse(data['dateFin'])
+                : DateTime.now().add(const Duration(days: 30)),
+          );
+        }).where((ad) => 
+          // Filter ads with valid image URLs and that are published
+          ad.imageUrl.isNotEmpty && 
+          ad.isActive
+        ).toList();
+
+        print('Converted ${ads.length} valid ads');
+        return ads;
+      } else {
+        print('Error response: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Exception fetching ads from server: $e');
+      return [];
+    } finally {
+      print('===== END ADS API REQUEST =====');
+    }
   }
 
   // PRODUCT API
