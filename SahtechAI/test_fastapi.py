@@ -3,7 +3,7 @@ import json
 import sys
 
 # Configuration
-AI_SERVICE_URL = "http://192.168.1.69:8000"
+AI_SERVICE_URL = "http://192.168.137.187:8000"
 API_KEY = "sahtech-fastapi-secure-key-2025"
 
 def test_health():

@@ -38,11 +38,12 @@ class _NutriDisponibleState extends State<NutriDisponible> {
       // Get the authentication token
       final StorageService storageService = StorageService();
       final String? token = await storageService.getToken();
-      
-      print('Fetching nutritionists with auth token: ${token != null ? 'Yes (length: ${token.length})' : 'No token available'}');
-      
+
+      print(
+          'Fetching nutritionists with auth token: ${token != null ? 'Yes (length: ${token.length})' : 'No token available'}');
+
       final response = await http.get(
-        Uri.parse('http://192.168.1.69:8080/API/Sahtech/Nutrisionistes/All'),
+        Uri.parse('http://192.168.137.187:8080/API/Sahtech/Nutrisionistes/All'),
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
@@ -50,11 +51,13 @@ class _NutriDisponibleState extends State<NutriDisponible> {
       );
 
       print('Nutritionists API response status: ${response.statusCode}');
-      
+
       if (response.statusCode == 200) {
         final List<dynamic> nutritionistsJson = json.decode(response.body);
-        final nutritionists = nutritionistsJson.map((json) => NutritionisteModel.fromMap(json)).toList();
-        
+        final nutritionists = nutritionistsJson
+            .map((json) => NutritionisteModel.fromMap(json))
+            .toList();
+
         if (mounted) {
           setState(() {
             _nutritionists = nutritionists;
@@ -64,7 +67,7 @@ class _NutriDisponibleState extends State<NutriDisponible> {
       } else {
         print('Error fetching nutritionists: ${response.statusCode}');
         print('Error response body: ${response.body}');
-        
+
         if (mounted) {
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -77,7 +80,7 @@ class _NutriDisponibleState extends State<NutriDisponible> {
       }
     } catch (e) {
       print('Exception when fetching nutritionists: $e');
-      
+
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -94,15 +97,16 @@ class _NutriDisponibleState extends State<NutriDisponible> {
   void _callNutritionist(NutritionisteModel nutritionist) async {
     // Get the phone number from the nutritionist model
     String? phoneNumber;
-    
+
     // Try to get phone number from different possible fields
-    if (nutritionist.phoneNumber != null && nutritionist.phoneNumber!.isNotEmpty) {
+    if (nutritionist.phoneNumber != null &&
+        nutritionist.phoneNumber!.isNotEmpty) {
       phoneNumber = nutritionist.phoneNumber;
     } else if (nutritionist.numTelephone != null) {
       // Convert integer to string if needed
       phoneNumber = nutritionist.numTelephone.toString();
     }
-    
+
     if (phoneNumber == null || phoneNumber.isEmpty) {
       // Show error message if no phone number is available
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -111,23 +115,23 @@ class _NutriDisponibleState extends State<NutriDisponible> {
       ));
       return;
     }
-    
+
     // Format the phone number for dialing
     String formattedNumber = phoneNumber;
     if (!formattedNumber.startsWith('+')) {
       // Add country code if not present
       formattedNumber = '+213$formattedNumber';
     }
-    
+
     // Create the URI for launching the phone dialer
     final Uri phoneUri = Uri(scheme: 'tel', path: formattedNumber);
-    
+
     try {
       // Try to launch the phone dialer
       if (await canLaunchUrl(phoneUri)) {
         await launchUrl(phoneUri);
         print('Launched phone dialer with number: $formattedNumber');
-        
+
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Appel à ${nutritionist.name}'),
@@ -257,11 +261,13 @@ class _NutriDisponibleState extends State<NutriDisponible> {
         children: [
           // Green header section (already part of the app bar background)
           SizedBox(height: 30.h),
-          
+
           // Main content with nutritionist cards
           Expanded(
             child: _isLoading
-                ? Center(child: CircularProgressIndicator(color: AppColors.lightTeal))
+                ? Center(
+                    child:
+                        CircularProgressIndicator(color: AppColors.lightTeal))
                 : RefreshIndicator(
                     onRefresh: _loadNutritionists,
                     color: AppColors.lightTeal,
@@ -276,7 +282,8 @@ class _NutriDisponibleState extends State<NutriDisponible> {
                             ),
                           )
                         : ListView.builder(
-                            padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 80.h), // Added extra bottom padding
+                            padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w,
+                                80.h), // Added extra bottom padding
                             itemCount: _nutritionists.length,
                             itemBuilder: (context, index) {
                               final nutritionist = _nutritionists[index];
@@ -295,7 +302,7 @@ class _NutriDisponibleState extends State<NutriDisponible> {
   Widget _buildNutritionistCard(NutritionisteModel nutritionist) {
     // Generate a random rating between 4.5 and 5.0
     final rating = (45 + (nutritionist.id.hashCode % 5)) / 10;
-    
+
     return Container(
       margin: EdgeInsets.only(bottom: 16.h),
       decoration: BoxDecoration(
@@ -319,7 +326,9 @@ class _NutriDisponibleState extends State<NutriDisponible> {
             ClipRRect(
               borderRadius: BorderRadius.circular(12.r),
               child: Image.network(
-                nutritionist.photoUrl ?? nutritionist.profileImageUrl ?? 'https://picsum.photos/200',
+                nutritionist.photoUrl ??
+                    nutritionist.profileImageUrl ??
+                    'https://picsum.photos/200',
                 width: 60.w,
                 height: 60.w,
                 fit: BoxFit.cover,
@@ -339,7 +348,7 @@ class _NutriDisponibleState extends State<NutriDisponible> {
               ),
             ),
             SizedBox(width: 12.w),
-            
+
             // Nutritionist info
             Expanded(
               child: Column(
@@ -363,7 +372,7 @@ class _NutriDisponibleState extends State<NutriDisponible> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      
+
                       // Rating
                       Row(
                         children: [
@@ -386,7 +395,7 @@ class _NutriDisponibleState extends State<NutriDisponible> {
                     ],
                   ),
                   SizedBox(height: 4.h),
-                  
+
                   // Specialization
                   Text(
                     nutritionist.specialite ?? 'Nutritionniste',
@@ -397,7 +406,7 @@ class _NutriDisponibleState extends State<NutriDisponible> {
                     ),
                   ),
                   SizedBox(height: 4.h),
-                  
+
                   // Location
                   Row(
                     children: [
@@ -409,7 +418,9 @@ class _NutriDisponibleState extends State<NutriDisponible> {
                       SizedBox(width: 4.w),
                       Expanded(
                         child: Text(
-                          nutritionist.cabinetAddress ?? nutritionist.address ?? 'Location',
+                          nutritionist.cabinetAddress ??
+                              nutritionist.address ??
+                              'Location',
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: Colors.grey[600],
@@ -423,9 +434,9 @@ class _NutriDisponibleState extends State<NutriDisponible> {
                 ],
               ),
             ),
-            
+
             SizedBox(width: 8.w),
-            
+
             // Action buttons - side by side
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -447,7 +458,7 @@ class _NutriDisponibleState extends State<NutriDisponible> {
                   ),
                 ),
                 SizedBox(width: 8.w),
-                
+
                 // Bookmark button
                 InkWell(
                   onTap: () => _navigateToNutritionistDetails(nutritionist),
@@ -497,9 +508,12 @@ class _NutriDisponibleState extends State<NutriDisponible> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildNavItem(0, Icons.home_outlined, Icons.home, 'Accueil'),
-              _buildNavItem(1, Icons.history_outlined, Icons.history, 'Historique'),
+              _buildNavItem(
+                  1, Icons.history_outlined, Icons.history, 'Historique'),
               _buildNavScanItem(),
-              _buildNavItem(3, Icons.bookmark_outline, Icons.bookmark, 'Favoris', isActive: true),
+              _buildNavItem(
+                  3, Icons.bookmark_outline, Icons.bookmark, 'Favoris',
+                  isActive: true),
               _buildNavItem(4, Icons.person_outline, Icons.person, 'Profil'),
             ],
           ),
@@ -509,7 +523,9 @@ class _NutriDisponibleState extends State<NutriDisponible> {
   }
 
   // Build a navigation item
-  Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label, {bool isActive = false}) {
+  Widget _buildNavItem(
+      int index, IconData icon, IconData activeIcon, String label,
+      {bool isActive = false}) {
     return InkWell(
       onTap: () {
         if (index == 0) {
@@ -531,7 +547,8 @@ class _NutriDisponibleState extends State<NutriDisponible> {
           // Since we don't have userData here, show a message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Profil utilisateur - Besoin de données utilisateur'),
+              content:
+                  Text('Profil utilisateur - Besoin de données utilisateur'),
               backgroundColor: Colors.orange,
               duration: Duration(seconds: 2),
             ),

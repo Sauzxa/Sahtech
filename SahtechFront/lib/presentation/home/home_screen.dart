@@ -137,11 +137,13 @@ class _HomeScreenState extends State<HomeScreen> {
         // Get the authentication token
         final StorageService storageService = StorageService();
         final String? token = await storageService.getToken();
-        
-        print('Fetching nutritionists with auth token: ${token != null ? 'Yes (length: ${token.length})' : 'No token available'}');
-        
+
+        print(
+            'Fetching nutritionists with auth token: ${token != null ? 'Yes (length: ${token.length})' : 'No token available'}');
+
         final response = await http.get(
-          Uri.parse('http://192.168.1.69:8080/API/Sahtech/Nutrisionistes/All'),
+          Uri.parse(
+              'http://192.168.137.187:8080/API/Sahtech/Nutrisionistes/All'),
           headers: {
             'Content-Type': 'application/json',
             if (token != null) 'Authorization': 'Bearer $token',
@@ -149,13 +151,15 @@ class _HomeScreenState extends State<HomeScreen> {
         );
 
         print('Nutritionists API response status: ${response.statusCode}');
-        
+
         if (response.statusCode == 200) {
           final List<dynamic> nutritionistsJson = json.decode(response.body);
           print('API Response: ${response.body}');
-          nutritionists = nutritionistsJson.map((json) => NutritionisteModel.fromMap(json)).toList();
+          nutritionists = nutritionistsJson
+              .map((json) => NutritionisteModel.fromMap(json))
+              .toList();
           print('Fetched ${nutritionists.length} nutritionists from API');
-          
+
           // Debug each nutritionist
           for (var i = 0; i < nutritionists.length; i++) {
             print('Nutritionist $i:');
@@ -164,7 +168,8 @@ class _HomeScreenState extends State<HomeScreen> {
             print('  Photo URL: ${nutritionists[i].photoUrl}');
             print('  Specialite: ${nutritionists[i].specialite}');
             print('  Cabinet Address: ${nutritionists[i].cabinetAddress}');
-            print('  Phone: ${nutritionists[i].phoneNumber} (${nutritionists[i].numTelephone})');
+            print(
+                '  Phone: ${nutritionists[i].phoneNumber} (${nutritionists[i].numTelephone})');
           }
         } else {
           print('Error fetching nutritionists: ${response.statusCode}');
@@ -348,15 +353,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void _callNutritionist(NutritionisteModel nutritionist) async {
     // Get the phone number from the nutritionist model
     String? phoneNumber;
-    
+
     // Try to get phone number from different possible fields
-    if (nutritionist.phoneNumber != null && nutritionist.phoneNumber!.isNotEmpty) {
+    if (nutritionist.phoneNumber != null &&
+        nutritionist.phoneNumber!.isNotEmpty) {
       phoneNumber = nutritionist.phoneNumber;
     } else if (nutritionist.numTelephone != null) {
       // Convert integer to string if needed
       phoneNumber = nutritionist.numTelephone.toString();
     }
-    
+
     if (phoneNumber == null || phoneNumber.isEmpty) {
       // Show error message if no phone number is available
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -365,23 +371,23 @@ class _HomeScreenState extends State<HomeScreen> {
       ));
       return;
     }
-    
+
     // Format the phone number for dialing
     String formattedNumber = phoneNumber;
     if (!formattedNumber.startsWith('+')) {
       // Add country code if not present
       formattedNumber = '+213$formattedNumber';
     }
-    
+
     // Create the URI for launching the phone dialer
     final Uri phoneUri = Uri(scheme: 'tel', path: formattedNumber);
-    
+
     try {
       // Try to launch the phone dialer
       if (await canLaunchUrl(phoneUri)) {
         await launchUrl(phoneUri);
         print('Launched phone dialer with number: $formattedNumber');
-        
+
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Appel à ${nutritionist.name}'),
@@ -409,7 +415,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _navigateToNutritionistDetails(NutritionisteModel nutritionist) {
     // Get the nutritionist ID
     final nutritionistId = nutritionist.userId ?? nutritionist.id;
-    
+
     // For now, just show a snackbar
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text('Détails de ${nutritionist.name}'),
@@ -432,7 +438,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // Parse the URL
         final Uri uri = Uri.parse(url);
-        
+
         // Try to launch the URL
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -839,14 +845,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                         children: [
                                           // Ad image with error handling
                                           ClipRRect(
-                                            borderRadius: BorderRadius.circular(16.r),
+                                            borderRadius:
+                                                BorderRadius.circular(16.r),
                                             child: Image.network(
                                               ad.imageUrl,
                                               width: 280.w,
                                               height: 130.h,
                                               fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) {
-                                                print('Error loading ad image: $error');
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                print(
+                                                    'Error loading ad image: $error');
                                                 return Container(
                                                   width: 280.w,
                                                   height: 130.h,
@@ -860,18 +869,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                 );
                                               },
-                                              loadingBuilder: (context, child, loadingProgress) {
-                                                if (loadingProgress == null) return child;
+                                              loadingBuilder: (context, child,
+                                                  loadingProgress) {
+                                                if (loadingProgress == null)
+                                                  return child;
                                                 return Container(
                                                   width: 280.w,
                                                   height: 130.h,
                                                   color: Colors.grey[200],
                                                   child: Center(
-                                                    child: CircularProgressIndicator(
-                                                      color: AppColors.lightTeal,
-                                                      value: loadingProgress.expectedTotalBytes != null
-                                                          ? loadingProgress.cumulativeBytesLoaded /
-                                                              loadingProgress.expectedTotalBytes!
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      color:
+                                                          AppColors.lightTeal,
+                                                      value: loadingProgress
+                                                                  .expectedTotalBytes !=
+                                                              null
+                                                          ? loadingProgress
+                                                                  .cumulativeBytesLoaded /
+                                                              loadingProgress
+                                                                  .expectedTotalBytes!
                                                           : null,
                                                     ),
                                                   ),
@@ -891,10 +908,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   horizontal: 12.w,
                                                 ),
                                                 decoration: BoxDecoration(
-                                                  color: Colors.black.withOpacity(0.5),
-                                                  borderRadius: BorderRadius.only(
-                                                    bottomLeft: Radius.circular(16.r),
-                                                    bottomRight: Radius.circular(16.r),
+                                                  color: Colors.black
+                                                      .withOpacity(0.5),
+                                                  borderRadius:
+                                                      BorderRadius.only(
+                                                    bottomLeft:
+                                                        Radius.circular(16.r),
+                                                    bottomRight:
+                                                        Radius.circular(16.r),
                                                   ),
                                                 ),
                                                 child: Text(
@@ -905,7 +926,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                                   maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                               ),
                                             ),

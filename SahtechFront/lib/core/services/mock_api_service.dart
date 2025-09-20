@@ -82,7 +82,7 @@ class MockApiService {
   // Spring Boot API base URL
   // Updated IP address to match working endpoint seen in logs
   final String _baseUrl =
-      'http://192.168.1.69:8080/API/Sahtech'; // Using the IP that works for user data
+      'http://192.168.137.187:8080/API/Sahtech'; // Using the IP that works for user data
   // Alternative URLs for different environments:
   // final String _baseUrl = 'http://10.0.2.2:8080/API/Sahtech'; // Previous setting that caused timeouts
   // final String _baseUrl = 'http://192.168.43.1:8080/API/Sahtech'; // Previous IP that caused timeouts
@@ -217,10 +217,12 @@ class MockApiService {
       }
 
       // Make the API request
-      final response = await http.get(
-        Uri.parse(adsUrl),
-        headers: headers,
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse(adsUrl),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 10));
 
       print('Ads API response status: ${response.statusCode}');
 
@@ -229,28 +231,29 @@ class MockApiService {
         print('Successfully fetched ${jsonData.length} ads from server');
 
         // Convert JSON data to AdModel objects
-        final List<AdModel> ads = jsonData.map((data) {
-          // Map server data to AdModel
-          return AdModel(
-            id: data['id'] ?? '',
-            companyName: data['partenaire'] ?? data['titre'] ?? '',
-            imageUrl: data['imageUrl'] ?? '',
-            title: data['titre'] ?? '',
-            description: data['description'] ?? '',
-            link: data['lienRedirection'] ?? '',
-            isActive: data['etatPublicite'] == 'PUBLIEE',
-            startDate: data['dateDebut'] != null 
-                ? DateTime.parse(data['dateDebut'])
-                : DateTime.now(),
-            endDate: data['dateFin'] != null
-                ? DateTime.parse(data['dateFin'])
-                : DateTime.now().add(const Duration(days: 30)),
-          );
-        }).where((ad) => 
-          // Filter ads with valid image URLs and that are published
-          ad.imageUrl.isNotEmpty && 
-          ad.isActive
-        ).toList();
+        final List<AdModel> ads = jsonData
+            .map((data) {
+              // Map server data to AdModel
+              return AdModel(
+                id: data['id'] ?? '',
+                companyName: data['partenaire'] ?? data['titre'] ?? '',
+                imageUrl: data['imageUrl'] ?? '',
+                title: data['titre'] ?? '',
+                description: data['description'] ?? '',
+                link: data['lienRedirection'] ?? '',
+                isActive: data['etatPublicite'] == 'PUBLIEE',
+                startDate: data['dateDebut'] != null
+                    ? DateTime.parse(data['dateDebut'])
+                    : DateTime.now(),
+                endDate: data['dateFin'] != null
+                    ? DateTime.parse(data['dateFin'])
+                    : DateTime.now().add(const Duration(days: 30)),
+              );
+            })
+            .where((ad) =>
+                // Filter ads with valid image URLs and that are published
+                ad.imageUrl.isNotEmpty && ad.isActive)
+            .toList();
 
         print('Converted ${ads.length} valid ads');
         return ads;

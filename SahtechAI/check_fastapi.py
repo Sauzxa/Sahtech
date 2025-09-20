@@ -1,7 +1,7 @@
 import requests
 import sys
 
-def check_fastapi_service(url="http://192.168.1.69:8000"):
+def check_fastapi_service(url="http://192.168.137.187:8000"):
     """Check if the FastAPI service is running"""
     try:
         response = requests.get(f"{url}/health", timeout=5)
