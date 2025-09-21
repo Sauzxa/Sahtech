@@ -131,7 +131,7 @@ Sahtech is a comprehensive health and nutrition platform designed to help users 
   - Nutritional advice generation
 
 ### Static Website
-- **URL**: https://sahtech-website.vercel.app/
+- **URL**: soon...
 - **Features**:
   - Platform description and benefits
   - Download links for the mobile application
