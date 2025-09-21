@@ -3,7 +3,7 @@ import json
 import os
 
 # API endpoint and key
-FASTAPI_URL = "http://192.168.137.187:8000/predict"  # Use the FastAPI URL from application.properties
+FASTAPI_URL = "http://192.168.1.69:8000/predict"  # Use the FastAPI URL from application.properties
 API_KEY = "sahtech-fastapi-secure-key-2025"  # Use the API key from application.properties
 
 def test_recommendation_api():

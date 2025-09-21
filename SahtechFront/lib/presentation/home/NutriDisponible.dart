@@ -43,7 +43,7 @@ class _NutriDisponibleState extends State<NutriDisponible> {
           'Fetching nutritionists with auth token: ${token != null ? 'Yes (length: ${token.length})' : 'No token available'}');
 
       final response = await http.get(
-        Uri.parse('http://192.168.137.187:8080/API/Sahtech/Nutrisionistes/All'),
+        Uri.parse('http://192.168.1.69:8080/API/Sahtech/Nutrisionistes/All'),
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',

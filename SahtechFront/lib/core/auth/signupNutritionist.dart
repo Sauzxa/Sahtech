@@ -269,7 +269,7 @@ class _SignupNutritionistState extends State<SignupNutritionist> {
       // Try server connectivity first
       print('=== TESTING SERVER CONNECTIVITY ===');
       try {
-        final testUrl = 'http://192.168.137.187:8080/health';
+        final testUrl = 'http://192.168.1.69:8080/health';
         final testResponse = await http
             .get(Uri.parse(testUrl))
             .timeout(const Duration(seconds: 5));
@@ -352,8 +352,8 @@ class _SignupNutritionistState extends State<SignupNutritionist> {
       // Create API request for registration
       // Try different API URL formats in case the current one is incorrect
       final primaryApiUrl =
-          'http://192.168.137.187:8080/API/Sahtech/auth/register';
-      final fallbackApiUrl = 'http://192.168.137.187:8080/api/auth/register';
+          'http://192.168.1.69:8080/API/Sahtech/auth/register';
+      final fallbackApiUrl = 'http://192.168.1.69:8080/api/auth/register';
 
       print('=== SENDING REGISTRATION REQUEST ===');
       print('Primary API URL: $primaryApiUrl');
@@ -592,11 +592,11 @@ class _SignupNutritionistState extends State<SignupNutritionist> {
 
       // Try different API URL formats
       final primaryApiUrl =
-          'http://192.168.137.187:8080/API/Sahtech/Nutrisionistes/$userId/uploadPhotoDiplome';
+          'http://192.168.1.69:8080/API/Sahtech/Nutrisionistes/$userId/uploadPhotoDiplome';
       final fallbackApiUrl =
-          'http://192.168.137.187:8080/api/nutritionist/$userId/uploadDiploma';
+          'http://192.168.1.69:8080/api/nutritionist/$userId/uploadDiploma';
       final fallbackApiUrl2 =
-          'http://192.168.137.187:8080/api/nutritionists/$userId/upload-diploma';
+          'http://192.168.1.69:8080/api/nutritionists/$userId/upload-diploma';
 
       print('Primary Upload API URL: $primaryApiUrl');
       print('Fallback Upload API URL 1: $fallbackApiUrl');

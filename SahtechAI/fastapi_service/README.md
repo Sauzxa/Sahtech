@@ -32,7 +32,7 @@ This service provides AI-powered food product recommendations based on user heal
 The Spring Boot application communicates with this FastAPI service. To ensure proper connectivity:
 
 1. Make sure the FastAPI service is running before starting the Spring Boot app
-2. Check that the `ai.service.url` property in `application.properties` matches your FastAPI service URL (http://192.168.137.187:8000)
+2. Check that the `ai.service.url` property in `application.properties` matches your FastAPI service URL (http://192.168.1.69:8000)
 3. The Spring Boot application uses a default timeout of 10 seconds for API calls
 
 ## Troubleshooting

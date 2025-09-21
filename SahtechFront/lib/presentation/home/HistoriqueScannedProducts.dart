@@ -194,7 +194,7 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
   Future<void> _testApiConnection() async {
     try {
       const String baseUrl =
-          'http://192.168.137.187:8080/API/Sahtech'; // Same as in MockApiService
+          'http://192.168.1.69:8080/API/Sahtech'; // Same as in MockApiService
       final url = Uri.parse('$baseUrl/ping');
       print('Testing API connection to: $url');
 
