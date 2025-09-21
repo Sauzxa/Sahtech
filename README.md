@@ -18,34 +18,22 @@ Sahtech is a comprehensive health and nutrition platform designed to help users 
 *Screenshots from the actual Android application*
 
 #### Onboarding & Presentation
-<div style="display: flex; flex-wrap: wrap; gap: 10px;">
-  <img src="SahtechFront/lib/assets/ImagesForReadmeFile/Presentation.png" alt="App Presentation 1" width="200"/>
-  <img src="SahtechFront/lib/assets/ImagesForReadmeFile/Presentation2.png" alt="App Presentation 2" width="200"/>
-  <img src="SahtechFront/lib/assets/ImagesForReadmeFile/Presentation3.png" alt="App Presentation 3" width="200"/>
-</div>
+![App Presentation 1](SahtechFront/lib/assets/ImagesForReadmeFile/Presentation.png)
+![App Presentation 2](SahtechFront/lib/assets/ImagesForReadmeFile/Presentation2.png)
+![App Presentation 3](SahtechFront/lib/assets/ImagesForReadmeFile/Presentation3.png)
 
 #### User Role Selection & Setup
-<div style="display: flex; flex-wrap: wrap; gap: 10px;">
-  <img src="SahtechFront/lib/assets/ImagesForReadmeFile/ChoiceUserRole.png" alt="User Role Selection" width="200"/>
-  <img src="SahtechFront/lib/assets/ImagesForReadmeFile/Selectpage1.png" alt="User Selection Page 1" width="200"/>
-  <img src="SahtechFront/lib/assets/ImagesForReadmeFile/Selectpage2.png" alt="User Selection Page 2" width="200"/>
-  <img src="SahtechFront/lib/assets/ImagesForReadmeFile/SelectPage3.png" alt="User Selection Page 3" width="200"/>
-</div>
+![User Role Selection](SahtechFront/lib/assets/ImagesForReadmeFile/ChoiceUserRole.png)
+![User Selection Page 1](SahtechFront/lib/assets/ImagesForReadmeFile/Selectpage1.png)
+![User Selection Page 2](SahtechFront/lib/assets/ImagesForReadmeFile/Selectpage2.png)
+![User Selection Page 3](SahtechFront/lib/assets/ImagesForReadmeFile/SelectPage3.png)
 
 #### Main Application Features
-<div style="display: flex; flex-wrap: wrap; gap: 10px;">
-  <img src="SahtechFront/lib/assets/ImagesForReadmeFile/HomeScreen.png" alt="Home Screen" width="200"/>
-  <img src="SahtechFront/lib/assets/ImagesForReadmeFile/Scanne.png" alt="Scanning Interface" width="200"/>
-  <img src="SahtechFront/lib/assets/ImagesForReadmeFile/ResultScann.png" alt="Scan Results" width="200"/>
-  <img src="SahtechFront/lib/assets/ImagesForReadmeFile/HistoriqueScann.png" alt="Scan History" width="200"/>
-  <img src="SahtechFront/lib/assets/ImagesForReadmeFile/SettingsProfile.png" alt="Profile Settings" width="200"/>
-</div>
-
-### Website
-![Sahtech Website](https://github.com/yourusername/sahtech/raw/main/images/website_landing.png)
-
-### Analytics Dashboard
-![Sahtech Dashboard](https://github.com/yourusername/sahtech/raw/main/images/dashboard.png)
+![Home Screen](SahtechFront/lib/assets/ImagesForReadmeFile/HomeScreen.png)
+![Scanning Interface](SahtechFront/lib/assets/ImagesForReadmeFile/Scanne.png)
+![Scan Results](SahtechFront/lib/assets/ImagesForReadmeFile/ResultScann.png)
+![Scan History](SahtechFront/lib/assets/ImagesForReadmeFile/HistoriqueScann.png)
+![Profile Settings](SahtechFront/lib/assets/ImagesForReadmeFile/SettingsProfile.png)
 
 ## Platform Components
 
