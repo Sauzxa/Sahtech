@@ -18,22 +18,47 @@ Sahtech is a comprehensive health and nutrition platform designed to help users 
 *Screenshots from the actual Android application*
 
 #### Onboarding & Presentation
-![App Presentation 1](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/Presentation.png)
-![App Presentation 2](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/Presentation2.png)
-![App Presentation 3](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/Presentation3.png)
+<div align="center">
+  <img src="https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/Presentation.png" alt="App Presentation 1" width="250" height="500">
+  <img src="https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/Presentation2.png" alt="App Presentation 2" width="250" height="500">
+  <img src="https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/Presentation3.png" alt="App Presentation 3" width="250" height="500">
+</div>
+
+<table>
+<tr>
+<td width="50%">
 
 #### User Role Selection & Setup
-![User Role Selection](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/ChoiceUserRole.png)
-![User Selection Page 1](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/Selectpage1.png)
-![User Selection Page 2](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/Selectpage2.png)
-![User Selection Page 3](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/SelectPage3.png)
+<div align="center">
+  <img src="https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/ChoiceUserRole.png" alt="User Role Selection" width="200" height="400">
+</div>
+<div align="center">
+  <img src="https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/Selectpage1.png" alt="User Selection Page 1" width="200" height="400">
+  <img src="https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/Selectpage2.png" alt="User Selection Page 2" width="200" height="400">
+</div>
+<div align="center">
+  <img src="https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/SelectPage3.png" alt="User Selection Page 3" width="200" height="400">
+</div>
+
+</td>
+<td width="50%">
 
 #### Main Application Features
-![Home Screen](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/HomeScreen.png)
-![Scanning Interface](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/Scanne.png)
-![Scan Results](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/ResultScann.png)
-![Scan History](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/HistoriqueScann.png)
-![Profile Settings](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/SettingsProfile.png)
+<div align="center">
+  <img src="https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/HomeScreen.png" alt="Home Screen" width="200" height="400">
+  <img src="https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/Scanne.png" alt="Scanning Interface" width="200" height="400">
+</div>
+<div align="center">
+  <img src="https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/ResultScann.png" alt="Scan Results" width="200" height="400">
+  <img src="https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/HistoriqueScann.png" alt="Scan History" width="200" height="400">
+</div>
+<div align="center">
+  <img src="https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/imagesForReadmeFile/SettingsProfile.png" alt="Profile Settings" width="200" height="400">
+</div>
+
+</td>
+</tr>
+</table>
 
 ## Platform Components
 
