@@ -10,7 +10,7 @@ Sahtech is a comprehensive health and nutrition platform designed to help users 
 5. **Collaboration Form** - A system for advertisers and partners to submit collaboration requests.
 6. **Analytics Dashboard** - A dashboard to monitor user metrics, downloads, and platform performance.
 
-![Sahtech Logo](https://github.com/yourusername/sahtech/raw/main/images/sahtech_logo.png)
+![Sahtech Logo](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/images/mainlogo.jpg)
 
 ## Platform Screenshots
 
@@ -18,22 +18,22 @@ Sahtech is a comprehensive health and nutrition platform designed to help users 
 *Screenshots from the actual Android application*
 
 #### Onboarding & Presentation
-![App Presentation 1](SahtechFront/lib/assets/ImagesForReadmeFile/Presentation.png)
-![App Presentation 2](SahtechFront/lib/assets/ImagesForReadmeFile/Presentation2.png)
-![App Presentation 3](SahtechFront/lib/assets/ImagesForReadmeFile/Presentation3.png)
+![App Presentation 1](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/ImagesForReadmeFile/Presentation.png)
+![App Presentation 2](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/ImagesForReadmeFile/Presentation2.png)
+![App Presentation 3](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/ImagesForReadmeFile/Presentation3.png)
 
 #### User Role Selection & Setup
-![User Role Selection](SahtechFront/lib/assets/ImagesForReadmeFile/ChoiceUserRole.png)
-![User Selection Page 1](SahtechFront/lib/assets/ImagesForReadmeFile/Selectpage1.png)
-![User Selection Page 2](SahtechFront/lib/assets/ImagesForReadmeFile/Selectpage2.png)
-![User Selection Page 3](SahtechFront/lib/assets/ImagesForReadmeFile/SelectPage3.png)
+![User Role Selection](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/ImagesForReadmeFile/ChoiceUserRole.png)
+![User Selection Page 1](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/ImagesForReadmeFile/Selectpage1.png)
+![User Selection Page 2](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/ImagesForReadmeFile/Selectpage2.png)
+![User Selection Page 3](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/ImagesForReadmeFile/SelectPage3.png)
 
 #### Main Application Features
-![Home Screen](SahtechFront/lib/assets/ImagesForReadmeFile/HomeScreen.png)
-![Scanning Interface](SahtechFront/lib/assets/ImagesForReadmeFile/Scanne.png)
-![Scan Results](SahtechFront/lib/assets/ImagesForReadmeFile/ResultScann.png)
-![Scan History](SahtechFront/lib/assets/ImagesForReadmeFile/HistoriqueScann.png)
-![Profile Settings](SahtechFront/lib/assets/ImagesForReadmeFile/SettingsProfile.png)
+![Home Screen](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/ImagesForReadmeFile/HomeScreen.png)
+![Scanning Interface](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/ImagesForReadmeFile/Scanne.png)
+![Scan Results](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/ImagesForReadmeFile/ResultScann.png)
+![Scan History](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/ImagesForReadmeFile/HistoriqueScann.png)
+![Profile Settings](https://github.com/Sauzxa/Sahtech/blob/main/SahtechFront/lib/assets/ImagesForReadmeFile/SettingsProfile.png)
 
 ## Platform Components
 
