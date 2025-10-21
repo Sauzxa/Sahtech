@@ -1,0 +1,19 @@
+{
+  "de": [
+    "selectProofTitle",
+    "selectProofSubtitle",
+    "chooseProofHint",
+    "diploma",
+    "workAttestation",
+    "trainingAttestation"
+  ],
+
+  "es": [
+    "selectProofTitle",
+    "selectProofSubtitle",
+    "chooseProofHint",
+    "diploma",
+    "workAttestation",
+    "trainingAttestation"
+  ]
+}

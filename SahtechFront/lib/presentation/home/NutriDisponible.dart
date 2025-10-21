@@ -9,8 +9,7 @@ import 'package:sahtech/presentation/scan/product_scanner_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sahtech/presentation/home/HistoriqueScannedProducts.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:sahtech/core/services/mock_api_service.dart';
 
 class NutriDisponible extends StatefulWidget {
   const NutriDisponible({Key? key}) : super(key: key);
@@ -22,7 +21,6 @@ class NutriDisponible extends StatefulWidget {
 class _NutriDisponibleState extends State<NutriDisponible> {
   List<NutritionisteModel> _nutritionists = [];
   bool _isLoading = true;
-  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -34,53 +32,17 @@ class _NutriDisponibleState extends State<NutriDisponible> {
   Future<void> _loadNutritionists() async {
     setState(() => _isLoading = true);
 
+    final MockApiService api = MockApiService();
     try {
-      // Get the authentication token
-      final StorageService storageService = StorageService();
-      final String? token = await storageService.getToken();
-
-      print(
-          'Fetching nutritionists with auth token: ${token != null ? 'Yes (length: ${token.length})' : 'No token available'}');
-
-      final response = await http.get(
-        Uri.parse('http://192.168.1.69:8080/API/Sahtech/Nutrisionistes/All'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
-      );
-
-      print('Nutritionists API response status: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final List<dynamic> nutritionistsJson = json.decode(response.body);
-        final nutritionists = nutritionistsJson
-            .map((json) => NutritionisteModel.fromMap(json))
-            .toList();
-
-        if (mounted) {
-          setState(() {
-            _nutritionists = nutritionists;
-            _isLoading = false;
-          });
-        }
-      } else {
-        print('Error fetching nutritionists: ${response.statusCode}');
-        print('Error response body: ${response.body}');
-
-        if (mounted) {
-          setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erreur lors du chargement des nutritionnistes'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+      final nutritionists = await api.getNutritionists();
+      if (mounted) {
+        setState(() {
+          _nutritionists = nutritionists;
+          _isLoading = false;
+        });
       }
     } catch (e) {
-      print('Exception when fetching nutritionists: $e');
-
+      print('Exception when fetching nutritionists via service: $e');
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(

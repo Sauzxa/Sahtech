@@ -7,8 +7,11 @@ class AuthService {
   // Spring Boot API endpoint
   static const String apiBaseUrl =
       // final String _baseUrl = 'http://192.168.144.26:8080/API/Sahtech'; hada li yatbadal
-      'http://192.168.1.69:8080'; // Explicit IP address for testing  hada li yatbadal
-
+      // final String _baseUrl = 'http://192.168.144.26:8080/API/Sahtech'; hada li yatbadal
+      // Use the Android emulator host mapping (no spaces): 10.0.2.2:8080
+      // For Genymotion use 10.0.3.2, for a physical device use the host machine IP address.
+      // NOTE: avoid accidental spaces like "10.0.2.2 :8080" which produce invalid URLs.
+      'http://10.0.2.2:8080';
   final StorageService _storageService = StorageService();
 
   // Registration method

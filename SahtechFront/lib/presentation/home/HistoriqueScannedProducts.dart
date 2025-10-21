@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/CustomWidgets/productRecoCard.dart';
 import '../../core/services/mock_api_service.dart';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:sahtech/core/services/mock_api_service.dart';
 import '../../core/utils/models/product_model.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../core/theme/colors.dart';
@@ -193,9 +193,9 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
   // Test API connection by making a simple request
   Future<void> _testApiConnection() async {
     try {
-      const String baseUrl =
-          'http://192.168.1.69:8080/API/Sahtech'; // Same as in MockApiService
-      final url = Uri.parse('$baseUrl/ping');
+      final MockApiService api = MockApiService();
+      final base = api.baseUrl; // using public getter configured in service
+      final url = Uri.parse('$base/ping');
       print('Testing API connection to: $url');
 
       final response = await http.get(url).timeout(const Duration(seconds: 5),

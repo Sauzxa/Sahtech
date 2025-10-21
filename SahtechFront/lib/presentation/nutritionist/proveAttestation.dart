@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/services/translation_service.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:sahtech/presentation/nutritionist/Attest_nutri_screnn.dart';
 import 'package:sahtech/core/CustomWidgets/language_selector.dart';
+import 'package:sahtech/core/l10n/generated/app_localizations.dart';
+
+
 
 class ProveAttestationScreen extends StatefulWidget {
   final NutritionisteModel nutritionistData;

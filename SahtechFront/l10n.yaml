@@ -1,4 +1,6 @@
 arb-dir: lib/core/l10n
 template-arb-file: app_fr.arb
 output-localization-file: app_localizations.dart
-output-class: AppLocalizations 
+output-dir: lib/core/l10n/generated
+synthetic-package: false
+untranslated-messages-file: untranslated_messages.json

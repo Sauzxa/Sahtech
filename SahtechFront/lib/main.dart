@@ -19,8 +19,8 @@ import 'package:sahtech/presentation/home/HistoriqueScannedProducts.dart';
 import 'package:sahtech/core/CustomWidgets/HistoRecommandationPage.dart';
 import 'package:sahtech/core/utils/models/product_model.dart';
 import 'package:sahtech/presentation/scan/product_scanner_screen.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:sahtech/core/l10n/generated/app_localizations.dart';
 
 // Device preview removed as requested
 // f

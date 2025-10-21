@@ -82,7 +82,10 @@ class MockApiService {
   // Spring Boot API base URL
   // Updated IP address to match working endpoint seen in logs
   final String _baseUrl =
-      'http://192.168.1.69:8080/API/Sahtech'; // Using the IP that works for user data
+      'http://10.0.2.2:8080/API/Sahtech'; // Using the IP that works for user data
+  /// Public getter for the base URL (read-only)
+  String get baseUrl => _baseUrl;
+
   // Alternative URLs for different environments:
   // final String _baseUrl = 'http://10.0.2.2:8080/API/Sahtech'; // Previous setting that caused timeouts
   // final String _baseUrl = 'http://192.168.43.1:8080/API/Sahtech'; // Previous IP that caused timeouts
@@ -129,11 +132,68 @@ class MockApiService {
   // NUTRITIONIST API
 
   /// Get all available nutritionists
-  Future<List<NutritionisteModel>> getNutritionists() async {
+  // In-memory cache for nutritionists
+  List<NutritionisteModel>? _nutritionistsCache;
+  DateTime? _nutritionistsCacheTime;
+
+  /// Get all available nutritionists
+  /// Tries the server first, falls back to in-memory mock data, and caches results for a short TTL.
+  Future<List<NutritionisteModel>> getNutritionists(
+      {Duration ttl = const Duration(minutes: 2)}) async {
+    // Return cached value if fresh
+    try {
+      if (_nutritionistsCache != null && _nutritionistsCacheTime != null) {
+        final age = DateTime.now().difference(_nutritionistsCacheTime!);
+        if (age <= ttl) {
+          print('Returning cached nutritionists (age: ${age.inSeconds}s)');
+          return List.from(_nutritionistsCache!);
+        }
+      }
+
+      // Attempt to fetch from server first
+      final token = await _getToken();
+      final String url = '$_baseUrl/Nutrisionistes/All';
+      print('Attempting to fetch nutritionists from server: $url');
+
+      final headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final response = await http
+          .get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> nutritionistsJson = json.decode(response.body);
+        final List<NutritionisteModel> fetched = nutritionistsJson
+            .map((json) => NutritionisteModel.fromMap(json))
+            .toList();
+
+        // Cache and return
+        _nutritionistsCache = List.from(fetched);
+        _nutritionistsCacheTime = DateTime.now();
+        print(
+            'Fetched ${fetched.length} nutritionists from server and cached them');
+        return List.from(fetched);
+      } else {
+        print(
+            'Server returned ${response.statusCode} when fetching nutritionists, falling back to mock');
+      }
+    } catch (e) {
+      print('Error fetching nutritionists from server: $e');
+    }
+
+    // If server fetch fails, simulate delay and return mock list
     await _simulateNetworkDelay();
     _maybeThrowError();
 
-    // Return copy of list to prevent mutation
+    // Refresh cache with mock data to speed up subsequent calls
+    _nutritionistsCache = List.from(_nutritionists);
+    _nutritionistsCacheTime = DateTime.now();
+    print('Returning mock nutritionists and caching result');
     return List.from(_nutritionists);
   }
 
@@ -621,7 +681,7 @@ class MockApiService {
 
             print('Fresh recommendation received:');
             print(
-                '- Text: ${recText?.substring(0, min(50, recText?.length ?? 0)) ?? "null"}');
+                '- Text: ${recText != null ? recText.substring(0, min(50, recText.length)) : "null"}');
             print('- Type: $recType');
             print(
                 '- Is fallback: ${freshRecommendation['is_fallback'] ?? false}');
