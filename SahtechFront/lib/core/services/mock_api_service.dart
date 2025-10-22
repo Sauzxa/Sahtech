@@ -296,12 +296,13 @@ class MockApiService {
               // Map server data to AdModel
               return AdModel(
                 id: data['id'] ?? '',
-                companyName: data['partenaire'] ?? data['titre'] ?? '',
+                companyName: data['partenaire']?['nom'] ?? data['titre'] ?? '',
                 imageUrl: data['imageUrl'] ?? '',
                 title: data['titre'] ?? '',
                 description: data['description'] ?? '',
                 link: data['lienRedirection'] ?? '',
                 isActive: data['etatPublicite'] == 'PUBLIEE',
+                state: data['statusPublicite'] ?? 'EN_ATTENTE',
                 startDate: data['dateDebut'] != null
                     ? DateTime.parse(data['dateDebut'])
                     : DateTime.now(),
@@ -756,6 +757,7 @@ class MockApiService {
             'Un médicament naturel pour soulager les douleurs articulaires',
         link: 'https://example.com/antiflex',
         isActive: true,
+        state: 'ACCEPTEE',
         startDate: DateTime.now(),
         endDate: DateTime.now().add(const Duration(days: 30)),
       ),
@@ -767,6 +769,7 @@ class MockApiService {
         description: 'Découvrez notre gamme de produits bio et naturels',
         link: 'https://example.com/bionutrition',
         isActive: true,
+        state: 'ACCEPTEE',
         startDate: DateTime.now(),
         endDate: DateTime.now().add(const Duration(days: 30)),
       ),
@@ -778,6 +781,7 @@ class MockApiService {
         description: 'Complément alimentaire à base de plantes et vitamines',
         link: 'https://example.com/vitaplus',
         isActive: true,
+        state: 'ACCEPTEE',
         startDate: DateTime.now(),
         endDate: DateTime.now().add(const Duration(days: 30)),
       ),
@@ -789,6 +793,7 @@ class MockApiService {
         description: 'Protéines et compléments pour sportifs',
         link: 'https://example.com/sportnutrition',
         isActive: false, // Inactive ad for testing
+        state: 'REJECTEE',
         startDate: DateTime.now().subtract(const Duration(days: 60)),
         endDate: DateTime.now().subtract(const Duration(days: 30)),
       ),

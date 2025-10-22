@@ -6,6 +6,7 @@ class AdModel {
   final String description;
   final String link;
   final bool isActive;
+  final String state;    // ACCEPTEE, REJECTEE, or EN_ATTENTE
   final DateTime startDate;
   final DateTime endDate;
 
@@ -17,6 +18,7 @@ class AdModel {
     required this.description,
     required this.link,
     required this.isActive,
+    required this.state,
     required this.startDate,
     required this.endDate,
   });
@@ -25,17 +27,18 @@ class AdModel {
   factory AdModel.fromMap(Map<String, dynamic> map) {
     return AdModel(
       id: map['_id'] ?? '',
-      companyName: map['companyName'] ?? '',
+      companyName: map['partenaire']?['nom'] ?? map['titre'] ?? '',
       imageUrl: map['imageUrl'] ?? '',
-      title: map['title'] ?? '',
+      title: map['titre'] ?? '',
       description: map['description'] ?? '',
-      link: map['link'] ?? '',
-      isActive: map['isActive'] ?? false,
-      startDate: map['startDate'] != null
-          ? DateTime.parse(map['startDate'])
+      link: map['lienRedirection'] ?? '',
+      isActive: map['etatPublicite'] == 'PUBLIEE',
+      state: map['statusPublicite'] ?? 'EN_ATTENTE',
+      startDate: map['dateDebut'] != null
+          ? DateTime.parse(map['dateDebut'])
           : DateTime.now(),
-      endDate: map['endDate'] != null
-          ? DateTime.parse(map['endDate'])
+      endDate: map['dateFin'] != null
+          ? DateTime.parse(map['dateFin'])
           : DateTime.now().add(const Duration(days: 30)),
     );
   }

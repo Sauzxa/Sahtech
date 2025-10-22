@@ -1,3 +1,5 @@
+//ChangePassword.dart is for logged-in users changing their password
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/theme/colors.dart';

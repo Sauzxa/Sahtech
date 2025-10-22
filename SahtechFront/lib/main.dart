@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sahtech/core/services/translation_service.dart';
+import 'package:sahtech/core/services/location_service.dart';
 import 'package:sahtech/presentation/onboarding/loading.dart';
 import 'package:provider/provider.dart';
 import 'package:sahtech/presentation/onboarding/onboardingscreen1.dart';
@@ -24,6 +25,9 @@ import 'package:sahtech/core/l10n/generated/app_localizations.dart';
 
 // Device preview removed as requested
 // f
+// Global instance of LocationService to maintain throughout app lifecycle
+final locationService = LocationService();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -33,6 +37,9 @@ void main() async {
 
   // Initialize storage service
   final storageService = StorageService();
+  
+  // Initialize location service
+  await locationService.initialize();
 
   // Check if camera permission has been requested before
   final hasRequestedCameraPermission =
@@ -109,6 +116,7 @@ class _MainState extends State<Main> {
   @override
   void dispose() {
     _translationService.removeListener(_onLanguageChanged);
+    locationService.disposeLocationService();
     super.dispose();
   }
 
