@@ -249,3 +249,4 @@ The Sahtech platform follows a microservices architecture:
 ## Project Status
 This project is currently under active development as part of a Startup final year project (Projet de fin d'études L3).
 
+"Fixing bugs and uneccesary files" 
