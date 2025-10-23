@@ -37,7 +37,7 @@ void main() async {
 
   // Initialize storage service
   final storageService = StorageService();
-  
+
   // Initialize location service
   await locationService.initialize();
 
