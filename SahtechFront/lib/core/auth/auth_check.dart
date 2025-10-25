@@ -35,9 +35,6 @@ class _AuthCheckState extends State<AuthCheck> {
       final bool isLoggedIn = await _storageService.isLoggedIn();
       final bool hasLoggedOut = await _storageService.hasLoggedOut();
 
-      print(
-          'AUTH_CHECK: Is user logged in? $isLoggedIn, Has previously logged out? $hasLoggedOut');
-
       if (isLoggedIn) {
         // USER IS AUTHENTICATED - Direct to home screen
         _navigateToHomeIfAuthenticated();
@@ -45,8 +42,6 @@ class _AuthCheckState extends State<AuthCheck> {
         // USER IS NOT AUTHENTICATED
         if (hasLoggedOut) {
           // This is a returning user who logged out - Go directly to login screen
-          print(
-              'AUTH_CHECK: User previously logged out, going directly to login screen');
           if (mounted && context.mounted) {
             Navigator.pushReplacement(
               context,
@@ -60,15 +55,12 @@ class _AuthCheckState extends State<AuthCheck> {
           }
         } else {
           // New user - Show normal onboarding flow
-          print('AUTH_CHECK: New user, showing normal onboarding flow');
           if (mounted && context.mounted) {
             Navigator.pushReplacementNamed(context, '/splash');
           }
         }
       }
     } catch (e) {
-      print('AUTH_CHECK: Error in authentication check: $e');
-
       // On error, check if user previously logged out
       try {
         final bool hasLoggedOut = await _storageService.hasLoggedOut();
@@ -92,7 +84,6 @@ class _AuthCheckState extends State<AuthCheck> {
           }
         }
       } catch (storageError) {
-        print('AUTH_CHECK: Error checking storage: $storageError');
         // Default to splash screen on double error
         if (mounted && context.mounted) {
           Navigator.pushReplacementNamed(context, '/splash');
@@ -114,9 +105,6 @@ class _AuthCheckState extends State<AuthCheck> {
       final String? userType = await _storageService.getUserType();
       final String? token = await _storageService.getToken();
 
-      print('AUTH_CHECK: User ID: $userId, User Type: $userType');
-      print('AUTH_CHECK: Token exists: ${token != null && token.isNotEmpty}');
-
       // Check if we have all required data for authentication
       if (userId != null &&
           userType != null &&
@@ -127,15 +115,11 @@ class _AuthCheckState extends State<AuthCheck> {
 
         try {
           isTokenValid = await _authService.isAuthenticated();
-          print('AUTH_CHECK: Token validation result: $isTokenValid');
         } catch (e) {
-          print('AUTH_CHECK: Error validating token: $e');
           isTokenValid = false;
         }
 
         if (!isTokenValid) {
-          print(
-              'AUTH_CHECK: Token is invalid, logging out and redirecting to login');
           // Clear auth data and redirect to login
           await _storageService.clearAuthData();
           if (mounted && context.mounted) {
@@ -164,21 +148,14 @@ class _AuthCheckState extends State<AuthCheck> {
 
         for (int i = 0; i < maxRetries; i++) {
           try {
-            print(
-                'AUTH_CHECK: Attempting to fetch user data (attempt ${i + 1})...');
             fetchedUser = await _authService.getUserData(userId);
 
             if (fetchedUser != null) {
-              print('AUTH_CHECK: Successfully fetched user data');
               // If we got valid user data, use it instead of the basic one
               userData = fetchedUser;
               break; // Success, exit retry loop
-            } else {
-              print('AUTH_CHECK: Failed to get user data (null response)');
             }
           } catch (e) {
-            print(
-                'AUTH_CHECK: Error fetching user data (attempt ${i + 1}): $e');
             if (i < maxRetries - 1) {
               // Wait a bit before retrying
               await Future.delayed(Duration(seconds: 1 * (i + 1)));
@@ -188,7 +165,6 @@ class _AuthCheckState extends State<AuthCheck> {
 
         // Navigate to home page with user data
         if (mounted && context.mounted) {
-          print('AUTH_CHECK: Navigating to home with user data');
           Navigator.pushReplacement(
             context,
             PageRouteBuilder(
@@ -200,8 +176,6 @@ class _AuthCheckState extends State<AuthCheck> {
           );
         }
       } else {
-        print(
-            'AUTH_CHECK: Missing required auth data (userId, userType, or token)');
         // Missing required data, clear problematic state and go to login
         await _storageService.clearAuthData();
         if (mounted && context.mounted) {
@@ -217,7 +191,6 @@ class _AuthCheckState extends State<AuthCheck> {
         }
       }
     } catch (e) {
-      print('AUTH_CHECK: Error navigating to home: $e');
       // On error, clear auth data and redirect to login
       await _storageService.clearAuthData();
       if (mounted && context.mounted) {

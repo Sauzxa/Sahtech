@@ -158,10 +158,6 @@ class _SigninUserState extends State<SigninUser> {
       // Use the AuthService to log in the user
       final AuthService authService = AuthService();
 
-      // Show logging for debugging
-      print('Attempting login with email: ${_emailController.text}');
-      print('User type: ${widget.userData.userType}');
-
       final loginResult = await authService.loginUser(
         _emailController.text.trim(),
         _passwordController.text,
@@ -172,8 +168,6 @@ class _SigninUserState extends State<SigninUser> {
       widget.userData.clearPassword();
 
       if (loginResult['success']) {
-        print('Login successful');
-
         // If login successful, fetch the complete user data
         String? userId = null;
         if (loginResult['data'] != null) {
@@ -181,10 +175,8 @@ class _SigninUserState extends State<SigninUser> {
         }
 
         if (userId != null) {
-          print('User ID from login response: $userId');
           widget.userData.userId = userId;
 
-          print('Fetching complete user data...');
           int maxRetries = 3;
           UserModel? userData;
 
@@ -209,7 +201,6 @@ class _SigninUserState extends State<SigninUser> {
           }
 
           if (userData != null) {
-            print('Retrieved user data successfully.');
             // Update the user model with all data from MongoDB
             widget.userData.name = userData.name ?? widget.userData.name;
             widget.userData.email = userData.email ?? widget.userData.email;
@@ -241,9 +232,6 @@ class _SigninUserState extends State<SigninUser> {
             widget.userData.height = userData.height ?? widget.userData.height;
             widget.userData.heightUnit =
                 userData.heightUnit ?? widget.userData.heightUnit;
-          } else {
-            print('Failed to retrieve user data after multiple attempts');
-            // Continue with just the basic user data we have
           }
         }
 
@@ -274,7 +262,6 @@ class _SigninUserState extends State<SigninUser> {
         }
       }
     } catch (e) {
-      print('Exception during login: $e');
       if (mounted) {
         setState(() {
           _isSubmitting = false;
