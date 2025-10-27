@@ -4,7 +4,7 @@ import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/user_model.dart';
 import 'package:sahtech/core/utils/models/nutritioniste_model.dart';
 import 'package:sahtech/core/utils/models/ad_model.dart';
-import 'package:sahtech/core/services/mock_api_service.dart';
+import 'package:sahtech/core/services/api_service.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -42,8 +42,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int _scannedProductsCount = 0;
   bool _isLoading = true;
 
-  // Mock API service
-  final MockApiService _apiService = MockApiService();
+  // API service
+  final ApiService _apiService = ApiService();
 
   // Timer for periodic refresh
   Timer? _refreshTimer;
@@ -233,24 +233,20 @@ class _HomeScreenState extends State<HomeScreen> {
     final hasRequested = await storageService.getCameraPermissionRequested();
     final status = await Permission.camera.status;
 
-    print(
-        'Home: Camera permission status: $status, previously requested: $hasRequested');
-
     if (status.isGranted) {
       // Permission already granted, go directly to scanner
-      print('Home: Camera permission already granted, navigating to scanner');
+
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => const ProductScannerScreen(),
         ),
       ).then((_) {
-        print('Returned from scan screen, refreshing data...');
         _loadData();
       });
     } else if (!hasRequested) {
       // First time requesting permission
-      print('Home: First time requesting camera permission');
+
       final result = await Permission.camera.request();
       await storageService.setCameraPermissionRequested(true);
 
@@ -261,7 +257,6 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (context) => const ProductScannerScreen(),
           ),
         ).then((_) {
-          print('Returned from scan screen, refreshing data...');
           _loadData();
         });
       } else {
@@ -343,7 +338,6 @@ class _HomeScreenState extends State<HomeScreen> {
       // Try to launch the phone dialer
       if (await canLaunchUrl(phoneUri)) {
         await launchUrl(phoneUri);
-        print('Launched phone dialer with number: $formattedNumber');
 
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -356,7 +350,6 @@ class _HomeScreenState extends State<HomeScreen> {
           content: Text('Impossible d\'ouvrir l\'application téléphone'),
           backgroundColor: Colors.red,
         ));
-        print('Could not launch phone dialer: $phoneUri');
       }
     } catch (e) {
       // Handle any errors
@@ -364,7 +357,6 @@ class _HomeScreenState extends State<HomeScreen> {
         content: Text('Erreur lors de l\'appel: $e'),
         backgroundColor: Colors.red,
       ));
-      print('Error launching phone dialer: $e');
     }
   }
 

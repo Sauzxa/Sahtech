@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sahtech/core/theme/colors.dart';
 import 'package:sahtech/core/utils/models/product_model.dart';
-import 'package:sahtech/core/services/mock_api_service.dart';
+import 'package:sahtech/core/services/api_service.dart';
 import 'dart:math';
 import 'package:sahtech/presentation/scan/product_scanner_screen.dart';
 import 'package:sahtech/presentation/home/ContactNutri.dart';
@@ -49,7 +49,7 @@ class _ProductRecommendationScreenState
     print('Allergens count: ${widget.product.allergens.length}');
 
     // Register for direct recommendations from FastAPI
-    MockApiService.registerDirectRecommendationCallback(
+    ApiService.registerDirectRecommendationCallback(
         _handleDirectRecommendation);
     print(
         'Registered for direct recommendations for product: ${widget.product.id}');
@@ -622,7 +622,7 @@ class _ProductRecommendationScreenState
                 ],
               ),
             ),
-            
+
             // Extra space for bottom navigation bar
             SizedBox(height: 70.h),
           ],
@@ -631,7 +631,7 @@ class _ProductRecommendationScreenState
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
-  
+
   // Build the custom bottom navigation bar
   Widget _buildBottomNavigationBar() {
     return Container(
@@ -652,11 +652,15 @@ class _ProductRecommendationScreenState
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, Icons.home_outlined, Icons.home, 'Accueil', false),
-              _buildNavItem(1, Icons.history_outlined, Icons.history, 'Historique', false),
+              _buildNavItem(
+                  0, Icons.home_outlined, Icons.home, 'Accueil', false),
+              _buildNavItem(1, Icons.history_outlined, Icons.history,
+                  'Historique', false),
               _buildScanButton(true),
-              _buildNavItem(3, Icons.bookmark_outline, Icons.bookmark, 'Favoris', false),
-              _buildNavItem(4, Icons.person_outline, Icons.person, 'Profil', false),
+              _buildNavItem(
+                  3, Icons.bookmark_outline, Icons.bookmark, 'Favoris', false),
+              _buildNavItem(
+                  4, Icons.person_outline, Icons.person, 'Profil', false),
             ],
           ),
         ),
@@ -665,7 +669,8 @@ class _ProductRecommendationScreenState
   }
 
   // Build a navigation item
-  Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label, bool isSelected) {
+  Widget _buildNavItem(int index, IconData icon, IconData activeIcon,
+      String label, bool isSelected) {
     return InkWell(
       onTap: () {
         if (index == 0) {
@@ -730,16 +735,20 @@ class _ProductRecommendationScreenState
         child: Container(
           padding: EdgeInsets.all(12.w),
           decoration: BoxDecoration(
-            color: isActive ? AppColors.lightTeal : AppColors.lightTeal.withOpacity(0.8),
+            color: isActive
+                ? AppColors.lightTeal
+                : AppColors.lightTeal.withOpacity(0.8),
             shape: BoxShape.circle,
-            boxShadow: isActive ? [
-              BoxShadow(
-                color: AppColors.lightTeal.withOpacity(0.3),
-                blurRadius: 8,
-                spreadRadius: 2,
-                offset: Offset(0, 0),
-              ),
-            ] : [],
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: AppColors.lightTeal.withOpacity(0.3),
+                      blurRadius: 8,
+                      spreadRadius: 2,
+                      offset: Offset(0, 0),
+                    ),
+                  ]
+                : [],
           ),
           child: Icon(
             Icons.qr_code_scanner,
@@ -750,7 +759,7 @@ class _ProductRecommendationScreenState
       ),
     );
   }
-  
+
   // Navigate to profile settings
   void _navigateToProfile() {
     // Since we don't have user data in ProductModel, we'll just navigate to UserProfileSettings
@@ -764,7 +773,7 @@ class _ProductRecommendationScreenState
       ),
     );
   }
-  
+
   // Navigate to scan screen
   Future<void> _navigateToScanScreen() async {
     final storageService = StorageService();
@@ -834,7 +843,7 @@ class _ProductRecommendationScreenState
   @override
   void dispose() {
     // Unregister from direct recommendations
-    MockApiService.unregisterDirectRecommendationCallback();
+    ApiService.unregisterDirectRecommendationCallback();
     print('Unregistered from direct recommendations');
     super.dispose();
   }

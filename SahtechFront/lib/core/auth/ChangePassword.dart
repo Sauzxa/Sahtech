@@ -92,7 +92,7 @@ class _ChangePasswordState extends State<ChangePassword> {
           }
         }
       } catch (e) {
-        print('Error checking token expiration: $e');
+        
         // On error, assume we should try to refresh
         tokenMightBeExpired = true;
       }

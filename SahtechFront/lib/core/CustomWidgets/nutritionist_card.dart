@@ -17,12 +17,6 @@ class NutritionistCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Debug the nutritionist data
-    print('Building card for nutritionist:');
-    print('  Name: ${nutritionist.name}');
-    print('  Photo URL: ${nutritionist.photoUrl}');
-    print('  Specialite: ${nutritionist.specialite}');
-    
     return Container(
       width: 260.w,
       margin: EdgeInsets.only(right: 12.w),

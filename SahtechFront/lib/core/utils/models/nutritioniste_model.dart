@@ -142,7 +142,7 @@ class NutritionisteModel {
   // Factory method to create a user from a map
   factory NutritionisteModel.fromMap(Map<String, dynamic> map) {
     // Debug the incoming map
-    print('Creating NutritionisteModel from: $map');
+    
     
     return NutritionisteModel(
       userType: 'nutritionist',

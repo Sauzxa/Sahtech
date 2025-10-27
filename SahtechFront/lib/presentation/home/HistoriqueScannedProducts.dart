@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/CustomWidgets/productRecoCard.dart';
-import '../../core/services/mock_api_service.dart';
+import '../../core/services/api_service.dart';
 import 'package:http/http.dart' as http;
-import 'package:sahtech/core/services/mock_api_service.dart';
+import 'package:sahtech/core/services/api_service.dart';
 import '../../core/utils/models/product_model.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../core/theme/colors.dart';
@@ -30,8 +30,8 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
   // Navigation index
   int _currentIndex = 1; // History tab is selected
 
-  // Mock API service instance
-  final MockApiService _apiService = MockApiService();
+  // API service instance
+  final ApiService _apiService = ApiService();
 
   // Storage service for user authentication
   final StorageService _storageService = StorageService();
@@ -127,20 +127,11 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
         print("Using default test userId: $userId");
       }
 
-      print("===== DEBUG: LOADING PRODUCTS FROM NEW ENDPOINT =====");
-      print("Fetching scanned products for user: $userId");
-
       // Using the new endpoint method in mock_api_service
       final products = await _apiService.getUserScannedProducts(userId);
 
       print("Products received: ${products.length}");
-      if (products.isEmpty) {
-        print("WARNING: Received empty products list");
-      } else {
-        print("First product ID: ${products.first["id"] ?? 'No ID found'}");
-        print("First product data structure: ${products.first.keys.toList()}");
-        print("Complete first product data: ${products.first}");
-      }
+      if (products.isEmpty) {}
 
       if (!mounted) return;
 
@@ -149,8 +140,6 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
         _filteredProducts = products;
         _isLoading = false;
       });
-
-      print('Loaded ${products.length} products for user $userId');
     } catch (e) {
       print('Error loading products: $e');
       print(e.toString());
@@ -181,9 +170,6 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
             userType: userType,
           );
         });
-        print('Loaded user data: ID=$userId, Type=$userType');
-      } else {
-        print('Warning: Could not load user data from storage');
       }
     } catch (e) {
       print('Error loading user data: $e');
@@ -193,7 +179,7 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
   // Test API connection by making a simple request
   Future<void> _testApiConnection() async {
     try {
-      final MockApiService api = MockApiService();
+      final ApiService api = ApiService();
       final base = api.baseUrl; // using public getter configured in service
       final url = Uri.parse('$base/ping');
       print('Testing API connection to: $url');
@@ -202,16 +188,6 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
           onTimeout: () => http.Response('Timeout', 408));
 
       print('API test response: ${response.statusCode} - ${response.body}');
-
-      if (response.statusCode == 408) {
-        print(
-            'WARNING: API connection timed out - check server status and IP address');
-      } else if (response.statusCode != 200) {
-        print(
-            'WARNING: API returned non-200 status code: ${response.statusCode}');
-      } else {
-        print('API connection successful');
-      }
     } catch (e) {
       print('ERROR: API connection test failed: $e');
     }
@@ -530,15 +506,11 @@ class _HistoriqueScannedProductsState extends State<HistoriqueScannedProducts> {
           userType: userType,
         );
 
-        print(
-            'Retrieved user data from SharedPreferences: ID=$userId, Type=$userType');
         Navigator.of(context).pushReplacementNamed('/home', arguments: user);
       } else {
-        print('Warning: No user data available in SharedPreferences');
         Navigator.of(context).pushReplacementNamed('/home');
       }
     } catch (e) {
-      print('Error getting user data: $e');
       Navigator.of(context).pushReplacementNamed('/home');
     }
   }

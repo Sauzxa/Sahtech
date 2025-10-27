@@ -193,27 +193,3 @@ class ProductRecoCard extends StatelessWidget {
   }
 }
 
-/*
-Example usage in a ListView:
-
-ListView.builder(
-  itemCount: products.length,
-  itemBuilder: (context, index) {
-    final product = products[index];
-    return ProductRecoCard(
-      imageUrl: product.imageUrl,
-      productName: product.name,
-      productType: product.type,
-      onViewPressed: () {
-        // TODO: Navigate to Recommendation page with ScanResult data
-        // Navigator.push(
-        //   context,
-        //   MaterialPageRoute(
-        //     builder: (context) => RecommendationScreen(scanResult: product.scanResult),
-        //   ),
-        // );
-      },
-    );
-  },
-)
-*/

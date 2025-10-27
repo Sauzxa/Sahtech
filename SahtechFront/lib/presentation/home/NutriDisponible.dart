@@ -9,7 +9,7 @@ import 'package:sahtech/presentation/scan/product_scanner_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:sahtech/presentation/home/HistoriqueScannedProducts.dart';
-import 'package:sahtech/core/services/mock_api_service.dart';
+import 'package:sahtech/core/services/api_service.dart';
 
 class NutriDisponible extends StatefulWidget {
   const NutriDisponible({Key? key}) : super(key: key);
@@ -32,7 +32,7 @@ class _NutriDisponibleState extends State<NutriDisponible> {
   Future<void> _loadNutritionists() async {
     setState(() => _isLoading = true);
 
-    final MockApiService api = MockApiService();
+    final ApiService api = ApiService();
     try {
       final nutritionists = await api.getNutritionists();
       if (mounted) {

@@ -5,7 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sahtech/core/theme/colors.dart';
-import 'package:sahtech/core/services/mock_api_service.dart';
+import 'package:sahtech/core/services/api_service.dart';
 import 'package:sahtech/core/utils/models/product_model.dart';
 import 'package:sahtech/presentation/scan/product_recommendation_screen.dart';
 import 'package:sahtech/core/services/storage_service.dart';
@@ -22,7 +22,7 @@ class ProductScannerScreen extends StatefulWidget {
 
 class _ProductScannerScreenState extends State<ProductScannerScreen>
     with SingleTickerProviderStateMixin {
-  final MockApiService _apiService = MockApiService();
+  final ApiService _apiService = ApiService();
   final StorageService _storageService = StorageService();
   final TextEditingController _barcodeController = TextEditingController();
 

@@ -196,8 +196,8 @@ class _BirthdayScreenState extends State<BirthdayScreen> {
       if (userType == 'nutritionist') {
         // Always assign allergies regardless if empty
         widget.nutritionistData!.allergies = _selectedAllergies;
-        // Debug log
-        print("Setting allergies for nutritionist: $_selectedAllergies");
+       
+       
 
         // For nutritionist, navigate to signup screen
         Navigator.push(
@@ -213,13 +213,7 @@ class _BirthdayScreenState extends State<BirthdayScreen> {
         widget.userData!.allergies = _selectedAllergies;
         // Set hasAllergies based on selection
         widget.userData!.hasAllergies = _selectedAllergies.isNotEmpty;
-        // Debug log
-        print("Setting allergies for user: $_selectedAllergies");
-        print(
-            "User model after assignment - allergies: ${widget.userData!.allergies}");
-        print(
-            "User model after assignment - hasAllergies: ${widget.userData!.hasAllergies}");
-
+        
         // Format date of birth in YYYY-MM-DD format
         String day = _selectedDay.padLeft(2, '0');
         String month;
@@ -266,7 +260,7 @@ class _BirthdayScreenState extends State<BirthdayScreen> {
         }
         String year = _selectedYear;
         widget.userData!.dateOfBirth = "$year-$month-$day";
-        print("Setting date of birth: ${widget.userData!.dateOfBirth}");
+        
 
         // Navigate to user signup screen with all collected data
         Navigator.push(

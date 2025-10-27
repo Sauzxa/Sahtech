@@ -73,18 +73,13 @@ class UserModel {
     String? photoUrl;
     if (map['photoUrl'] != null) {
       photoUrl = map['photoUrl'];
-      print('Found photoUrl in map: $photoUrl');
+     
     } else if (map['photoUrl'] != null) {
       photoUrl = map['photoUrl'];
-      print('Found photoUrl in map: $photoUrl');
-    } else {
-      print('No profile image URL found in data from server');
-    }
+     
+    } 
 
-    // Debug chronic conditions mapping
-    print('========= USER MODEL FROM MAP - DISEASE DEBUG =========');
-    print('Raw map: $map');
-    print('Has maladies field: ${map.containsKey('maladies')}');
+   ;
     if (map.containsKey('maladies')) {
       print('Maladies type: ${map['maladies'].runtimeType}');
       print('Maladies value: ${map['maladies']}');
@@ -136,8 +131,7 @@ class UserModel {
       }
     }
     print('Final chronicConditions list: $chronicConditions');
-    print('====================================================');
-
+   
     return UserModel(
       userType: map['userType'] ?? 'user',
       name: (map['prenom'] != null && map['nom'] != null)

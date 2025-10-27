@@ -38,9 +38,7 @@ class ProductModel {
   // Factory method to create a product from a map
   factory ProductModel.fromMap(Map<String, dynamic> map) {
     // Debug the raw data
-    print(
-        'Creating ProductModel from data: ${map.toString().substring(0, min(100, map.toString().length))}...');
-
+   
     // Handle different field naming conventions from backend and validate data
     // Standardized field mapping - prioritize 'barcode' first, then fallback to others
     final rawBarcode =
@@ -60,11 +58,11 @@ class ProductModel {
         barcodeValue = BigInt.zero;
       }
     } catch (e) {
-      print('Error converting barcode to BigInt: $e');
+      
       barcodeValue = BigInt.zero;
     }
 
-    print('Converted barcode: $barcodeValue (from ${rawBarcode.runtimeType})');
+    
 
     // Validate and extract required fields with appropriate defaults
     final String id = map['id']?.toString() ?? '';

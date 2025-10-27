@@ -1,4 +1,4 @@
-import 'dart:async';
+/*import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
@@ -13,14 +13,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// This allows testing of loading states, error handling, and UI without real backend
 class MockApiService {
   // Singleton pattern
-  static final MockApiService _instance = MockApiService._internal();
-
-  factory MockApiService() => _instance;
-
-  MockApiService._internal() {
-    // Initialize mock data
-    _initializeMockNutritionists();
-  }
 
   // Random generator for simulating network conditions
   final Random _random = Random();
@@ -34,47 +26,6 @@ class MockApiService {
 
   // In-memory database for CRUD operations
   final List<NutritionisteModel> _nutritionists = [];
-  final List<AdModel> _ads = _getMockAds();
-  final List<ProductModel> _products = _getMockProducts();
-
-  // Initialize mock nutritionists
-  void _initializeMockNutritionists() {
-    _nutritionists.addAll([
-      NutritionisteModel(
-        userType: 'nutritionist',
-        userId: '1',
-        name: 'Dr. Hamza Tariq',
-        profileImageUrl: 'https://picsum.photos/id/64/300/300',
-        address: 'Cité Douzi, Ben Arous',
-        phoneNumber: '+216 22 345 678',
-        specialite: 'Nutritionniste générale',
-        preferredLanguage: 'fr',
-        isVerified: true,
-      ),
-      NutritionisteModel(
-        userType: 'nutritionist',
-        userId: '2',
-        name: 'Dr. Amira Ben Salem',
-        profileImageUrl: 'https://picsum.photos/id/1027/300/300',
-        address: 'La Marsa, Tunis',
-        phoneNumber: '+216 55 789 012',
-        specialite: 'Nutritionniste Pédiatrique',
-        preferredLanguage: 'fr',
-        isVerified: true,
-      ),
-      NutritionisteModel(
-        userType: 'nutritionist',
-        userId: '3',
-        name: 'Dr. Ahmed Kouki',
-        profileImageUrl: 'https://picsum.photos/id/1074/300/300',
-        address: 'Sousse Centre',
-        phoneNumber: '+216 98 567 432',
-        specialite: 'Nutritionniste Sportif',
-        preferredLanguage: 'fr',
-        isVerified: true,
-      ),
-    ]);
-  }
 
   // Map to store user-specific products
   final Map<String, List<ProductModel>> _userProductsMap = {};
@@ -186,15 +137,9 @@ class MockApiService {
       print('Error fetching nutritionists from server: $e');
     }
 
-    // If server fetch fails, simulate delay and return mock list
-    await _simulateNetworkDelay();
-    _maybeThrowError();
-
-    // Refresh cache with mock data to speed up subsequent calls
-    _nutritionistsCache = List.from(_nutritionists);
-    _nutritionistsCacheTime = DateTime.now();
-    print('Returning mock nutritionists and caching result');
-    return List.from(_nutritionists);
+    // If server fetch fails, do not return mock data anymore
+    print('Returning empty nutritionists list (no mock data)');
+    return [];
   }
 
   /// Get nutritionist by ID
@@ -232,24 +177,14 @@ class MockApiService {
       print('Error fetching ads from server, using mock data: $e');
     }
 
-    // If server request fails or returns empty, use mock data
-    await _simulateNetworkDelay();
-    _maybeThrowError();
-
-    // Filter only active ads
-    final activeAds = _ads.where((ad) => ad.isActive).toList();
-    return List.from(activeAds);
+    // If server request fails or returns empty, do not use mock data
+    return [];
   }
 
   /// Get ad by ID
   Future<AdModel?> getAdById(String id) async {
-    await _simulateNetworkDelay();
-    _maybeThrowError();
-
-    return _ads.firstWhere(
-      (ad) => ad.id == id,
-      orElse: () => throw Exception('Ad not found'),
-    );
+    // No mock lookup; either fetch via server in future or return null
+    return null;
   }
 
   /// Get ads from the server endpoint
@@ -429,7 +364,7 @@ class MockApiService {
   // Helper method to determine if we should use mock data
   // This allows easier testing without a live backend
   bool _shouldUseMockData() {
-    // Always return false - we want to use real API data only
+    // Deprecated: always false
     return false;
   }
 
@@ -537,15 +472,14 @@ class MockApiService {
             }
           }
 
-          // If we got here, something's wrong with the response format
-          print(
-              'Falling back to default recommendation due to invalid response format');
-          return _createFallbackMockRecommendation(productId);
+          // Invalid response format; do not fabricate a recommendation
+          print('Invalid recommendation format; returning null');
+          return null;
         } catch (parseError) {
           print('ERROR parsing response JSON: $parseError');
           print(
               'Raw response: ${response.body.substring(0, min(100, response.body.length))}...');
-          return _createFallbackMockRecommendation(productId);
+          return null;
         }
       } else {
         print('Failed to get AI recommendation: HTTP ${response.statusCode}');
@@ -568,12 +502,12 @@ class MockApiService {
         }
 
         print('=== RECOMMENDATION REQUEST FAILED ===\n');
-        return _createFallbackMockRecommendation(productId);
+        return null;
       }
     } catch (e) {
       print('ERROR requesting AI recommendation: $e');
       print('=== RECOMMENDATION REQUEST FAILED ===\n');
-      return _createFallbackMockRecommendation(productId);
+      return null;
     }
   }
 
@@ -599,36 +533,8 @@ class MockApiService {
 
   /// Get all products for a user
   Future<List<ProductModel>> getUserProducts(String userId) async {
-    await _simulateNetworkDelay();
-    _maybeThrowError();
-
-    // For new users or null/empty userIds, return an empty list
-    if (userId.isEmpty || userId == 'new_user') {
-      return [];
-    }
-
-    // For testing purposes: if the userId contains "empty", return empty list
-    if (userId.contains("empty")) {
-      return [];
-    }
-
-    // Check if user has scanned products in the user-specific map
-    if (_userProductsMap.containsKey(userId)) {
-      print(
-          'Found ${_userProductsMap[userId]!.length} products for user $userId');
-      return List.from(_userProductsMap[userId]!);
-    }
-
-    // Only return mock products for testing with specific userId patterns
-    // This simulates that only certain users have scanned products
-    if (userId == 'test_user' ||
-        userId == 'existing_user' ||
-        userId.contains('test')) {
-      return List.from(_getExistingUserMockProducts());
-    }
-
-    // By default, return an empty list for all other users
-    // This ensures new users start with zero products
+    // No mock data; implement server call when endpoint is available
+    if (userId.isEmpty) return [];
     return [];
   }
 
@@ -716,22 +622,7 @@ class MockApiService {
           '- aiRecommendation length: ${apiProduct.aiRecommendation?.length ?? 0}');
       print('- recommendationType: ${apiProduct.recommendationType ?? "null"}');
 
-      // Add to global products for consistency
-      // Remove any existing product with the same ID first to avoid duplicates
-      _products.removeWhere((p) => p.id == apiProduct.id);
-      _products.add(apiProduct);
-
-      // If we have a userId, add to user-specific products
-      if (userId != null && userId.isNotEmpty) {
-        // Make sure the user has a products list
-        _userProductsMap.putIfAbsent(userId, () => []);
-        // Remove any existing product with the same ID to avoid duplicates
-        _userProductsMap[userId]!.removeWhere((p) => p.id == apiProduct.id);
-        // Add the updated product with fresh recommendation
-        _userProductsMap[userId]!.add(apiProduct);
-        print(
-            'Added product from API to user $userId\'s products. New count: ${_userProductsMap[userId]!.length}');
-      }
+      // No in-memory product storage or mock caching anymore
 
       print('=== PRODUCT SCAN COMPLETE ===');
       return apiProduct;
@@ -743,131 +634,131 @@ class MockApiService {
     }
   }
 
-  // MOCK DATA
+  // // MOCK DATA
 
-  // Mock ads for testing
-  static List<AdModel> _getMockAds() {
-    return [
-      AdModel(
-        id: '1',
-        companyName: 'Antiflex',
-        imageUrl: 'https://picsum.photos/id/237/800/300',
-        title: 'Soulager naturellement la douleur',
-        description:
-            'Un médicament naturel pour soulager les douleurs articulaires',
-        link: 'https://example.com/antiflex',
-        isActive: true,
-        state: 'ACCEPTEE',
-        startDate: DateTime.now(),
-        endDate: DateTime.now().add(const Duration(days: 30)),
-      ),
-      AdModel(
-        id: '2',
-        companyName: 'Bio Nutrition',
-        imageUrl: 'https://picsum.photos/id/292/800/300',
-        title: 'Alimentation bio pour votre santé',
-        description: 'Découvrez notre gamme de produits bio et naturels',
-        link: 'https://example.com/bionutrition',
-        isActive: true,
-        state: 'ACCEPTEE',
-        startDate: DateTime.now(),
-        endDate: DateTime.now().add(const Duration(days: 30)),
-      ),
-      AdModel(
-        id: '3',
-        companyName: 'VitaPlus',
-        imageUrl: 'https://picsum.photos/id/96/800/300',
-        title: 'Renforcez votre système immunitaire',
-        description: 'Complément alimentaire à base de plantes et vitamines',
-        link: 'https://example.com/vitaplus',
-        isActive: true,
-        state: 'ACCEPTEE',
-        startDate: DateTime.now(),
-        endDate: DateTime.now().add(const Duration(days: 30)),
-      ),
-      AdModel(
-        id: '4',
-        companyName: 'Sport Nutrition',
-        imageUrl: 'https://picsum.photos/id/342/800/300',
-        title: 'Booste ta performance',
-        description: 'Protéines et compléments pour sportifs',
-        link: 'https://example.com/sportnutrition',
-        isActive: false, // Inactive ad for testing
-        state: 'REJECTEE',
-        startDate: DateTime.now().subtract(const Duration(days: 60)),
-        endDate: DateTime.now().subtract(const Duration(days: 30)),
-      ),
-    ];
-  }
+  // // Mock ads for testing
+  // static List<AdModel> _getMockAds() {
+  //   return [
+  //     AdModel(
+  //       id: '1',
+  //       companyName: 'Antiflex',
+  //       imageUrl: 'https://picsum.photos/id/237/800/300',
+  //       title: 'Soulager naturellement la douleur',
+  //       description:
+  //           'Un médicament naturel pour soulager les douleurs articulaires',
+  //       link: 'https://example.com/antiflex',
+  //       isActive: true,
+  //       state: 'ACCEPTEE',
+  //       startDate: DateTime.now(),
+  //       endDate: DateTime.now().add(const Duration(days: 30)),
+  //     ),
+  //     AdModel(
+  //       id: '2',
+  //       companyName: 'Bio Nutrition',
+  //       imageUrl: 'https://picsum.photos/id/292/800/300',
+  //       title: 'Alimentation bio pour votre santé',
+  //       description: 'Découvrez notre gamme de produits bio et naturels',
+  //       link: 'https://example.com/bionutrition',
+  //       isActive: true,
+  //       state: 'ACCEPTEE',
+  //       startDate: DateTime.now(),
+  //       endDate: DateTime.now().add(const Duration(days: 30)),
+  //     ),
+  //     AdModel(
+  //       id: '3',
+  //       companyName: 'VitaPlus',
+  //       imageUrl: 'https://picsum.photos/id/96/800/300',
+  //       title: 'Renforcez votre système immunitaire',
+  //       description: 'Complément alimentaire à base de plantes et vitamines',
+  //       link: 'https://example.com/vitaplus',
+  //       isActive: true,
+  //       state: 'ACCEPTEE',
+  //       startDate: DateTime.now(),
+  //       endDate: DateTime.now().add(const Duration(days: 30)),
+  //     ),
+  //     AdModel(
+  //       id: '4',
+  //       companyName: 'Sport Nutrition',
+  //       imageUrl: 'https://picsum.photos/id/342/800/300',
+  //       title: 'Booste ta performance',
+  //       description: 'Protéines et compléments pour sportifs',
+  //       link: 'https://example.com/sportnutrition',
+  //       isActive: false, // Inactive ad for testing
+  //       state: 'REJECTEE',
+  //       startDate: DateTime.now().subtract(const Duration(days: 60)),
+  //       endDate: DateTime.now().subtract(const Duration(days: 30)),
+  //     ),
+  //   ];
+  // }
 
-  // Modified to return an empty list for new users by default
-  static List<ProductModel> _getMockProducts() {
-    // Return an empty list by default
-    return [];
-  }
+  // // Modified to return an empty list for new users by default
+  // static List<ProductModel> _getMockProducts() {
+  //   // Return an empty list by default
+  //   return [];
+  // }
 
-  // Product list for existing users only
-  static List<ProductModel> _getExistingUserMockProducts() {
-    return [
-      ProductModel(
-        id: '1',
-        name: 'Yaourt Nature',
-        imageUrl: 'https://picsum.photos/200?random=1',
-        barcode: BigInt.parse('3033490004751'),
-        brand: 'Nature Bio',
-        category: 'Produits laitiers',
-        nutritionFacts: {
-          'calories': 120,
-          'fat': 4.5,
-          'carbs': 12.0,
-          'protein': 8.0,
-          'salt': 0.2,
-        },
-        ingredients: ['Lait entier', 'Ferments lactiques'],
-        allergens: ['Lait'],
-        healthScore: 4.2,
-        scanDate: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      ProductModel(
-        id: '2',
-        name: 'Pain Complet',
-        imageUrl: 'https://picsum.photos/200?random=2',
-        barcode: BigInt.parse('3564700011439'),
-        brand: 'Boulangerie Artisanale',
-        category: 'Boulangerie',
-        nutritionFacts: {
-          'calories': 240,
-          'fat': 1.2,
-          'carbs': 45.0,
-          'protein': 9.0,
-          'salt': 1.1,
-        },
-        ingredients: ['Farine complète', 'Eau', 'Levure', 'Sel'],
-        allergens: ['Gluten'],
-        healthScore: 3.8,
-        scanDate: DateTime.now().subtract(const Duration(days: 5)),
-      ),
-      ProductModel(
-        id: '3',
-        name: 'Jus d\'Orange',
-        imageUrl: 'https://picsum.photos/200?random=3',
-        barcode: BigInt.parse('3057640385575'),
-        brand: 'Fruits Bio',
-        category: 'Boissons',
-        nutritionFacts: {
-          'calories': 45,
-          'fat': 0.0,
-          'carbs': 10.5,
-          'protein': 0.5,
-          'salt': 0.0,
-        },
-        ingredients: ['Jus d\'orange', 'Pulpe d\'orange'],
-        allergens: [],
-        healthScore: 4.0,
-        scanDate: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-    ];
-  }
+  // // Product list for existing users only
+  // static List<ProductModel> _getExistingUserMockProducts() {
+  //   return [
+  //     ProductModel(
+  //       id: '1',
+  //       name: 'Yaourt Nature',
+  //       imageUrl: 'https://picsum.photos/200?random=1',
+  //       barcode: BigInt.parse('3033490004751'),
+  //       brand: 'Nature Bio',
+  //       category: 'Produits laitiers',
+  //       nutritionFacts: {
+  //         'calories': 120,
+  //         'fat': 4.5,
+  //         'carbs': 12.0,
+  //         'protein': 8.0,
+  //         'salt': 0.2,
+  //       },
+  //       ingredients: ['Lait entier', 'Ferments lactiques'],
+  //       allergens: ['Lait'],
+  //       healthScore: 4.2,
+  //       scanDate: DateTime.now().subtract(const Duration(days: 2)),
+  //     ),
+  //     ProductModel(
+  //       id: '2',
+  //       name: 'Pain Complet',
+  //       imageUrl: 'https://picsum.photos/200?random=2',
+  //       barcode: BigInt.parse('3564700011439'),
+  //       brand: 'Boulangerie Artisanale',
+  //       category: 'Boulangerie',
+  //       nutritionFacts: {
+  //         'calories': 240,
+  //         'fat': 1.2,
+  //         'carbs': 45.0,
+  //         'protein': 9.0,
+  //         'salt': 1.1,
+  //       },
+  //       ingredients: ['Farine complète', 'Eau', 'Levure', 'Sel'],
+  //       allergens: ['Gluten'],
+  //       healthScore: 3.8,
+  //       scanDate: DateTime.now().subtract(const Duration(days: 5)),
+  //     ),
+  //     ProductModel(
+  //       id: '3',
+  //       name: 'Jus d\'Orange',
+  //       imageUrl: 'https://picsum.photos/200?random=3',
+  //       barcode: BigInt.parse('3057640385575'),
+  //       brand: 'Fruits Bio',
+  //       category: 'Boissons',
+  //       nutritionFacts: {
+  //         'calories': 45,
+  //         'fat': 0.0,
+  //         'carbs': 10.5,
+  //         'protein': 0.5,
+  //         'salt': 0.0,
+  //       },
+  //       ingredients: ['Jus d\'orange', 'Pulpe d\'orange'],
+  //       allergens: [],
+  //       healthScore: 4.0,
+  //       scanDate: DateTime.now().subtract(const Duration(days: 1)),
+  //     ),
+  //   ];
+  // }
 
   /// Get user health profile from Spring Boot backend
   Future<Map<String, dynamic>?> getUserHealthProfile(String userId) async {
@@ -1093,4 +984,4 @@ class MockApiService {
     // In a real app, this would be generated dynamically based on the device/user
     return 'https://sahtech-app.example/api/recommendations/callback';
   }
-}
+}*/

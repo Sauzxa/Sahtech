@@ -476,7 +476,7 @@ class HistoRecommandationPage extends StatelessWidget {
         Navigator.of(context).pushReplacementNamed('/home');
       }
     } catch (e) {
-      print('Error getting user data: $e');
+     
       Navigator.of(context).pushReplacementNamed('/home');
     }
   }
